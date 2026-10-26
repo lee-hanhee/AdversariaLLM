@@ -52,8 +52,9 @@ retry behavior. No additional application retry layer is added.
 | Integration | Repository datasets and results replace CSV loading, spreadsheet output, and CLI reporting. No RNG seed or generic generation overrides are introduced. |
 
 The adapter runs directly in the runner and reuses the existing `APITarget` SDK
-client. It adds no subprocess, JSON protocol, custom target class, or runtime SDK
-version gate. Original
+client. `OpenRouterAuthorClient` keeps routing and request traces together; the
+adapter converts original author records into repository results once. No extra
+client is constructed during author execution. Original
 post-loop reporting is outside the binding: FlipAttack's standalone reporting
 uses `if eval` rather than `args.eval`.
 

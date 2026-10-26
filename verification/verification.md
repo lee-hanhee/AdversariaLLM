@@ -69,8 +69,21 @@ state to compare histories, retries, scoring, branching, stopping, and outputs.
 
 ## 4. Record what passed and what differs
 
-Keep commands, environment, outcomes, departures, and remaining gaps in the
-method's verification record or manifest. Distinguish source checks from
-behavioral tests. State model/provider, dataset, judge, seed, generation, and
-control-flow changes explicitly. Source identity and mocked comparisons do not
-prove equivalent live model behavior or paper-result reproduction.
+Use the same metadata structure for every attack:
+
+| Section | What to record |
+| --- | --- |
+| `repository_history` | Local project revisions used for the integration. Keep these separate from the top-level official author `revision`. |
+| `integration.files[]` | Our integration files and each file's purpose. Author source correspondence stays in `files[]`. |
+| `integration.preserved_behavior[]` | Author behavior that the integration retains. |
+| `integration.changes[]` | One entry per changed area: `area`, `author`, `repository`, and `reason`. Use areas such as models/providers, dependencies, transport, data/storage, configuration, and reporting. |
+| `verification_results.source_identity` | Source-check command, status, and result. |
+| `verification_results.behavior` | Reference execution, compared behavior, allowed comparison differences, test runs, and how overlapping counts are handled. |
+| `verification_results.environments` | Test-runner and baseline environments; link dependency locks where available. |
+| `verification_results.execution_requirements` | Required setup and links to runnable instructions. |
+| `verification_results.not_tested` / `limitations` | Remaining gaps and claims the checks do not establish. |
+
+Record test runs separately rather than adding their pass counts together when
+tests overlap. Keep source identity separate from behavioral evidence. Source
+checks and mocked comparisons do not prove equivalent live model behavior or
+paper-result reproduction.

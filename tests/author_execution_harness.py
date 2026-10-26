@@ -100,6 +100,8 @@ def main():
             data = {'id': 'chatcmpl-test', 'object': 'chat.completion', 'created': 0, 'model': body['model'],
                     'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': text}, 'finish_reason': 'stop'}],
                     'usage': {'prompt_tokens': 2, 'completion_tokens': 3, 'total_tokens': 5}}
+        if item.get('empty_choices'):
+            data['content' if request.url.host == 'api.anthropic.com' else 'choices'] = []
         return httpx.Response(200, json=data, request=request)
 
     def factory(provider, options):
@@ -123,7 +125,9 @@ def main():
             else:
                 for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
                     os.environ.pop(key, None)
-                result = author_execution.execute(payload, sdk_factory=factory, sleep=sleeps.append)
+                client = factory('openai', {'api_key': 'test-openrouter-key', 'base_url': 'https://openrouter.ai/api/v1'})
+                result = author_execution.execute(payload['method'], payload['model'], payload['config'],
+                                                  payload['dataset'], client=client, sleep=sleeps.append)
         result.update(wire=wire, sleeps=sleeps, sdk_sleeps=sdk_sleeps)
     except Exception as error:
         result = {'error': {'type': type(error).__name__, 'message': str(error)}, 'wire': wire, 'sleeps': sleeps, 'sdk_sleeps': sdk_sleeps}

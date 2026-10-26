@@ -61,5 +61,5 @@ def compare_author(payload):
     if original.get('error', {}).get('type') in {'UnboundLocalError', 'IndexError', 'ValueError'}:
         assert adapted['error'] == original['error']
     if 'error' not in original:
-        assert [run['author_result'] for run in adapted['runs']] == original['records']
+        assert adapted['records'] == original['records']
     return original, adapted

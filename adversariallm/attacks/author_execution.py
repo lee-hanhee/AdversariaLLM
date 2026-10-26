@@ -3,7 +3,6 @@
 import ast
 import copy
 from importlib.metadata import version
-import os
 from pathlib import Path
 import time
 from types import SimpleNamespace
@@ -72,112 +71,99 @@ def load_symbols(filename, names, bindings):
     return {name: namespace[name] for name in names}
 
 
-def execute(payload, *, sdk_factory=None, sleep=None):
-    method, model, config = payload['method'], payload['model'], payload['config']
-    validate_author_config(method, model, config)
+class OpenRouterAuthorClient:
+    """Bind author client interfaces to one SDK client and retain per-example traces."""
 
-    environment = {'openai': version('openai')}
-    key = os.environ['OPENROUTER_API_KEY']
-    requests, durations = [], {}
-    state = {'index': -1, 'phase': 'target'}
+    def __init__(self, client, model, judge):
+        self.client, self.model, self.judge = client, model, judge
+        self.requests, self.durations = [], []
+        self.index, self.phase = -1, 'target'
 
-    def client(provider, **options):
-        # Original constructors are I/O bindings only; no original credential or endpoint is used.
-        options = {'api_key': key, 'base_url': 'https://openrouter.ai/api/v1'}
-        if sdk_factory:
-            native = sdk_factory('openai', options)
-        else:
-            from openai import OpenAI
-            native = OpenAI(**options)
+        # These are the only OpenAI/Anthropic client interfaces used by the author code.
+        self.chat = SimpleNamespace(completions=self)
+        self.messages = self
 
-        def create(**kwargs):
-            role = state['phase']
-            route = model if role == 'target' else config['judge']
-            record = {'example': state['index'], 'role': role,
-                      'endpoint': str(native.base_url), 'request': copy.deepcopy(kwargs)}
-            requests.append(record)
+    def __call__(self, **_options):
+        # Original constructor credentials/endpoints are replaced by the existing hosted client.
+        return self
 
-            # Translate Anthropic's system field to a chat message without changing its text.
-            routed = copy.deepcopy(kwargs)
-            routed['model'] = route['id']
-            if provider == 'anthropic':
-                routed['messages'] = [{'role': 'system', 'content': routed.pop('system')}, *routed['messages']]
-            routed['extra_body'] = {'provider': {'only': [route['provider']],
-                                                 'allow_fallbacks': False, 'require_parameters': True}}
-            record['routed_request'] = copy.deepcopy(routed)
-            try:
-                # The author owns application retries; the SDK retains its own normal retry behavior.
-                response = native.chat.completions.create(**routed)
-                usage = getattr(response, 'usage', None)
-                record['metadata'] = {'id': response.id, 'model': response.model,
-                                      'usage': usage.model_dump() if usage else None,
-                                      'finish_reasons': [choice.finish_reason for choice in response.choices],
-                                      'provider': getattr(response, 'provider', None)}
-                record['raw_text'] = response.choices[0].message.content
-                state['phase'] = 'judge'
-                if provider == 'anthropic':
-                    # Return the shape expected by the untouched Claude response processing.
-                    return SimpleNamespace(content=[SimpleNamespace(text=record['raw_text'])])
-                return response
-            except Exception as error:
-                record['error_type'] = type(error).__name__
-                raise
+    def create(self, **kwargs):
+        route = self.model if self.phase == 'target' else self.judge
+        record = {'example': self.index, 'role': self.phase, 'endpoint': str(self.client.base_url),
+                  'request': copy.deepcopy(kwargs)}
+        self.requests[self.index].append(record)
 
-        return (SimpleNamespace(messages=SimpleNamespace(create=create)) if provider == 'anthropic'
-                else SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create))))
+        # Claude has a separate system field and expects a different response shape.
+        routed = copy.deepcopy(kwargs)
+        anthropic = 'system' in routed
+        if anthropic:
+            routed['messages'] = [{'role': 'system', 'content': routed.pop('system')}, *routed['messages']]
+        routed['model'] = route['id']
+        routed['extra_body'] = {'provider': {'only': [route['provider']],
+                                             'allow_fallbacks': False, 'require_parameters': True}}
+        record['routed_request'] = copy.deepcopy(routed)
+        try:
+            # Keep SDK retries; all application retries remain in the original author methods.
+            response = self.client.chat.completions.create(**routed)
+            usage = getattr(response, 'usage', None)
+            record['metadata'] = {'id': response.id, 'model': response.model,
+                                  'usage': usage.model_dump() if usage else None,
+                                  'finish_reasons': [choice.finish_reason for choice in response.choices],
+                                  'provider': getattr(response, 'provider', None)}
+            record['raw_text'] = response.choices[0].message.content if response.choices else None
+            self.phase = 'judge'
+            if anthropic:
+                content = [SimpleNamespace(text=record['raw_text'])] if response.choices else []
+                return SimpleNamespace(content=content)
+            return response
+        except Exception as error:
+            record['error_type'] = type(error).__name__
+            raise
 
-    # Iteration preserves dataset order and measures time without touching the author's RNG.
-    def examples(values):
-        for index, value in enumerate(values):
-            state.update(index=index, phase='target')
+    def examples(self, values):
+        # Group traces as requests happen, avoiding a later scan of the full request history.
+        for self.index, value in enumerate(values):
+            self.phase = 'target'
+            self.requests.append([])
             started = time.perf_counter()
             yield value
-            durations[index] = time.perf_counter() - started
+            self.durations.append(time.perf_counter() - started)
 
-    openai_factory = lambda **kwargs: client('openai', **kwargs)
-    anthropic_factory = lambda **kwargs: client('anthropic', **kwargs)
-    clock = SimpleNamespace(sleep=sleep or time.sleep)
-    # Bind original environment lookups locally; never mutate process credentials.
-    author_os = SimpleNamespace(environ={'OPENAI_API_KEY': key, 'ANTHROPIC_API_KEY': key, 'DEEPINFRA_API_KEY': key}, path=os.path)
-    questions = [conv[0]['content'] for conv in payload['dataset']]
-    records, summary = [], {}
 
+def execute(method, model, config, dataset, *, client, sleep=None):
+    validate_author_config(method, model, config)
+    transport = OpenRouterAuthorClient(client, model, config['judge'])
+    questions = [conv[0]['content'] for conv in dataset]
+    records = []
+
+    # Reuse original definitions with local I/O bindings; never mutate process credentials.
+    author_os = SimpleNamespace(environ=dict.fromkeys(
+        ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'), client.api_key))
+    llm = load_symbols('flip_attack_llm.py', ['LLM'], {
+        'os': author_os, 'time': SimpleNamespace(sleep=sleep or time.sleep),
+        'OpenAI': transport, 'Anthropic': transport, 'anthropic': SimpleNamespace(Anthropic=transport),
+    })['LLM']
+    evaluator = load_symbols('flip_attack_evaluator.py', ['Evaluator'], {'re': __import__('re'), 'LLM': llm})['Evaluator']
+    builder = load_symbols('flip_attack.py', ['FlipAttack'], {'textwrap': __import__('textwrap')})['FlipAttack']
+    args = SimpleNamespace(**config, victim_llm=model['author_model'], judge_llm=config['judge_model'],
+                           eval=config['evaluate'], begin=0, end=len(questions))
+    victim = llm(model_id=model['author_model'], **{key: config[key] for key in (
+        'temperature', 'max_token', 'retry_time', 'failed_sleep_time', 'round_sleep_time')})
+
+    # Execute the unchanged per-example loop, binding only dataset/progress and result storage.
+    source = ast.parse((DATA / 'flip_attack_driver.py').read_bytes())
+    main = next(node for node in source.body if isinstance(node, ast.If))
+    loop = next(node for node in main.body if isinstance(node, ast.For))
+    namespace = {'args': args, 'adv_bench': {'goal': questions}, 'FlipAttack': builder,
+                 'victim_llm': victim, 'Evaluator': evaluator, 'result_dict_list': records,
+                 'all_count': 0, 'dict_success_count': 0, 'gpt_success_count': 0,
+                 'tqdm': transport.examples}
     try:
-        if method == 'flip_attack':
-            # Reuse the original client and evaluator classes, including retries and response processing.
-            llm = load_symbols('flip_attack_llm.py', ['LLM'], {
-                'os': author_os, 'time': clock, 'OpenAI': openai_factory, 'Anthropic': anthropic_factory,
-                'anthropic': SimpleNamespace(Anthropic=anthropic_factory),
-            })['LLM']
-            import re
-            evaluator = load_symbols('flip_attack_evaluator.py', ['Evaluator'], {'re': re, 'LLM': llm})['Evaluator']
-            builder = load_symbols('flip_attack.py', ['FlipAttack'], {'textwrap': __import__('textwrap')})['FlipAttack']
-            args = SimpleNamespace(**config, victim_llm=model['author_model'], judge_llm=config['judge_model'],
-                                   eval=config['evaluate'], begin=0, end=len(questions))
-            victim = llm(model_id=model['author_model'], **{key: config[key] for key in (
-                'temperature', 'max_token', 'retry_time', 'failed_sleep_time', 'round_sleep_time')})
-
-            # Execute the original per-example loop; replace only dataset/progress and result bindings.
-            source = ast.parse((DATA / 'flip_attack_driver.py').read_bytes())
-            main = next(node for node in source.body if isinstance(node, ast.If))
-            loop = next(node for node in main.body if isinstance(node, ast.For))
-            namespace = {'args': args, 'adv_bench': {'goal': questions}, 'FlipAttack': builder,
-                         'victim_llm': victim, 'Evaluator': evaluator, 'result_dict_list': records,
-                         'all_count': 0, 'dict_success_count': 0, 'gpt_success_count': 0,
-                         'tqdm': lambda values: examples(values)}
-            exec(compile(ast.Module(body=[loop], type_ignores=[]), 'author-flip-loop', 'exec'), namespace)
-            if config['evaluate']:
-                summary = {key: namespace[key] for key in ('all_count', 'dict_success_count', 'gpt_success_count')}
-        # Map artifacts only after the unchanged author logic finishes successfully.
-        runs = []
-        for index, record in enumerate(records):
-            trace = [request for request in requests if request['example'] == index]
-            target = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
-            runs.append({'author_result': record, 'requests': trace, 'messages': record['all_prompt'],
-                         'response': record['output'],
-                         'raw_response': target['raw_text'], 'api_metadata': target['metadata'],
-                         'time_taken': durations[index]})
-        return {'runs': runs, 'author_summary': summary, 'environment': environment}
+        exec(compile(ast.Module(body=[loop], type_ignores=[]), 'author-flip-loop', 'exec'), namespace)
     except Exception as error:
-        error.author_requests = requests
+        error.author_requests = [request for trace in transport.requests for request in trace]
         raise
+    summary = ({key: namespace[key] for key in ('all_count', 'dict_success_count', 'gpt_success_count')}
+               if config['evaluate'] else {})
+    return {'records': records, 'requests': transport.requests, 'durations': transport.durations,
+            'author_summary': summary, 'environment': {'openai': version('openai')}}

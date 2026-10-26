@@ -78,16 +78,16 @@ def hosted_target(payload, client=None):
 
 def test_author_records_map_to_repository_results_without_reinterpreting_scores(monkeypatch):
     payload = author_payload('flip_attack')
-    record = {'output': 'Answer.', 'judge_success_dict': 1, 'judge_score_gpt4': 10, 'judge_success_gpt4': 1}
-    result = {'runs': [{'messages': [{'role': 'user', 'content': 'Question'}], 'response': 'Answer.',
-                        'raw_response': '  Answer.\n', 'api_metadata': {'id': 'request'},
-                        'time_taken': 1.0, 'author_result': record, 'requests': [{'role': 'target'}]}],
+    record = {'output': 'Answer.', 'all_prompt': [{'role': 'user', 'content': 'Question'}],
+              'judge_success_dict': 1, 'judge_score_gpt4': 10, 'judge_success_gpt4': 1}
+    trace = [{'role': 'target', 'raw_text': '  Answer.\n', 'metadata': {'id': 'request'}}]
+    result = {'records': [record], 'requests': [trace], 'durations': [1.0],
               'author_summary': {'all_count': 1}, 'environment': {'openai': '1.109.1'}}
     monkeypatch.setattr('adversariallm.attacks.author_adapter.execute', lambda *args, **kwargs: result)
     output = FlipAttack(payload['config']).run(hosted_target(payload), payload['dataset'])
     step = output.runs[0].steps[0]
     assert step.model_completions == ['Answer.'] and step.model_completions_raw == ['  Answer.\n']
-    assert step.author_result == record and step.author_requests == [{'role': 'target'}]
+    assert step.author_result == record and step.author_requests == trace
     assert step.scores['flip_attack_author']['judge_score_gpt4'] == [10.0]
     assert output.author_summary == {'all_count': 1}
 

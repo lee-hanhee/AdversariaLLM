@@ -103,56 +103,143 @@
       }
     }
   ],
-  "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
-  "contribution_parent": "8e20d5385d0d830af880ebed4dcfe7bae64350b8",
-  "adapter": {
-    "path": "adversariallm/attacks/flip_attack.py",
-    "execution": "adversariallm/attacks/author_execution.py",
-    "configuration": "adversariallm/attacks/author_execution.py",
-    "mapping": {
-      "source": "Execute unchanged pinned author definitions and per-example driver; bind imports, API clients, dataset iteration, and result storage.",
-      "transport": "Reuse the existing APITarget SDK client for all target and author judge requests. Explicit model ID and single provider are required for each role; no fallback or added application retry layer.",
-      "results": "Preserve original records and request traces; map author scores without adding an evaluator.",
-      "integration": "Direct in-process execution; repository result dataclasses retain original records, request traces and author evaluation. No custom target, subprocess protocol or SDK-version gate."
+  "repository_history": {
+    "repository": "AdversariaLLM",
+    "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+    "contribution_base_revision": "8e20d5385d0d830af880ebed4dcfe7bae64350b8",
+    "description": "Local project history used for the integration. The official author revision is the top-level revision field."
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/flip_attack.py",
+        "purpose": "Attack registration and configuration defaults."
+      },
+      {
+        "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Load original definitions and driver; bind API calls to OpenRouterAuthorClient; validate configuration."
+      },
+      {
+        "path": "adversariallm/attacks/author_adapter.py",
+        "purpose": "Normalize configuration and map original records into repository results."
+      }
+    ],
+    "preserved_behavior": [
+      "Original prompt construction, four flipping modes, guidance flags, and model-specific prompt handling.",
+      "Original request controls, application retries and sleeps, response stripping, and response-processing errors.",
+      "Optional original keyword evaluation, judge prompts, rating parser, and success counters.",
+      "Original example order and result records; no added RNG seed or application retry layer."
+    ],
+    "changes": [
+      {
+        "area": "models_and_providers",
+        "author": "Source model IDs route to OpenAI, Anthropic, or DeepInfra.",
+        "repository": "Target and judge use explicit OpenRouter model IDs and pinned providers. Source-level model names still select author code paths.",
+        "reason": "Use the repository hosted backend. Matching source-level names to the intended model family is a configuration responsibility; live output equivalence is unverified."
+      },
+      {
+        "area": "dependencies",
+        "author": "OpenAI 1.51.2 and Anthropic 0.36.0 clients.",
+        "repository": "One existing OpenAI 1.109.1 client for OpenRouter; author SDKs are retained only as verification baselines.",
+        "reason": "Reuse the repository SDK environment. Tested SDK behaviors match; compatibility outside those cases is unverified."
+      },
+      {
+        "area": "request_transport",
+        "author": "Native provider requests, including Anthropic system/message serialization.",
+        "repository": "OpenAI-compatible OpenRouter requests with provider.only, allow_fallbacks=false, and require_parameters=true. Claude system text becomes a system chat message; text blocks and its 3584-token cap remain.",
+        "reason": "Translate the provider I/O boundary while executing original client methods."
+      },
+      {
+        "area": "data_and_storage",
+        "author": "AdvBench CSV loading, begin/end arguments, and standalone JSON output.",
+        "repository": "Repository dataset selection and result logging; original records and request traces are retained.",
+        "reason": "Use the existing experiment runner and storage interfaces."
+      },
+      {
+        "area": "configuration",
+        "author": "argparse settings, fixed victim-model choices, and a configurable judge model name.",
+        "repository": "Hydra settings with required target/judge routes, input-shape validation, and source judge profile fixed to gpt-4-0613. Generic generation overrides and runtime defenses are rejected.",
+        "reason": "Keep supported author settings explicit. The wrapper supports fewer source judge profiles than the author CLI."
+      },
+      {
+        "area": "reporting",
+        "author": "Standalone CLI summary and output files; the post-loop condition uses if eval instead of args.eval.",
+        "repository": "Run the original per-example loop and expose its counters through repository results; standalone reporting is not executed.",
+        "reason": "Replace CLI reporting with the repository result interface."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py flip_attack --official-repo /path/to/official-clone",
+      "status": "passed",
+      "result": "Bundled references match the pinned official revision. Runtime author files match after only their declared attribution headers or standalone-demo extraction."
     },
-    "binding": "adversariallm/attacks/author_adapter.py"
-  },
-  "departures": {
-    "Model/provider": "User-selected OpenRouter model IDs and pinned providers replace original endpoints/model IDs. Source-level author_model and judge_model labels select original code paths only; no live model equivalence is claimed.",
-    "SDK": "The shared OpenAI 1.109.1 client replaces the author OpenAI 1.51.2/Anthropic 0.36.0 clients. Original pins remain offline verification baselines. Tested SDK retry cases match; exhaustive SDK equivalence is not claimed.",
-    "Transport": "Provider routing fields are added. Claude system text becomes a system chat message and its text blocks are retained; the original 3584-token cap and response processing remain. Native Anthropic wire serialization is not preserved.",
-    "Dataset/storage": "Repository datasets and result logging replace original CSV loading, Excel/file output, CLI reporting and begin/end selection. No RNG seeding is added.",
-    "Validation": "Explicit model/provider routing validation and input-shape checks replace CLI configuration. Generic generation settings and runtime defenses are rejected.",
-    "Control flow": "Original builder, application retries/sleeps, stripping, optional keyword/GPT evaluation and parser are executed. CLI post-loop reporting (including original if eval bug) is outside the binding."
-  },
-  "validation": {
-    "scope": "Offline source identity and author behavior comparisons with declared transport changes; no live effectiveness or paper-result claim.",
-    "command": "See docs/author_execution.md; run tests/test_author_execution.py, tests/test_attacks/test_flip_attack.py, tests/test_source_verification.py and the PR 01 regression suites.",
-    "source_check": "python verification/verify_source.py flip_attack --official-repo /path/to/official-clone",
-    "baseline_lock": "verification/flip_attack/environment.lock.txt",
-    "reference_bindings": "Independent reference definitions and original loop/class from bundled official files; replace API and storage I/O only. Real SDK serializers use in-memory HTTP transports with scripted benign replies.",
-    "comparisons": "Prompt bytes and source request controls, omitted defaults, guidance variants, raw/stripped replies, author retries/sleeps, optional/mandatory judging, parser edge cases, error types, example order and original records. Wire expectations explicitly account for OpenRouter IDs, provider pin and Claude system-message conversion.",
-    "not_exercised": [
+    "behavior": {
+      "reference_execution": "Execute independent original reference definitions and driver with scripted benign replies. Native SDK serializers use in-memory HTTP transports; dataset, API, and storage I/O are controlled.",
+      "compared": [
+        "Prompt bytes and guidance variants",
+        "Request settings and omitted defaults",
+        "Raw and stripped replies",
+        "Application/SDK retries and author sleeps",
+        "Optional judging and parser edge cases",
+        "Error types, example order, result records, and per-example request traces"
+      ],
+      "allowed_comparison_differences": [
+        "OpenRouter model IDs and endpoint",
+        "Provider-routing fields",
+        "Claude system-message serialization"
+      ],
+      "runs": [
+        {
+          "name": "full_regression",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 144,
+          "skipped": 0
+        },
+        {
+          "name": "focused_followup",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py -k 'empty_api_choices or serialization or retry_count or exhaustion or grouped or repository_binding or records_map'",
+          "passed": 16,
+          "skipped": 0
+        }
+      ],
+      "unique_tests_passed": 146,
+      "counting_note": "The full run preceded the final empty-response correction. The focused run rechecked affected paths and added two GPT/Claude empty-response cases; its other tests overlap the full run."
+    },
+    "environments": {
+      "repository_tests": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.28.1",
+          "torch": "2.2.2",
+          "transformers": "5.9.0"
+        }
+      },
+      "author_sdk_baseline": {
+        "python": "3.13.7",
+        "dependency_lock": "verification/flip_attack/environment.lock.txt"
+      },
+      "shared_sdk_comparison": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.27.2"
+        }
+      }
+    },
+    "execution_requirements": {
+      "guide": "docs/author_execution.md",
+      "note": "Set the baseline/shared test interpreter paths as described in the guide. Intel macOS tests also use the test-process-only Torch recompile_limit setup in docs/openrouter.md; API/model/database I/O is mocked."
+    },
+    "not_tested": [
       "live OpenRouter/model availability",
       "MongoDB integration",
       "GPU inference",
       "paper benchmarks",
       "separate repository post-run classifiers"
     ],
-    "source_result": "All original references match the pinned revision in the independent official clone; runtime source bytes are unchanged after the declared attribution/header or demo extraction.",
-    "environment": {
-      "runtime_openai": "1.109.1",
-      "test_python": "3.11.13",
-      "sdk_baseline_python": "3.13.7",
-      "torch": "2.2.2",
-      "transformers": "5.9.0",
-      "httpx_runtime_test": "0.27.2 (shared SDK baseline test process), 0.28.1 (repository integration test process)"
-    },
-    "compatibility_note": "Intel macOS test process adds the upstream Torch recompile_limit option; API/model/database I/O is mocked. See docs/openrouter.md for that test-process setup.",
-    "result": {
-      "passed": 139,
-      "skipped": 0,
-      "scope": "Independent PR 02 worktree: FlipAttack behavior, hosted binding, generic verifier and PR 01 regressions."
-    }
+    "limitations": "Source identity and offline behavior checks do not establish equivalent live model outputs or reproduction of paper results."
   }
 }

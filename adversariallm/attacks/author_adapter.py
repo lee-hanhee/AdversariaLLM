@@ -31,26 +31,25 @@ class AuthorAttackResult(AttackResult):
 
 def run_author(method, target, config, dataset):
     # Reuse the repository's hosted client, while the original driver owns calls and retries.
-    model, config = normalize_config(target.config), normalize_config(config)
+    model = normalize_config(target.config)
     originals = list(dataset)
     for conv in originals:
         if len(conv) != 2 or [message['role'] for message in conv] != ['user', 'assistant']:
             raise ValueError('Author attacks require a user request and an assistant reference answer.')
-    result = execute({'method': method, 'model': model, 'config': config, 'dataset': originals},
-                     sdk_factory=lambda provider, options: target.text_generator.client)
+    result = execute(method, model, config, originals, client=target.text_generator.client)
 
     # Adapt source artifacts to the existing result and logging interface only.
     runs = []
-    for original, item in zip(originals, result['runs']):
-        record = item['author_result']
+    for original, record, trace, duration in zip(originals, result['records'], result['requests'], result['durations']):
+        target_request = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
         scores = {}
         if 'judge_score_gpt4' in record:
             scores['flip_attack_author'] = {key: [float(record[key])] for key in (
                 'judge_success_dict', 'judge_score_gpt4', 'judge_success_gpt4')}
-        step = AuthorStepResult(step=0, scores=scores, model_input=item['messages'], model_completions=[item['response']],
-                                model_completions_raw=[item['raw_response']], api_metadata=[item['api_metadata']],
-                                time_taken=item['time_taken'], author_result=item['author_result'],
-                                author_requests=item['requests'])
-        runs.append(SingleAttackRunResult(original_prompt=original, steps=[step], total_time=item['time_taken']))
+        step = AuthorStepResult(step=0, scores=scores, model_input=record['all_prompt'],
+                                model_completions=[record['output']], model_completions_raw=[target_request['raw_text']],
+                                api_metadata=[target_request['metadata']], time_taken=duration,
+                                author_result=record, author_requests=trace)
+        runs.append(SingleAttackRunResult(original_prompt=original, steps=[step], total_time=duration))
     return AuthorAttackResult(runs=runs, author_summary=result['author_summary'],
                               author_environment=result['environment'])
