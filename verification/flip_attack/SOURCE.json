@@ -13,95 +13,146 @@
   "files": [
     {
       "original_path": "src/flip_attack.py",
-      "local_path": "verification/flip_attack/reference/src/flip_attack.py",
-      "sha256": "07ffa54f0bc7675f91231832ffc71c74dc81bfb158412d785034de7aeb249694"
+      "reference": {
+        "path": "verification/flip_attack/reference/src/flip_attack.py",
+        "sha256": "07ffa54f0bc7675f91231832ffc71c74dc81bfb158412d785034de7aeb249694"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/data/flip_attack.py",
+          "sha256": "782b1947786fc7018d4ae75b520bec5ebe3c27e3e6f7d09db889aba943f3a15e",
+          "extraction": "Prepend attribution/MIT header; retain exact original bytes before if __name__ == \"__main__\":; omit standalone demo only.",
+          "adaptation": {
+            "stop_before": "if __name__ == \"__main__\":",
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/adaptation.diff",
+            "reference_label": "reference/src/flip_attack.py"
+          }
+        }
+      ]
     },
     {
       "original_path": "src/main.py",
-      "local_path": "verification/flip_attack/reference/src/main.py",
-      "sha256": "90acafc5c0e10c6afcb17de1f3ac7a04058c661e75b2279337200bee610191fc"
+      "reference": {
+        "path": "verification/flip_attack/reference/src/main.py",
+        "sha256": "90acafc5c0e10c6afcb17de1f3ac7a04058c661e75b2279337200bee610191fc"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/data/flip_attack_driver.py",
+          "sha256": "9e4cb4632e8b5fd0da2c6163300f4fa3af285a2960e6df7c737a48ac347e5b94",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/diffs/flip_attack_driver.py.diff",
+            "reference_label": "reference/src/main.py"
+          }
+        }
+      ]
     },
     {
       "original_path": "src/llm.py",
-      "local_path": "verification/flip_attack/reference/src/llm.py",
-      "sha256": "5d26b3972058de930d194a6fb911de47004c692293f3a908101c8879be895e57"
+      "reference": {
+        "path": "verification/flip_attack/reference/src/llm.py",
+        "sha256": "5d26b3972058de930d194a6fb911de47004c692293f3a908101c8879be895e57"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/data/flip_attack_llm.py",
+          "sha256": "d9d9b1e38095d6242017d1f052c1c6e8da9778810910e5707f19a37b35cbc0b4",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/diffs/flip_attack_llm.py.diff",
+            "reference_label": "reference/src/llm.py"
+          }
+        }
+      ]
     },
     {
       "original_path": "LICENSE",
-      "local_path": "verification/flip_attack/LICENSE",
-      "sha256": "ffa10db2b68769e714438848ba5dd5d712706615f4bdc24922c858577402c773"
+      "reference": {
+        "path": "verification/flip_attack/LICENSE",
+        "sha256": "ffa10db2b68769e714438848ba5dd5d712706615f4bdc24922c858577402c773"
+      }
     },
     {
-      "local_path": "adversariallm/attacks/data/flip_attack.py",
-      "sha256": "782b1947786fc7018d4ae75b520bec5ebe3c27e3e6f7d09db889aba943f3a15e",
-      "extraction": "Prepend attribution/MIT header; retain exact original bytes before if __name__ == \"__main__\":; omit standalone demo only.",
-      "derived_from": "verification/flip_attack/reference/src/flip_attack.py"
+      "original_path": "src/eval_util.py",
+      "reference": {
+        "path": "verification/flip_attack/reference/src/eval_util.py",
+        "sha256": "3910ea4482221d41b61b21c81cc00239181d294610e501bc6f56bab44731b4e0"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/data/flip_attack_evaluator.py",
+          "sha256": "5c33e768edff7742522135d3ce99a621745e68ab87da30c5f11418e2995078d8",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/diffs/flip_attack_evaluator.py.diff",
+            "reference_label": "reference/src/eval_util.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "requirements.txt",
+      "reference": {
+        "path": "verification/flip_attack/reference/requirements.txt",
+        "sha256": "6219a29ef713e398705ef21908220889f4bb4ade60ea8eabcd74ce087b7596bb"
+      }
     }
   ],
   "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
   "contribution_parent": "8e20d5385d0d830af880ebed4dcfe7bae64350b8",
   "adapter": {
     "path": "adversariallm/attacks/flip_attack.py",
+    "execution": "adversariallm/attacks/author_execution.py",
+    "configuration": "adversariallm/attacks/author_execution.py",
     "mapping": {
-      "original src/main.py per-example loop": "A fresh author builder for each dataset user message; one hosted target call and one result per example.",
-      "original src/llm.py transport": "PR 01 APITarget and APITextGenerator replace author API clients."
+      "source": "Execute unchanged pinned author definitions and per-example driver; bind imports, API clients, dataset iteration, and result storage.",
+      "transport": "Reuse the existing APITarget SDK client for all target and author judge requests. Explicit model ID and single provider are required for each role; no fallback or added application retry layer.",
+      "results": "Preserve original records and request traces; map author scores without adding an evaluator.",
+      "integration": "Direct in-process execution; repository result dataclasses retain original records, request traces and author evaluation. No custom target, subprocess protocol or SDK-version gate."
     },
-    "wrapper_scope": "Hosted only. Native-chat imports, session decorators, local metadata helpers, and checkpoint callbacks are deferred."
+    "binding": "adversariallm/attacks/author_adapter.py"
   },
   "departures": {
-    "Model/provider": "Explicit user-selected OpenRouter model and pinned provider replace author OpenAI/Anthropic/DeepInfra routing. No equivalence of model behavior is claimed.",
-    "Request settings": "GPT-path temperature and omitted default output cap match. Provider routing fields are added; an optional reasoning mapping comes from the selected model configuration. Explicit output caps are opt-in departures.",
-    "Claude transport": "The original Claude client imposes `max_tokens=3584` and uses Anthropic message serialization. The generic hosted default does not reproduce those settings; only builder parity is covered for Claude use.",
-    "Replies": "The original GPT/Llama/Mixtral clients call `.strip()`; the preserved repository wrapper retains raw response text. Tests document this difference.",
-    "Retries and timing": "The original client allows an initial attempt plus up to 1,000 retries and sleeps one second after successful requests. PR 01 uses its bounded transport policy and omits the author's round sleep. Failure/timing parity is not claimed.",
-    "Dataset": "Repository-selected data replaces the original CLI's AdvBench files and begin/end bounds. Benign fixtures establish interface parity only. No benchmark results are bundled.",
-    "Judge": "Author GPT and keyword evaluators are excluded. Step scores remain empty until separate judging; a saved response does not establish success.",
-    "Seed": "Repository `Attack` initialization uses seed zero by default; original CLI has no seed option. Prompt construction is deterministic and does not consume RNG. No sampled-model output equivalence is claimed.",
-    "Control flow": "Original fresh builder and one logical target request per example are preserved. There is no attack-level retry/search or success-based break. Transport failures raise rather than producing an attack score.",
-    "Edge cases": "Original short/empty few-shot splitting exceptions and case-sensitive `Llama` handling are retained. No request is sent if prompt construction fails.",
-    "Validation/storage": "Repository input/config validation and result/database interfaces replace original CLI assertions, file output, and reporting. These are integration adaptations."
+    "Model/provider": "User-selected OpenRouter model IDs and pinned providers replace original endpoints/model IDs. Source-level author_model and judge_model labels select original code paths only; no live model equivalence is claimed.",
+    "SDK": "The shared OpenAI 1.109.1 client replaces the author OpenAI 1.51.2/Anthropic 0.36.0 clients. Original pins remain offline verification baselines. Tested SDK retry cases match; exhaustive SDK equivalence is not claimed.",
+    "Transport": "Provider routing fields are added. Claude system text becomes a system chat message and its text blocks are retained; the original 3584-token cap and response processing remain. Native Anthropic wire serialization is not preserved.",
+    "Dataset/storage": "Repository datasets and result logging replace original CSV loading, Excel/file output, CLI reporting and begin/end selection. No RNG seeding is added.",
+    "Validation": "Explicit model/provider routing validation and input-shape checks replace CLI configuration. Generic generation settings and runtime defenses are rejected.",
+    "Control flow": "Original builder, application retries/sleeps, stripping, optional keyword/GPT evaluation and parser are executed. CLI post-loop reporting (including original if eval bug) is outside the binding."
   },
   "validation": {
-    "scope": "Offline source and interface comparisons; not live attack effectiveness or paper-result reproduction.",
-    "result": {
-      "passed": 172,
-      "skipped": 0,
-      "flipattack_checks": 120,
-      "inherited_regressions": 52
-    },
-    "environment": {
-      "python": "3.11.13",
-      "torch": "2.2.2",
-      "transformers": "5.9.0",
-      "openai": "1.109.1",
-      "pytest": "8.4.2",
-      "hydra-core": "1.3.7",
-      "omegaconf": "2.3.1"
-    },
-    "command": "HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 \\\nPYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python - <<'PY'\nimport torch\nimport pytest\n\ntorch._dynamo.config._allowed_keys.add('recompile_limit')\ntorch._dynamo.config._config.setdefault('recompile_limit', 512)\nraise SystemExit(pytest.main([\n    '-q', 'tests/test_attacks/test_flip_attack.py',\n    'tests/test_api_clients.py', 'tests/test_api_target.py',\n    'tests/test_run_attacks_defenses.py', 'tests/test_defense_compat.py',\n    'tests/test_defenses.py', 'tests/test_compatibility_contract.py',\n    'tests/test_attacks/test_direct_transfer_runtime.py',\n    'tests/test_attacks/test_bon_runtime.py',\n]))\nPY",
-    "compatibility_note": "Intel macOS Torch needs the documented test-process-only recompile_limit setup; Transformers disables local model loading in this environment.",
-    "source_check": "python verification/verify_source.py flip_attack --official-repo /path/to/fresh-official-clone",
-    "comparisons": "192 direct message comparisons: 32 mode/guidance combinations, three model-name cases, two benign Unicode/whitespace inputs. Original runner loop and GPT transport compared with mocked I/O and scripted replies.",
+    "scope": "Offline source identity and author behavior comparisons with declared transport changes; no live effectiveness or paper-result claim.",
+    "command": "See docs/author_execution.md; run tests/test_author_execution.py, tests/test_attacks/test_flip_attack.py, tests/test_source_verification.py and the PR 01 regression suites.",
+    "source_check": "python verification/verify_source.py flip_attack --official-repo /path/to/official-clone",
+    "baseline_lock": "verification/flip_attack/environment.lock.txt",
+    "reference_bindings": "Independent reference definitions and original loop/class from bundled official files; replace API and storage I/O only. Real SDK serializers use in-memory HTTP transports with scripted benign replies.",
+    "comparisons": "Prompt bytes and source request controls, omitted defaults, guidance variants, raw/stripped replies, author retries/sleeps, optional/mandatory judging, parser edge cases, error types, example order and original records. Wire expectations explicitly account for OpenRouter IDs, provider pin and Claude system-message conversion.",
     "not_exercised": [
-      "live provider execution",
+      "live OpenRouter/model availability",
       "MongoDB integration",
       "GPU inference",
-      "automatic judges",
-      "benchmark effectiveness"
+      "paper benchmarks",
+      "separate repository post-run classifiers"
     ],
-    "source_verifier_tests": {
-      "command": "python -m pytest -q tests/test_source_verification.py",
-      "passed": 13,
-      "scope": "Two independent method packages; tampering, stale diffs, unsupported/missing rules, official-source mismatch, and Python optimization."
+    "source_result": "All original references match the pinned revision in the independent official clone; runtime source bytes are unchanged after the declared attribution/header or demo extraction.",
+    "environment": {
+      "runtime_openai": "1.109.1",
+      "test_python": "3.11.13",
+      "sdk_baseline_python": "3.13.7",
+      "torch": "2.2.2",
+      "transformers": "5.9.0",
+      "httpx_runtime_test": "0.27.2 (shared SDK baseline test process), 0.28.1 (repository integration test process)"
+    },
+    "compatibility_note": "Intel macOS test process adds the upstream Torch recompile_limit option; API/model/database I/O is mocked. See docs/openrouter.md for that test-process setup.",
+    "result": {
+      "passed": 139,
+      "skipped": 0,
+      "scope": "Independent PR 02 worktree: FlipAttack behavior, hosted binding, generic verifier and PR 01 regressions."
     }
-  },
-  "adaptations": [
-    {
-      "local_path": "adversariallm/attacks/data/flip_attack.py",
-      "stop_before": "if __name__ == \"__main__\":",
-      "prepend_docstring": true,
-      "diff_path": "verification/flip_attack/adaptation.diff",
-      "reference_label": "reference/src/flip_attack.py"
-    }
-  ]
+  }
 }

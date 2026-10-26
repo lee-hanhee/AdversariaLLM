@@ -34,9 +34,13 @@ The checks are driven by each manifest:
 
 | Field | What it describes |
 | --- | --- |
-| `files` | Original/local paths and SHA-256 hashes of the recorded artifacts. |
-| `derived_from` | The bundled original reference used to produce a runtime file. |
-| `adaptations` | Extraction rules and the recorded diff for each runtime file; its reference comes from `derived_from`. |
+| `files[].original_path` | Path in the pinned author repository. |
+| `files[].reference` | Bundled original path and SHA-256 hash. |
+| `files[].implementations[]` | Local implementation path and hash, grouped under its original. |
+| `implementations[].adaptation` | Diff path and extraction rules for that implementation. |
+
+A reference can have several implementations, or none for reference-only files
+such as the license and dependency list. All correspondence is kept in one entry.
 
 With `--official-repo`, original reference files are also compared with the
 pinned Git revision. Without it, passing checks establish bundled consistency
@@ -55,7 +59,9 @@ prompts, whitespace, and redundant operations. Explain every extraction, changed
 import, callback, or I/O replacement. Use concise comments and blank lines in
 our code without editing the author reference.
 
-Run the method's behavioral tests and prerequisite regressions using its recorded
+Use separate SDK environments as [verification baselines](../docs/author_execution.md)
+when needed. The runtime may use a shared SDK; record that difference explicitly. Run its behavioral tests and prerequisite
+regressions using its recorded
 commands and environment. Expected results must come from independent original
 code or reference fixtures. Compare messages and request settings, including
 omitted defaults. Where relevant, use identical scripted replies and fixed RNG

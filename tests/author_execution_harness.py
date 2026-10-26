@@ -1,0 +1,134 @@
+"""Offline subprocess harness: original reference versus integrated author execution."""
+
+import ast
+from contextlib import redirect_stdout
+from importlib.metadata import version
+import json
+import os
+import random
+import time
+from pathlib import Path
+import sys
+from types import SimpleNamespace
+
+import httpx
+
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'adversariallm/attacks'))
+import author_execution
+
+
+def reference_symbols(path, names, bindings):
+    # The expected implementation comes from independent official reference files.
+    tree = ast.parse(path.read_bytes())
+    chosen = []
+    for node in tree.body:
+        if isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in names:
+            chosen.append(node)
+        elif isinstance(node, ast.Assign) and any(getattr(t, 'id', None) in names for t in node.targets):
+            chosen.append(node)
+    namespace = dict(bindings)
+    exec(compile(ast.Module(body=chosen, type_ignores=[]), str(path), 'exec'), namespace)
+    return {name: namespace[name] for name in names}
+
+
+def run_reference(payload, factory, sleep):
+    method, config, model = payload['method'], payload['config'], payload['model']
+    model = {**model, 'id': model['author_model']}
+    questions = [conv[0]['content'] for conv in payload['dataset']]
+    base = ROOT / 'verification' / method / 'reference'
+    openai = lambda **kw: factory('openai', kw)
+    anthropic = lambda **kw: factory('anthropic', kw)
+    records = []
+
+    if method == 'flip_attack':
+        llm = reference_symbols(base / 'src/llm.py', ['LLM'], {
+            'os': os, 'time': SimpleNamespace(sleep=sleep), 'OpenAI': openai,
+            'Anthropic': anthropic, 'anthropic': SimpleNamespace(Anthropic=anthropic),
+        })['LLM']
+        evaluator = reference_symbols(base / 'src/eval_util.py', ['Evaluator'], {
+            're': __import__('re'), 'LLM': llm,
+        })['Evaluator']
+        builder = reference_symbols(base / 'src/flip_attack.py', ['FlipAttack'], {
+            'textwrap': __import__('textwrap'),
+        })['FlipAttack']
+        original = ast.parse((base / 'src/main.py').read_bytes())
+        main = next(n for n in original.body if isinstance(n, ast.If))
+        loop = next(n for n in main.body if isinstance(n, ast.For))
+        args = SimpleNamespace(**config, victim_llm=model['id'], judge_llm=config['judge_model'],
+                               eval=config['evaluate'], begin=0, end=len(questions))
+        victim = llm(model_id=model['id'], **{k: config[k] for k in (
+            'temperature', 'max_token', 'retry_time', 'failed_sleep_time', 'round_sleep_time')})
+        scope = {'args': args, 'adv_bench': {'goal': questions}, 'FlipAttack': builder,
+                 'Evaluator': evaluator, 'victim_llm': victim, 'tqdm': lambda values: values,
+                 'result_dict_list': records, 'all_count': 0, 'dict_success_count': 0, 'gpt_success_count': 0}
+        exec(compile(ast.Module(body=[loop], type_ignores=[]), 'reference-loop', 'exec'), scope)
+        return records
+
+
+def main():
+    payload = json.load(sys.stdin)
+    wire, sleeps, sdk_sleeps = [], [], []
+    # Fix only the offline SDK retry jitter; production author execution is unseeded.
+    random.seed(2026)
+    time.sleep = sdk_sleeps.append
+    scripted = iter(payload['replies'])
+    for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
+        os.environ[key] = 'test-key'
+    os.environ['OPENROUTER_API_KEY'] = 'test-openrouter-key'
+    os.environ.pop('OPENAI_BASE_URL', None)
+    os.environ.pop('ANTHROPIC_BASE_URL', None)
+
+    # Real pinned SDKs serialize requests and parse replies, with HTTP kept entirely in memory.
+    def http(request):
+        body = json.loads(request.content)
+        wire.append({'url': str(request.url), 'body': body})
+        if request.url.host == 'openrouter.ai':
+            assert request.headers['authorization'] == 'Bearer test-openrouter-key'
+        item = next(scripted)
+        if item.get('status', 200) != 200:
+            return httpx.Response(item['status'], json={'error': {
+                'message': 'Unavailable original model', 'type': 'invalid_request_error', 'code': 'model_not_found',
+            }}, request=request)
+        text = item['text']
+        if request.url.host == 'api.anthropic.com':
+            data = {'id': 'msg-test', 'type': 'message', 'role': 'assistant', 'model': body['model'],
+                    'content': [{'type': 'text', 'text': text}], 'stop_reason': 'end_turn',
+                    'usage': {'input_tokens': 2, 'output_tokens': 3}}
+        else:
+            data = {'id': 'chatcmpl-test', 'object': 'chat.completion', 'created': 0, 'model': body['model'],
+                    'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': text}, 'finish_reason': 'stop'}],
+                    'usage': {'prompt_tokens': 2, 'completion_tokens': 3, 'total_tokens': 5}}
+        return httpx.Response(200, json=data, request=request)
+
+    def factory(provider, options):
+        transport = httpx.Client(transport=httpx.MockTransport(http))
+        if provider == 'anthropic':
+            from anthropic import Anthropic
+            return Anthropic(**options, http_client=transport)
+        from openai import OpenAI
+        return OpenAI(**options, http_client=transport)
+
+    try:
+        with redirect_stdout(sys.stderr):
+            if payload.pop('reference', False):
+                base = ROOT / 'verification' / payload['method'] / 'reference'
+                requirements = base / 'requirements.txt'
+                pins = dict(line.replace(' ', '').split('==') for line in requirements.read_text().splitlines() if '==' in line)
+                for name in ('openai', 'anthropic'):
+                    if name in pins:
+                        assert version(name) == pins[name]
+                result = {'records': run_reference(payload, factory, sleeps.append)}
+            else:
+                for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
+                    os.environ.pop(key, None)
+                result = author_execution.execute(payload, sdk_factory=factory, sleep=sleeps.append)
+        result.update(wire=wire, sleeps=sleeps, sdk_sleeps=sdk_sleeps)
+    except Exception as error:
+        result = {'error': {'type': type(error).__name__, 'message': str(error)}, 'wire': wire, 'sleeps': sleeps, 'sdk_sleeps': sdk_sleeps}
+    json.dump(result, sys.stdout, ensure_ascii=False)
+
+
+if __name__ == '__main__':
+    main()

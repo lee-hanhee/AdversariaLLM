@@ -38,16 +38,18 @@ def packages(tmp_path, monkeypatch):
         )))
         manifest = {
             'method': name, 'revision': 'pinned-revision',
-            'files': [
-                {'original_path': 'src/original.py', 'local_path': reference_path,
-                 'sha256': hashlib.sha256(original).hexdigest()},
-                {'local_path': local_path, 'derived_from': reference_path,
-                 'sha256': hashlib.sha256(runtime).hexdigest()},
-            ],
-            'adaptations': [{'local_path': local_path, 'diff_path': diff_path}],
+            'files': [{
+                'original_path': 'src/original.py',
+                'reference': {'path': reference_path, 'sha256': hashlib.sha256(original).hexdigest()},
+                'implementations': [{
+                    'path': local_path, 'sha256': hashlib.sha256(runtime).hexdigest(),
+                    'adaptation': {'diff_path': diff_path},
+                }],
+            }],
         }
         if prefix:
-            manifest['adaptations'][0].update(stop_before=marker, prepend_docstring=True)
+            manifest['files'][0]['implementations'][0]['adaptation'].update(
+                stop_before=marker, prepend_docstring=True)
         path = base / 'SOURCE.json'
         path.write_text(json.dumps(manifest))
         return path, manifest
@@ -61,8 +63,8 @@ def save(path, manifest):
 
 def replace_runtime(root, manifest, data):
     # Update the declared hash too: extraction checks must catch changes independently.
-    entry = manifest['files'][1]
-    (root / entry['local_path']).write_bytes(data)
+    entry = manifest['files'][0]['implementations'][0]
+    (root / entry['path']).write_bytes(data)
     entry['sha256'] = hashlib.sha256(data).hexdigest()
 
 
@@ -76,7 +78,7 @@ def test_two_different_methods_share_the_same_verifier(packages):
 def test_changed_reference_is_rejected(packages):
     root, make = packages
     path, manifest = make('alpha')
-    (root / manifest['files'][0]['local_path']).write_text('Changed reference')
+    (root / manifest['files'][0]['reference']['path']).write_text('Changed reference')
     with pytest.raises(ValueError, match='Hash mismatch'):
         verifier.verify(path)
 
@@ -85,7 +87,7 @@ def test_changed_reference_is_rejected(packages):
 def test_extraction_rejects_tampering_even_with_updated_hash(packages, tampering):
     root, make = packages
     path, manifest = make('beta', prefix=True)
-    runtime = (root / manifest['files'][1]['local_path']).read_bytes()
+    runtime = (root / manifest['files'][0]['implementations'][0]['path']).read_bytes()
     if tampering == 'body':
         runtime = runtime.replace(b'rainbows', b'clouds')
     elif tampering == 'whitespace':
@@ -103,23 +105,23 @@ def test_extraction_rejects_tampering_even_with_updated_hash(packages, tampering
 def test_recorded_diff_cannot_become_stale(packages):
     root, make = packages
     path, manifest = make('beta', prefix=True)
-    (root / manifest['adaptations'][0]['diff_path']).write_text('Outdated diff')
+    (root / manifest['files'][0]['implementations'][0]['adaptation']['diff_path']).write_text('Outdated diff')
     with pytest.raises(ValueError, match='Outdated adaptation diff'):
         verifier.verify(path)
 
 
-@pytest.mark.parametrize('issue', ['missing_rule', 'unknown_rule', 'missing_marker', 'wrong_reference'])
+@pytest.mark.parametrize('issue', ['missing_rule', 'unknown_rule', 'missing_marker', 'missing_reference'])
 def test_incomplete_or_unsupported_extraction_rules_fail(packages, issue):
     _, make = packages
     path, manifest = make('beta', prefix=True)
     if issue == 'missing_rule':
-        manifest['adaptations'] = []
+        del manifest['files'][0]['implementations'][0]['adaptation']
     elif issue == 'unknown_rule':
-        manifest['adaptations'][0]['rewrite_imports'] = True
+        manifest['files'][0]['implementations'][0]['adaptation']['rewrite_imports'] = True
     elif issue == 'missing_marker':
-        manifest['adaptations'][0]['stop_before'] = 'missing marker'
+        manifest['files'][0]['implementations'][0]['adaptation']['stop_before'] = 'missing marker'
     else:
-        manifest['files'][1]['derived_from'] = 'missing-reference.py'
+        del manifest['files'][0]['reference']
     save(path, manifest)
     with pytest.raises(ValueError):
         verifier.verify(path)
@@ -128,7 +130,7 @@ def test_incomplete_or_unsupported_extraction_rules_fail(packages, issue):
 def test_official_comparison_uses_the_pin_and_original_path(packages, monkeypatch):
     root, make = packages
     path, manifest = make('alpha')
-    original = (root / manifest['files'][0]['local_path']).read_bytes()
+    original = (root / manifest['files'][0]['reference']['path']).read_bytes()
     calls = []
 
     def show(command):
@@ -146,7 +148,7 @@ def test_official_comparison_uses_the_pin_and_original_path(packages, monkeypatc
 def test_checks_remain_active_under_python_optimization(packages):
     root, make = packages
     path, manifest = make('alpha')
-    (root / manifest['files'][0]['local_path']).write_text('Changed reference')
+    (root / manifest['files'][0]['reference']['path']).write_text('Changed reference')
     code = (
         'import importlib.util\n'
         f'spec = importlib.util.spec_from_file_location("verifier", {str(SCRIPT)!r})\n'
@@ -157,3 +159,57 @@ def test_checks_remain_active_under_python_optimization(packages):
     )
     result = subprocess.run([sys.executable, '-O', '-c', code], capture_output=True, text=True)
     assert result.returncode != 0 and 'Hash mismatch' in result.stderr
+
+
+def test_recorded_diff_preserves_crlf_source_lines(packages):
+    root, make = packages
+    path, manifest = make('crlf', prefix=True)
+    artifacts = [manifest['files'][0]['reference'], *manifest['files'][0]['implementations']]
+    for entry in artifacts:
+        artifact = root / entry['path']
+        data = artifact.read_bytes().replace(b'\n', b'\r\n')
+        artifact.write_bytes(data)
+        entry['sha256'] = hashlib.sha256(data).hexdigest()
+    original, runtime = [(root / entry['path']).read_bytes().decode() for entry in artifacts]
+    rule = manifest['files'][0]['implementations'][0]['adaptation']
+    difference = ''.join(difflib.unified_diff(original.splitlines(keepends=True), runtime.splitlines(keepends=True),
+                                            fromfile=artifacts[0]['path'], tofile=artifacts[1]['path']))
+    (root / rule['diff_path']).write_bytes(difference.encode())
+    save(path, manifest)
+    verifier.verify(path)
+    (root / rule['diff_path']).write_bytes(difference.replace('\r\n', '\n').encode())
+    with pytest.raises(ValueError, match='Outdated adaptation diff'):
+        verifier.verify(path)
+
+
+def test_reference_only_entry_and_multiple_implementations(packages):
+    root, make = packages
+    path, manifest = make('alpha')
+    entry = manifest['files'][0]
+    original = (root / entry['reference']['path']).read_bytes()
+    # A second implementation stays attached to the same original without repeating its reference.
+    (root / 'second.py').write_bytes(original)
+    (root / 'second.diff').write_bytes(b'')
+    entry['implementations'].append({'path': 'second.py', 'sha256': hashlib.sha256(original).hexdigest(),
+                                     'adaptation': {'diff_path': 'second.diff'}})
+    (root / 'LICENSE').write_bytes(b'License notice')
+    manifest['files'].append({'original_path': 'LICENSE', 'reference': {
+        'path': 'LICENSE', 'sha256': hashlib.sha256(b'License notice').hexdigest()}})
+    save(path, manifest)
+    verifier.verify(path)
+
+
+@pytest.mark.parametrize('duplicate', ['original', 'reference', 'implementation'])
+def test_duplicate_correspondence_is_rejected(packages, duplicate):
+    _, make = packages
+    path, manifest = make('alpha')
+    entry = manifest['files'][0]
+    if duplicate == 'original':
+        manifest['files'].append(entry.copy())
+    elif duplicate == 'reference':
+        entry['implementations'][0]['path'] = entry['reference']['path']
+    else:
+        entry['implementations'].append(entry['implementations'][0].copy())
+    save(path, manifest)
+    with pytest.raises(ValueError, match='Duplicate'):
+        verifier.verify(path)

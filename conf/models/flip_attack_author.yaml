@@ -1,0 +1,5 @@
+flip_attack_author:
+  backend: openrouter
+  id: ???  # Explicit OpenRouter routing ID; no automatic model substitution.
+  provider: ???  # One provider slug; fallback is disabled.
+  author_model: gpt-4-0613  # Source-level name used by the unchanged author logic.

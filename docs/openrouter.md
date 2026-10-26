@@ -1,11 +1,12 @@
 # OpenRouter targets
 
-The Direct baseline and [FlipAttack](attack.md) can generate
-through OpenRouter without loading local model
-weights or a tokenizer. Existing local model configurations continue to use the
-local loader. Hosted targets support generation only: loss and input token IDs
-are recorded as `null`. Runtime defenses and attacks without hosted support are
-rejected before dataset loading or database filtering.
+The Direct baseline can generate through OpenRouter without loading local model
+weights or a tokenizer. FlipAttack also routes its target and
+optional author judge through OpenRouter; see [author attack execution](author_execution.md)
+for their required routes and preserved control flow.
+Existing local model configurations continue to use the local loader. Hosted
+targets do not expose local losses or input token IDs. Runtime defenses and
+unsupported attack/backend combinations are rejected before dataset loading.
 
 ## Configuration
 

@@ -200,16 +200,22 @@ direct:
 flip_attack:
   name: flip_attack
   type: discrete
-  version: "0.1.0"
-  seed: ${attacks._default.seed}
+  version: "0.2.0"
+  seed: null
   flip_mode: FCS
   cot: false
   lang_gpt: false
   few_shot: false
-  generation_config:
-    temperature: 0.0
-    max_new_tokens: null  # Author default: omit an explicit API output-token cap.
-    num_return_sequences: 1
+  temperature: 0
+  max_token: -1
+  retry_time: 1000
+  failed_sleep_time: 1
+  round_sleep_time: 1
+  evaluate: false
+  judge_model: gpt-4-0613
+  judge:
+    id: ???  # Required even when evaluate=false, so enabling it never selects a model silently.
+    provider: ???
 gcg:
   name: gcg
   type: discrete
