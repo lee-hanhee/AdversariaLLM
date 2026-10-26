@@ -1,0 +1,107 @@
+{
+  "method": "FlipAttack",
+  "repository": "https://github.com/yueliu1999/FlipAttack",
+  "paper": "https://arxiv.org/abs/2410.02832",
+  "revision": "c53880b4a6e8ab47686849838b3d2e11bc80a6b9",
+  "verified_on": "2026-10-26",
+  "verification": "Fresh official GitHub clone; git show pinned revision for each reference file.",
+  "attribution": "Yue Liu et al.; source copyright (c) 2026 yueliu1999.",
+  "license": {
+    "status": "MIT, independently fetched at pinned revision",
+    "path": "verification/flip_attack/LICENSE"
+  },
+  "files": [
+    {
+      "original_path": "src/flip_attack.py",
+      "local_path": "verification/flip_attack/reference/src/flip_attack.py",
+      "sha256": "07ffa54f0bc7675f91231832ffc71c74dc81bfb158412d785034de7aeb249694"
+    },
+    {
+      "original_path": "src/main.py",
+      "local_path": "verification/flip_attack/reference/src/main.py",
+      "sha256": "90acafc5c0e10c6afcb17de1f3ac7a04058c661e75b2279337200bee610191fc"
+    },
+    {
+      "original_path": "src/llm.py",
+      "local_path": "verification/flip_attack/reference/src/llm.py",
+      "sha256": "5d26b3972058de930d194a6fb911de47004c692293f3a908101c8879be895e57"
+    },
+    {
+      "original_path": "LICENSE",
+      "local_path": "verification/flip_attack/LICENSE",
+      "sha256": "ffa10db2b68769e714438848ba5dd5d712706615f4bdc24922c858577402c773"
+    },
+    {
+      "local_path": "adversariallm/attacks/data/flip_attack.py",
+      "sha256": "782b1947786fc7018d4ae75b520bec5ebe3c27e3e6f7d09db889aba943f3a15e",
+      "extraction": "Prepend attribution/MIT header; retain exact original bytes before if __name__ == \"__main__\":; omit standalone demo only.",
+      "derived_from": "verification/flip_attack/reference/src/flip_attack.py"
+    }
+  ],
+  "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+  "contribution_parent": "8e20d5385d0d830af880ebed4dcfe7bae64350b8",
+  "adapter": {
+    "path": "adversariallm/attacks/flip_attack.py",
+    "mapping": {
+      "original src/main.py per-example loop": "A fresh author builder for each dataset user message; one hosted target call and one result per example.",
+      "original src/llm.py transport": "PR 01 APITarget and APITextGenerator replace author API clients."
+    },
+    "wrapper_scope": "Hosted only. Native-chat imports, session decorators, local metadata helpers, and checkpoint callbacks are deferred."
+  },
+  "departures": {
+    "Model/provider": "Explicit user-selected OpenRouter model and pinned provider replace author OpenAI/Anthropic/DeepInfra routing. No equivalence of model behavior is claimed.",
+    "Request settings": "GPT-path temperature and omitted default output cap match. Provider routing fields are added; an optional reasoning mapping comes from the selected model configuration. Explicit output caps are opt-in departures.",
+    "Claude transport": "The original Claude client imposes `max_tokens=3584` and uses Anthropic message serialization. The generic hosted default does not reproduce those settings; only builder parity is covered for Claude use.",
+    "Replies": "The original GPT/Llama/Mixtral clients call `.strip()`; the preserved repository wrapper retains raw response text. Tests document this difference.",
+    "Retries and timing": "The original client allows an initial attempt plus up to 1,000 retries and sleeps one second after successful requests. PR 01 uses its bounded transport policy and omits the author's round sleep. Failure/timing parity is not claimed.",
+    "Dataset": "Repository-selected data replaces the original CLI's AdvBench files and begin/end bounds. Benign fixtures establish interface parity only. No benchmark results are bundled.",
+    "Judge": "Author GPT and keyword evaluators are excluded. Step scores remain empty until separate judging; a saved response does not establish success.",
+    "Seed": "Repository `Attack` initialization uses seed zero by default; original CLI has no seed option. Prompt construction is deterministic and does not consume RNG. No sampled-model output equivalence is claimed.",
+    "Control flow": "Original fresh builder and one logical target request per example are preserved. There is no attack-level retry/search or success-based break. Transport failures raise rather than producing an attack score.",
+    "Edge cases": "Original short/empty few-shot splitting exceptions and case-sensitive `Llama` handling are retained. No request is sent if prompt construction fails.",
+    "Validation/storage": "Repository input/config validation and result/database interfaces replace original CLI assertions, file output, and reporting. These are integration adaptations."
+  },
+  "validation": {
+    "scope": "Offline source and interface comparisons; not live attack effectiveness or paper-result reproduction.",
+    "result": {
+      "passed": 172,
+      "skipped": 0,
+      "flipattack_checks": 120,
+      "inherited_regressions": 52
+    },
+    "environment": {
+      "python": "3.11.13",
+      "torch": "2.2.2",
+      "transformers": "5.9.0",
+      "openai": "1.109.1",
+      "pytest": "8.4.2",
+      "hydra-core": "1.3.7",
+      "omegaconf": "2.3.1"
+    },
+    "command": "HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 PYTHONDONTWRITEBYTECODE=1 \\\nPYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python - <<'PY'\nimport torch\nimport pytest\n\ntorch._dynamo.config._allowed_keys.add('recompile_limit')\ntorch._dynamo.config._config.setdefault('recompile_limit', 512)\nraise SystemExit(pytest.main([\n    '-q', 'tests/test_attacks/test_flip_attack.py',\n    'tests/test_api_clients.py', 'tests/test_api_target.py',\n    'tests/test_run_attacks_defenses.py', 'tests/test_defense_compat.py',\n    'tests/test_defenses.py', 'tests/test_compatibility_contract.py',\n    'tests/test_attacks/test_direct_transfer_runtime.py',\n    'tests/test_attacks/test_bon_runtime.py',\n]))\nPY",
+    "compatibility_note": "Intel macOS Torch needs the documented test-process-only recompile_limit setup; Transformers disables local model loading in this environment.",
+    "source_check": "python verification/verify_source.py flip_attack --official-repo /path/to/fresh-official-clone",
+    "comparisons": "192 direct message comparisons: 32 mode/guidance combinations, three model-name cases, two benign Unicode/whitespace inputs. Original runner loop and GPT transport compared with mocked I/O and scripted replies.",
+    "not_exercised": [
+      "live provider execution",
+      "MongoDB integration",
+      "GPU inference",
+      "automatic judges",
+      "benchmark effectiveness"
+    ],
+    "source_verifier_tests": {
+      "command": "python -m pytest -q tests/test_source_verification.py",
+      "passed": 13,
+      "scope": "Two independent method packages; tampering, stale diffs, unsupported/missing rules, official-source mismatch, and Python optimization."
+    }
+  },
+  "adaptations": [
+    {
+      "local_path": "adversariallm/attacks/data/flip_attack.py",
+      "stop_before": "if __name__ == \"__main__\":",
+      "prepend_docstring": true,
+      "diff_path": "verification/flip_attack/adaptation.diff",
+      "reference_label": "reference/src/flip_attack.py"
+    }
+  ]
+}

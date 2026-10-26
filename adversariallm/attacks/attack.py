@@ -137,6 +137,10 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+            case "flip_attack":
+                from .flip_attack import FlipAttack
+
+                return FlipAttack
             case "gcg":
                 from .gcg import GCGAttack
 
