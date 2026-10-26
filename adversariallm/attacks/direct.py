@@ -27,6 +27,8 @@ class DirectConfig:
 
 class DirectAttack(Attack):
     """A baseline attack that simply prompts the model with the original prompt."""
+    SUPPORTS_HOSTED_TARGET = True
+
     def __init__(self, config: DirectConfig):
         super().__init__(config)
 
@@ -62,14 +64,15 @@ class DirectAttack(Attack):
             conv_for_generation[-1]["content"] = ""
             generation_conversations.append(conv_for_generation)
 
-            token_tensors = prepare_conversation(target.tokenizer, conv_for_generation)
-            flat_prompt_tokens = [t for turn_tokens in token_tensors for t in turn_tokens]
-            generation_prompt_token_tensors_list.append(torch.cat(flat_prompt_tokens, dim=0))
+            if target.tokenizer is not None:
+                token_tensors = prepare_conversation(target.tokenizer, conv_for_generation)
+                flat_prompt_tokens = [t for turn_tokens in token_tensors for t in turn_tokens]
+                generation_prompt_token_tensors_list.append(torch.cat(flat_prompt_tokens, dim=0))
 
-            token_tensors = prepare_conversation(target.tokenizer, conversation)
-            flat_tokens = [t for turn_tokens in token_tensors for t in turn_tokens]
-            # Concatenate all turns for the full input/target context.
-            loss_full_token_tensors_list.append(torch.cat(flat_tokens, dim=0))
+                token_tensors = prepare_conversation(target.tokenizer, conversation)
+                flat_tokens = [t for turn_tokens in token_tensors for t in turn_tokens]
+                # Concatenate all turns for the full input/target context.
+                loss_full_token_tensors_list.append(torch.cat(flat_tokens, dim=0))
 
         # --- 2. Calculate Losses ---
         B = len(original_conversations)
@@ -79,7 +82,7 @@ class DirectAttack(Attack):
             loss_full_token_tensors_list,
             generation_prompt_token_tensors_list,
             initial_batch_size=B,
-        )
+        ) if target.tokenizer is not None else [None] * B
         t_end_loss = time.time()
         loss_time_total = t_end_loss - t_start_loss
 
@@ -95,7 +98,7 @@ class DirectAttack(Attack):
             initial_batch_size=B * self.config.generation_config.num_return_sequences,
         )
         completions = generation_result.gen
-        generation_input_ids = generation_result.require_input_ids("Direct", expected_len=B)
+        generation_input_ids = generation_result.require_input_ids("Direct", expected_len=B) if target.tokenizer is not None else [None] * B
         t_end_gen = time.time()
         gen_time_total = t_end_gen - t_start_gen
 
@@ -120,6 +123,7 @@ class DirectAttack(Attack):
                 model_input=model_input,
                 model_input_tokens=model_input_tokens,
                 defense_metadata=generation_result.defense_metadata_for(i),
+                api_metadata=generation_result.api_metadata[i] if generation_result.api_metadata is not None else None,
             )
 
             # Create the result for this single run

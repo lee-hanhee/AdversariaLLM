@@ -63,6 +63,7 @@ class AttackStepResult:
 
     # Optional defense metadata (kept optional for backward compatibility).
     defense_metadata: Optional[list[dict[str, Any]]] = None
+    api_metadata: Optional[list[dict[str, Any]]] = None
 
 
 @beartype
@@ -95,6 +96,8 @@ class AttackResult:
 AttRes = TypeVar("AttRes", bound=AttackResult)
 
 class Attack(Generic[AttRes]):
+    SUPPORTS_HOSTED_TARGET = False
+
     def __init__(self, config):
         self.config = config
         transformers.set_seed(config.seed)

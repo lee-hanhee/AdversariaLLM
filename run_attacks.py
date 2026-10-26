@@ -11,9 +11,10 @@ from omegaconf import DictConfig, ListConfig, OmegaConf
 from adversariallm.attacks import Attack, AttackResult
 from adversariallm.dataset import PromptDataset
 from adversariallm.defenses import build_target_system, validate_defense_compatibility
+from adversariallm.defenses.api_target import APITarget
+from adversariallm.defenses.registry import validate_hosted_target
 from adversariallm.errors import print_exceptions
 from adversariallm.io_utils import RunConfig, filter_config, free_vram, load_model_and_tokenizer, log_attack
-from run_judges import run_judges
 
 torch.use_deterministic_algorithms(True, warn_only=True)
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -37,6 +38,9 @@ def collect_configs(cfg: DictConfig) -> list[RunConfig]:
     for attack, _attack_params in attacks_to_run:
         for _defense, defense_params in defenses_to_run:
             validate_defense_compatibility(attack, defense_params)
+            for _model, model_params in models_to_run:
+                if model_params.get("backend", "local") != "local":
+                    validate_hosted_target(Attack.from_name(attack), model_params, defense_params)
 
     all_run_configs = []
     for model, model_params in models_to_run:
@@ -73,7 +77,12 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
         if last_model != run_config.model:
             logging.info(f"Target: {run_config.model}\n{OmegaConf.to_yaml(run_config.model_params, resolve=True)}")
             last_model = run_config.model
-            model, tokenizer = load_model_and_tokenizer(run_config.model_params)
+            if run_config.model_params.get("backend", "local") == "openrouter":
+                hosted_target = APITarget(run_config.model_params)
+                model, tokenizer = None, None
+            else:
+                hosted_target = None
+                model, tokenizer = load_model_and_tokenizer(run_config.model_params)
         if last_dataset != run_config.dataset:
             logging.info(f"Dataset: {run_config.dataset}\n{OmegaConf.to_yaml(run_config.dataset_params, resolve=True)}")
             last_dataset = run_config.dataset
@@ -86,7 +95,7 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
             last_defense = run_config.defense
 
         attack: Attack[AttackResult] = Attack.from_name(run_config.attack)(run_config.attack_params)
-        target = build_target_system(
+        target = hosted_target if hosted_target is not None else build_target_system(
             run_config.defense_params,
             model=model,
             tokenizer=tokenizer,
@@ -118,6 +127,8 @@ def main(cfg: DictConfig) -> None:
     # 3. Run the judges
     if judges_to_run is None:
         return
+    from run_judges import run_judges
+
     for judge in judges_to_run:
         # Create judge config
         judge_cfg = OmegaConf.create({

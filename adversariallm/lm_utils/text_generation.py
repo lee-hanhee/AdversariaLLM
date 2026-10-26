@@ -11,14 +11,18 @@ from dataclasses import dataclass, field
 import inspect
 import logging
 import os
+from pathlib import Path
 import time
 from typing import Any, Callable, List, Optional
 
 from openai import OpenAI
+from dotenv import load_dotenv
+from omegaconf import OmegaConf
 import torch
 from transformers import PreTrainedModel, PreTrainedTokenizerBase
 
 from ..io_utils.json_utils import safe_parse_json_responses
+from ..io_utils.model_loading import load_model_and_tokenizer
 from ..types import Conversation
 from .filters import forbid_extras
 from .generation import generate_ragged_batched
@@ -184,8 +188,8 @@ class LocalRetryPolicy:
 
 @dataclass
 class RetryPolicy:
-    api: APIRetryPolicy = APIRetryPolicy()
-    local: LocalRetryPolicy = LocalRetryPolicy()
+    api: APIRetryPolicy = field(default_factory=APIRetryPolicy)
+    local: LocalRetryPolicy = field(default_factory=LocalRetryPolicy)
 
     def merge(self, overrides: Optional[RetryOverrides]) -> "RetryPolicy":
         return RetryPolicy(
@@ -201,6 +205,7 @@ class GenerationResult:
     input_ids: Optional[list[list[int]]] = None
     raw_gen: Optional[list[list[str]]] = None
     defense_decisions: Optional[list[list[dict[str, Any]]]] = None
+    api_metadata: Optional[list[list[dict[str, Any]]]] = None
 
     @property
     def gen0(self) -> list[str]:
@@ -468,6 +473,8 @@ class APITextGenerator(TextGenerator):
         max_retries: int = 3,
         retry_sleep: float = 1.0,
         retry_backoff: float = 1.5,
+        api_kwargs: Optional[dict[str, Any]] = None,
+        raise_on_error: bool = False,
     ):
         self.max_retries = max(1, max_retries)
         self.retry_sleep = max(retry_sleep, 0.0)
@@ -475,11 +482,16 @@ class APITextGenerator(TextGenerator):
         self.clients = {}
         self._initialize_clients()
 
-        self.model_name = model_name
         self.client = self._get_client(model_name)
+        # Explicit client prefix is routing metadata, not part of the API model ID.
+        provider, separator, api_model_name = model_name.partition("/")
+        self.model_name = api_model_name if separator and provider in self.clients else model_name
 
         self.default_generate_kwargs = default_generate_kwargs or {}
         self.retry_policy = RetryPolicy()
+        self.api_kwargs = api_kwargs or {}
+        self.raise_on_error = raise_on_error
+        self.last_response_metadata: dict[str, Any] = {}
 
     def generate(
         self,
@@ -490,16 +502,19 @@ class APITextGenerator(TextGenerator):
         top_p: Optional[float] = None,
         filters: Optional[list[dict]] = None,
         retry_overrides: Optional[RetryOverrides] = None,
+        *,
+        max_retries: Optional[int] = None,
+        retry_sleep: Optional[float] = None,
+        retry_backoff: Optional[float] = None,
         **kwargs: Any,
     ) -> GenerationResult:
         if len(convs) == 0:
             return GenerationResult(gen=[], input_ids=[])
 
         effective_policy = self.retry_policy.merge(retry_overrides)
-        api_policy = effective_policy.api
-        max_retries = api_policy.max_attempts
-        retry_sleep = api_policy.sleep_seconds
-        retry_backoff = api_policy.backoff
+        api_policy = effective_policy.api.merge(APIRetryOverrides(
+            max_attempts=max_retries, sleep_seconds=retry_sleep, backoff=retry_backoff,
+        ))
 
         function_args = {
             "num_return_sequences": num_return_sequences,
@@ -515,23 +530,53 @@ class APITextGenerator(TextGenerator):
 
         common_generate_args_dict = common_generate_args.to_api_args()
 
-        params = {**common_generate_args_dict, **kwargs}
+        params = {**self.api_kwargs, **common_generate_args_dict, **kwargs}
+        if OmegaConf.is_config(params.get("extra_body")):
+            params["extra_body"] = OmegaConf.to_container(params["extra_body"], resolve=True)
+        is_openrouter = self.client is self.clients.get("openrouter")
+        if is_openrouter:
+            extra_body = {**self.api_kwargs.get("extra_body", {}), **params.get("extra_body", {})}
+            pinned_provider = self.api_kwargs.get("extra_body", {}).get("provider")
+            if pinned_provider is not None:
+                extra_body["provider"] = pinned_provider
+            if "top_k" in params:
+                extra_body["top_k"] = params.pop("top_k")
+            if extra_body:
+                params["extra_body"] = extra_body
+        if is_openrouter and "max_completion_tokens" in params:
+            params["max_tokens"] = params.pop("max_completion_tokens")
+        # OpenRouter providers do not uniformly support n; sample with separate calls.
+        samples = params.pop("n", 1) if is_openrouter else 1
         responses: list[list[str]] = []
+        metadata: list[list[dict[str, Any]]] = []
         for conv in convs:
-            responses.append(
-                self._api_call(
+            row, row_metadata = [], []
+            for _ in range(samples):
+                row.extend(self._api_call(
                     conv,
-                    max_retries=max_retries,
-                    retry_sleep=retry_sleep,
-                    retry_backoff=retry_backoff,
+                    max_retries=api_policy.max_attempts,
+                    retry_sleep=api_policy.sleep_seconds,
+                    retry_backoff=api_policy.backoff,
                     **params,
-                )
-            )
+                ))
+                row_metadata.append(self.last_response_metadata)
+            responses.append(row)
+            metadata.append(row_metadata)
 
-        return GenerationResult(gen=responses)
+        return GenerationResult(gen=responses, api_metadata=metadata)
 
     def _initialize_clients(self):
         """Dynamically initialize available clients based on environment variables."""
+
+        # Resolve the .env explicitly.
+        load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
+
+        openrouter_api_key = _get_env_variable("OPENROUTER_API_KEY")
+        if openrouter_api_key:
+            self.clients["openrouter"] = OpenAI(
+                base_url=os.getenv("OPENROUTER_BASE_URL") or "https://openrouter.ai/api/v1",
+                api_key=openrouter_api_key,
+            )
 
         gpt_api_key = _get_env_variable("GPT_API_KEY")
         gpt_base_url = _get_env_variable("BASE_URL_GPT")
@@ -559,6 +604,13 @@ class APITextGenerator(TextGenerator):
 
     def _get_client(self, model_name: str) -> OpenAI:
         """Select appropriate client based on the given model name."""
+        provider, separator, api_model_name = model_name.partition("/")
+        if separator and (provider in self.clients or provider == "openrouter"):
+            if not api_model_name:
+                raise ValueError("An API model ID is required after the client prefix.")
+            if provider not in self.clients:
+                raise ValueError(f"{provider} client is not available. Configure its API credentials.")
+            return self.clients[provider]
         if "gpt" in model_name or "o1-" in model_name:
             client = self.clients.get("gpt")
         elif "claude" in model_name:
@@ -589,20 +641,67 @@ class APITextGenerator(TextGenerator):
 
         for attempt in range(1, attempts + 1):
             try:
+                self.last_response_metadata = {}
                 completion = self.client.chat.completions.create(model=self.model_name, messages=messages, **kwargs)
-                resp = [completion.choices[i].message.content for i in range(len(completion.choices))]
+                resp = [choice.message.content for choice in completion.choices]
+                usage = getattr(completion, "usage", None)
+                self.last_response_metadata = {
+                    "id": completion.id,
+                    "model": completion.model,
+                    "provider": getattr(completion, "provider", None),
+                    "usage": usage.model_dump() if usage is not None else None,
+                    "finish_reasons": [choice.finish_reason for choice in completion.choices],
+                }
+                if self.raise_on_error and (not resp or any(not isinstance(text, str) or not text for text in resp)):
+                    raise ValueError(f"API response has no text completion; finish reasons: {self.last_response_metadata['finish_reasons']}")
                 return resp
             except Exception as e:
                 logging.warning(
                     "API_CALL Error on attempt %d/%d for model %s: %s", attempt, attempts, self.model_name, e
                 )
+                if self.raise_on_error and isinstance(e, ValueError):
+                    raise  # Retrying an empty billed completion does not fix its token budget.
                 if attempt == attempts:
+                    if self.raise_on_error:
+                        raise
                     logging.error("Exhausted retries for model %s; returning empty response.", self.model_name)
                     break
                 if sleep_seconds > 0:
                     time.sleep(sleep_seconds)
                     sleep_seconds *= backoff
         return []
+
+
+def validate_generator_config(cfg) -> None:
+    """Check a model backend before loading models or making requests."""
+    backend = cfg.get("backend", "local")
+    if backend not in {"local", "openrouter"}:
+        raise ValueError(f"Unknown model backend: {backend}")
+    if backend == "openrouter":
+        if not isinstance(cfg.get("id"), str) or not cfg["id"].strip():
+            raise ValueError("OpenRouter requires an explicit model id.")
+        if not isinstance(cfg.get("provider"), str) or not cfg["provider"].strip():
+            raise ValueError("OpenRouter requires one explicit provider slug.")
+
+
+def build_text_generator(cfg, *, default_generate_kwargs=None) -> TextGenerator:
+    """Build a local or provider-pinned OpenRouter generator from model settings."""
+    validate_generator_config(cfg)
+    if cfg.get("backend", "local") == "openrouter":
+        extra_body = {"provider": {
+            "only": [cfg["provider"]], "allow_fallbacks": False, "require_parameters": True,
+        }}
+        if cfg.get("reasoning") is not None:
+            reasoning = cfg["reasoning"]
+            extra_body["reasoning"] = OmegaConf.to_container(reasoning, resolve=True) if OmegaConf.is_config(reasoning) else reasoning
+        return APITextGenerator(
+            f"openrouter/{cfg['id']}",
+            default_generate_kwargs=default_generate_kwargs,
+            api_kwargs={"extra_body": extra_body},
+            raise_on_error=True,
+        )
+    model, tokenizer = load_model_and_tokenizer(cfg)
+    return LocalTextGenerator(model, tokenizer, default_generate_kwargs=default_generate_kwargs)
 
 
 def generate_from_prompts(model: TextGenerator, prompts: list[str], **kwargs) -> list[str]:

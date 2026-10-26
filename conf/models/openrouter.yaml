@@ -1,0 +1,5 @@
+openrouter:
+  backend: openrouter
+  id: ???  # Exact OpenRouter model ID; set in the experiment or command line.
+  provider: ???  # One explicit OpenRouter provider slug; fallback is disabled.
+  supports_assistant_prefill: false
