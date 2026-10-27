@@ -62,6 +62,7 @@ class TargetSystem(ABC):
         initial_batch_size: int,
         verbose: bool = False,
     ) -> list[float | None]:
+        # Reject local-loss requests for targets that expose only hosted generation.
         if self.model is None:
             raise ValueError("This target does not expose local model losses.")
         if len(full_token_tensors) != len(prompt_token_tensors):

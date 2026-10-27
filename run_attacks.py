@@ -38,6 +38,8 @@ def collect_configs(cfg: DictConfig) -> list[RunConfig]:
     for attack, _attack_params in attacks_to_run:
         for _defense, defense_params in defenses_to_run:
             validate_defense_compatibility(attack, defense_params)
+
+            # Reject unsupported hosted combinations before dataset loading or storage checks.
             for _model, model_params in models_to_run:
                 if model_params.get("backend", "local") != "local":
                     validate_hosted_target(Attack.from_name(attack), model_params, defense_params)
@@ -77,6 +79,8 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
         if last_model != run_config.model:
             logging.info(f"Target: {run_config.model}\n{OmegaConf.to_yaml(run_config.model_params, resolve=True)}")
             last_model = run_config.model
+
+            # Choose the hosted interface or load local weights when the selected model changes.
             if run_config.model_params.get("backend", "local") == "openrouter":
                 hosted_target = APITarget(run_config.model_params)
                 model, tokenizer = None, None
@@ -95,6 +99,8 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
             last_defense = run_config.defense
 
         attack: Attack[AttackResult] = Attack.from_name(run_config.attack)(run_config.attack_params)
+
+        # Pass the selected hosted/local target through the same attack interface.
         target = hosted_target if hosted_target is not None else build_target_system(
             run_config.defense_params,
             model=model,
@@ -127,6 +133,8 @@ def main(cfg: DictConfig) -> None:
     # 3. Run the judges
     if judges_to_run is None:
         return
+
+    # Import post-run classifiers only when they are requested.
     from run_judges import run_judges
 
     for judge in judges_to_run:

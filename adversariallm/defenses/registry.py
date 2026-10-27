@@ -80,6 +80,8 @@ def validate_defense_compatibility(
 
 def validate_hosted_target(attack_cls, model_config, defense_config):
     """Reject unsupported hosted combinations before dataset or model loading."""
+
+    # Validate ordinary hosted attacks against backend and defense capabilities.
     validate_generator_config(model_config)
     if model_config.get("backend", "local") == "local":
         return

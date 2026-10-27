@@ -161,6 +161,7 @@ def test_runner_hosted_target_does_not_load_local_model(monkeypatch):
 
     from adversariallm.io_utils.config import RunConfig
 
+    # Replace model, dataset, and logging dependencies before exercising the runner.
     target = object()
     calls = []
 
@@ -185,6 +186,8 @@ def test_runner_hosted_target_does_not_load_local_model(monkeypatch):
         dataset_params={}, attack_params={}, defense_params=None,
     )
     run_attacks.run_attacks([rc], OmegaConf.create({}), "test")
+
+    # Pass the hosted target through execution and logging without loading weights.
     assert calls == ["attack", "saved"]
 
 
@@ -195,6 +198,7 @@ def test_runner_hosted_target_does_not_load_local_model(monkeypatch):
     ("direct", "unknown", "test", "none", "Unknown model backend"),
 ])
 def test_hosted_validation_precedes_dataset_and_storage(monkeypatch, attack, backend, provider, defense, error):
+    # Replace model, dataset, and logging dependencies before exercising the runner.
     def unexpected(*args, **kwargs):
         pytest.fail("Invalid hosted configuration reached dataset or storage access")
 
@@ -206,6 +210,8 @@ def test_hosted_validation_precedes_dataset_and_storage(monkeypatch, attack, bac
         "attacks": {attack: {"name": attack}}, "attack": attack,
         "defenses": {defense: {"name": defense}}, "defense": defense,
     })
+
+    # Fail invalid hosted configurations before dataset or storage access.
     with pytest.raises(ValueError, match=error):
         run_attacks.collect_configs(cfg)
 
@@ -213,6 +219,7 @@ def test_hosted_validation_precedes_dataset_and_storage(monkeypatch, attack, bac
 def test_runner_switches_between_local_and_hosted_targets(monkeypatch):
     from adversariallm.io_utils.config import RunConfig
 
+    # Replace model, dataset, and logging dependencies before exercising the runner.
     targets = []
     model_loads = []
     logged = []
@@ -242,6 +249,8 @@ def test_runner_switches_between_local_and_hosted_targets(monkeypatch):
         dataset_params={}, attack_params={}, defense_params=None,
     ) for name, backend in [("local-a", "local"), ("hosted", "openrouter"), ("local-b", "local")]]
     run_attacks.run_attacks(runs, OmegaConf.create({}), "test")
+
+    # Reload only local targets and preserve the execution order across backend changes.
     assert model_loads == ["local-a", "local-b"]
     assert targets == ["local-a", hosted, "local-b"]
     assert len(logged) == 3
