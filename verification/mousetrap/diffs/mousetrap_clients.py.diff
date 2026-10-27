@@ -1,0 +1,14 @@
+--- reference/Evaluation.ipynb:cells=2,3
++++ adversariallm/attacks/utils/mousetrap/mousetrap_clients.py
+@@ -1,3 +1,11 @@
++"""Preserved author notebook cells 2, 3 (zero-based).
++
++Source: https://github.com/EVIGBYEN/Mousetrap
++Revision: 3906547a9d18fe0e54d27bb541676162cbdbe31c
++MIT License; Copyright (c) 2025 YAO YANG.
++License, original notebook, and extraction diff: verification/mousetrap/.
++"""
++
+ class Judger:
+     def __init__(self):
+         self.client = openai.OpenAI(api_key="YOUR_SECRET_KEY_HERE")

@@ -517,3 +517,16 @@ random_search:
   candidates_per_generation: 8
   optim_str_init: "x x x x x x x x x x x x x x x x x x x x" # all tested tokenizers convert this to exactly 20 tokens
   generation_config: ${attacks._default.generation_config}
+
+# Preserved notebook source paths; select an explicit target profile and routes.
+mousetrap:
+  # Identify the repository entry point without adding RNG seeding.
+  name: mousetrap
+  type: discrete
+  version: 0.1.0
+  seed: null
+
+  # Require an explicit OpenRouter route for every author judgment.
+  judge:
+    id: ???
+    provider: ???

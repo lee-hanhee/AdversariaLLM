@@ -10,6 +10,7 @@ import sys
 from adversariallm.attacks.flip_attack import FlipAttackConfig
 from adversariallm.attacks.equacode import EquaCodeConfig
 from adversariallm.attacks.gta import GTAConfig
+from adversariallm.attacks.mousetrap import MousetrapConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -19,20 +20,30 @@ def author_payload(method, **overrides):
     # Environment paths are explicit so missing author environments fail instead of skipping evidence.
     env_name = f'{method.upper()}_AUTHOR_PYTHON'
     python = os.environ.get(env_name, str(ROOT / '.author_envs' / method / 'bin/python'))
-    configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig, 'gta': GTAConfig}
+
+    # Build attack defaults with fake, explicit target and judge routes.
+    configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig, 'gta': GTAConfig, 'mousetrap': MousetrapConfig}
     config = asdict(configs[method]())
     config.update(overrides)
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider',
-             'author_model': {'flip_attack': 'gpt-4-0613', 'equacode': 'gpt-3.5-turbo', 'gta': 'deepseek_r1'}[method]}
+             'author_model': {'flip_attack': 'gpt-4-0613', 'equacode': 'gpt-3.5-turbo', 'gta': 'deepseek_r1', 'mousetrap': 'o1-2024-12-17'}[method]}
     config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
     if method == 'gta':
         config['attacker'] = {'id': 'test/attacker', 'provider': 'attacker-provider'}
+
+    # Use the declared shared comparison environment for releases without exact SDK pins.
+    if method in ('gta', 'mousetrap'):
         python = os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable)
+
+    # Keep successful Mousetrap fixtures ASCII; dedicated cases check original Unicode quirks.
+    question = 'Explain rainbows through café windows.\nKeep {braces}.'
+    if method == 'mousetrap':
+        question = 'Explain rainbows through cafe windows.\nKeep {braces}.'
 
     # Package the benign dataset, scripted replies, and interpreter choices for the harness.
     return {'method': method, 'model': model, 'config': config,
             'reference_python': python, 'shared_python': os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable),
-            'dataset': [[{'role': 'user', 'content': 'Explain rainbows through café windows.\nKeep {braces}.'},
+            'dataset': [[{'role': 'user', 'content': question},
                          {'role': 'assistant', 'content': 'Reference answer.'}]],
             'replies': [{'text': '  A benign answer.\n'}]}
 
@@ -63,6 +74,8 @@ def compare_author(payload):
             role = request['role']
             route = {'Police': payload['config']['attacker'], 'Judge': payload['config']['judge'],
                      'Thomas': payload['model'], 'Marcos': payload['model']}[role]
+        elif payload['method'] == 'mousetrap':
+            route = payload['config']['judge'] if messages[0]['role'] == 'system' else payload['model']
         else:
             route = payload['config']['judge'] if judge else payload['model']
 
@@ -82,6 +95,8 @@ def compare_author(payload):
     assert adapted.get('error', {}).get('type') == original.get('error', {}).get('type')
     if original.get('error', {}).get('type') in {'UnboundLocalError', 'IndexError', 'ValueError'}:
         assert adapted['error'] == original['error']
+    if payload['method'] == 'mousetrap':
+        assert adapted['rng_state'] == original['rng_state']
     if 'error' not in original:
         assert adapted['records'] == original['records']
     return original, adapted

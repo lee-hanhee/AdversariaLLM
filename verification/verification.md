@@ -47,10 +47,13 @@ pinned Git revision. Without it, passing checks establish bundled consistency
 only, not independent source origin.
 
 Currently supported extractions are exact copies or prefixes ending before a
-unique `stop_before` marker, optionally preceded by a Python attribution
-docstring. Recorded diffs must match the files. Notebook-cell extraction,
-rewritten code, or other transformations require explicit additional support;
-they are not automatically verified by a matching hash.
+unique `stop_before` marker, or selected notebook code cells. Any extraction may
+be preceded by a Python attribution docstring. `adaptation.notebook_cells`
+lists zero-based cell indices in original order; their exact source strings are
+joined with two newline characters. Each notebook diff compares that extracted
+code with the local file, while the complete notebook is hashed and checked
+against the official revision. Rewritten code and other transformations are not
+automatically verified by a matching hash. Recorded diffs must match the files.
 
 ## 3. Review the adapter and compare behavior
 

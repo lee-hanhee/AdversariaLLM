@@ -52,6 +52,10 @@ def run_reference(payload, factory, sleep):
         from gta_reference import run_reference_gta
         return run_reference_gta(payload, factory, sleep, base)
 
+    if method == 'mousetrap':
+        from mousetrap_reference import run_reference_mousetrap
+        return run_reference_mousetrap(payload, factory, base)
+
     # Construct native SDK clients for the independent original-source path.
     openai = lambda **kw: factory('openai', kw)
     anthropic = lambda **kw: factory('anthropic', kw)
@@ -109,7 +113,7 @@ def main():
     payload = json.load(sys.stdin)
     wire, sleeps, sdk_sleeps = [], [], []
     # Fix only the offline SDK retry jitter; production author execution is unseeded.
-    random.seed(2026)
+    random.seed(payload.get('rng_seed', 2026))
     time.sleep = sdk_sleeps.append
     scripted = iter(payload['replies'])
 
@@ -169,8 +173,11 @@ def main():
         with redirect_stdout(sys.stderr):
             if payload.pop('reference', False):
                 base = ROOT / 'verification' / payload['method'] / 'reference'
-                requirements = base / ('requirement.txt' if payload['method'] == 'equacode' else 'requirements.txt')
-                pins = dict(line.replace(' ', '').split('==') for line in requirements.read_text().splitlines() if '==' in line)
+                # Mousetrap publishes no dependency pins; use the declared shared test baseline.
+                pins = {}
+                if payload['method'] != 'mousetrap':
+                    requirements = base / ('requirement.txt' if payload['method'] == 'equacode' else 'requirements.txt')
+                    pins = dict(line.replace(' ', '').split('==') for line in requirements.read_text().splitlines() if '==' in line)
 
                 # Enforce source SDK pins when the original release declares them.
                 for name in ('openai', 'anthropic'):
@@ -190,6 +197,10 @@ def main():
         result.update(wire=wire, sleeps=sleeps, sdk_sleeps=sdk_sleeps)
     except Exception as error:
         result = {'error': {'type': type(error).__name__, 'message': str(error)}, 'wire': wire, 'sleeps': sleeps, 'sdk_sleeps': sdk_sleeps}
+
+    # Include the final random state when checking the notebook's shared RNG stream.
+    if payload['method'] == 'mousetrap':
+        result['rng_state'] = random.getstate()
 
     # Emit a machine-readable result for the parent test process.
     json.dump(result, sys.stdout, ensure_ascii=False)

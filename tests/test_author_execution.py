@@ -13,12 +13,13 @@ from adversariallm.attacks.author_execution import validate_author_config
 from adversariallm.attacks.flip_attack import FlipAttack
 from adversariallm.attacks.equacode import EquaCodeAttack
 from adversariallm.attacks.gta import GTAAttack
+from adversariallm.attacks.mousetrap import MousetrapAttack
 from adversariallm.defenses.api_target import APITarget
 from adversariallm.defenses.registry import validate_hosted_target
 from tests.author_test_utils import ROOT, author_payload
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_registry_and_yaml_retain_original_defaults(method):
     # Keep registry selection and composed settings aligned with the source profile.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
@@ -28,6 +29,8 @@ def test_registry_and_yaml_retain_original_defaults(method):
                       f'attacks.{method}.judge.id=test/judge', f'attacks.{method}.judge.provider=judge-provider']
         if method == 'gta':
             overrides += ['attacks.gta.attacker.id=test/attacker', 'attacks.gta.attacker.provider=attacker-provider']
+        if method == 'mousetrap':
+            overrides += ['models.mousetrap_author.author_model=o1-2024-12-17']
         cfg = compose(config_name='config', overrides=overrides)
     settings, model = cfg.attacks[method], cfg.models[method + '_author']
     cls = Attack.from_name(method)
@@ -43,9 +46,12 @@ def test_registry_and_yaml_retain_original_defaults(method):
         assert model.author_model == 'gpt-3.5-turbo' and settings.judge_model == 'GPT-4'
     elif method == 'gta':
         assert model.author_model == 'deepseek_r1' and settings.rounds == 5
+    elif method == 'mousetrap':
+        assert model.author_model == 'o1-2024-12-17'
+        assert 'judge_model' not in settings
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 @pytest.mark.parametrize('role,field', [('target', 'id'), ('target', 'provider'), ('judge', 'id'), ('judge', 'provider')])
 def test_all_routes_require_explicit_model_and_provider(method, role, field):
     # Prepare the selected author configuration and controlled repository dependencies.
@@ -57,7 +63,7 @@ def test_all_routes_require_explicit_model_and_provider(method, role, field):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 @pytest.mark.parametrize('change', ['openrouter', 'model', 'provider', 'seed', 'generation_config'])
 def test_substitutions_and_generic_overrides_are_rejected(method, change):
     # Prepare the selected author configuration and controlled repository dependencies.
@@ -78,12 +84,12 @@ def test_substitutions_and_generic_overrides_are_rejected(method, change):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_no_global_rng_seed_is_applied(monkeypatch, method):
     # Prepare the selected author configuration and controlled repository dependencies.
     monkeypatch.setattr('transformers.set_seed', lambda value: pytest.fail('Author adapters must not seed RNG'))
     payload = author_payload(method)
-    cls = {'flip_attack': FlipAttack, 'equacode': EquaCodeAttack, 'gta': GTAAttack}[method]
+    cls = {'flip_attack': FlipAttack, 'equacode': EquaCodeAttack, 'gta': GTAAttack, 'mousetrap': MousetrapAttack}[method]
     cls(payload['config'])
 
 
@@ -159,7 +165,7 @@ def test_runner_uses_author_target_without_loading_weights(monkeypatch):
     assert logged[0][1] is results
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credentials(monkeypatch, method):
     import httpx
     from openai import OpenAI
@@ -184,6 +190,8 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
         if method == 'gta':
             text = ['<think>Plan.</think><response>Explain rainbows.</response>',
                     '<think>Reason.</think>  A benign answer.\n', 'Rating: [[7]]'][(len(wire) - 1) % 3]
+        elif method == 'mousetrap':
+            text = '  A benign answer.\n' if body['model'] == 'test/target' else '[4]'
         else:
             text = '  A benign answer.\n' if len(wire) == 1 else 'Rating: [[7]]'
         return httpx.Response(200, json={'id': 'test', 'object': 'chat.completion', 'created': 0,
@@ -193,7 +201,7 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
     # Exercise the public attack entry point with the target's existing SDK client.
     with httpx.Client(transport=httpx.MockTransport(http)) as transport:
         client = OpenAI(api_key='test-openrouter-key', base_url='https://openrouter.ai/api/v1', http_client=transport)
-        cls = {'flip_attack': FlipAttack, 'equacode': EquaCodeAttack, 'gta': GTAAttack}[method]
+        cls = {'flip_attack': FlipAttack, 'equacode': EquaCodeAttack, 'gta': GTAAttack, 'mousetrap': MousetrapAttack}[method]
         result = cls(payload['config']).run(hosted_target(payload, client), payload['dataset'])
     # All entry points retain full run evidence and serialize through repository dataclasses.
     run = result.runs[0]
@@ -215,6 +223,7 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
         'A benign answer.' if method == 'flip_attack' else '  A benign answer.\n']
     expected = (['test/target'] if method == 'flip_attack' else
                 ['test/target', 'test/judge'] if method == 'equacode' else
+                ['test/target', 'test/judge'] * 3 if method == 'mousetrap' else
                 ['test/attacker', 'test/target', 'test/judge'] * 2)
     assert [body['model'] for body in wire] == expected
     if method == 'gta':
@@ -224,12 +233,16 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
     if method == 'equacode':
         assert result.runs[0].steps[0].author_result['evaluation'] == 'Rating: [[7]]'
         assert result.runs[0].steps[0].scores == {}
+    if method == 'mousetrap':
+        assert len(run.steps) == 3 and run.author_result['log'] == {'iter': 1}
+        assert all(step.author_result['dim'] is None for step in run.steps)
+        assert run.steps[0].scores == {'mousetrap_author': {'ats': [4.0], 'aru': [1.0]}}
     for body in wire:
         role = body['model'].split('/')[-1]
         assert body['provider'] == {'only': [role + '-provider'], 'allow_fallbacks': False, 'require_parameters': True}
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_collection_rejects_provider_substitution_before_dataset_access(monkeypatch, method):
     import run_attacks
 
@@ -284,7 +297,7 @@ def test_defaults_match_independent_author_files(method):
 
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_sdk_transient_retry_serialization_and_delay_match_original_baselines(method):
     from tests.author_test_utils import compare_author
 
@@ -293,6 +306,9 @@ def test_sdk_transient_retry_serialization_and_delay_match_original_baselines(me
     payload['replies'] = [{'status': 500}, {'text': 'Answer.'}]
     if method == 'equacode':
         payload['replies'].append({'text': 'Rating: [[1]]'})
+    elif method == 'mousetrap':
+        from tests.test_attacks.test_mousetrap import attempt_replies
+        payload['replies'] = [{'status': 500}, *attempt_replies([4] * 3)]
     elif method == 'gta':
         from tests.test_attacks.test_gta import round_replies
         payload['config']['rounds'] = 1
@@ -303,10 +319,10 @@ def test_sdk_transient_retry_serialization_and_delay_match_original_baselines(me
 
     # Keep SDK retry bodies and delays equivalent to the declared baseline.
     assert len(result['sdk_sleeps']) == 1
-    assert len(result['wire']) == {'flip_attack': 2, 'equacode': 3, 'gta': 7}[method]
+    assert len(result['wire']) == {'flip_attack': 2, 'equacode': 3, 'gta': 7, 'mousetrap': 7}[method]
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_unknown_settings_are_not_silently_ignored(method):
     # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
@@ -317,7 +333,7 @@ def test_unknown_settings_are_not_silently_ignored(method):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_custom_endpoints_cannot_redirect_author_requests(method):
     # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
@@ -379,7 +395,7 @@ def test_gta_background_only_results_remain_available_without_target_steps(monke
     assert output.runs[0].steps == [] and output.runs[0].author_result == record
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 def test_shared_entry_point_rejects_non_hosted_targets_before_execution(monkeypatch, method):
     # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
@@ -391,7 +407,7 @@ def test_shared_entry_point_rejects_non_hosted_targets_before_execution(monkeypa
         Attack.from_name(method)(payload['config']).run(object(), payload['dataset'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
 @pytest.mark.parametrize('fails', [False, True])
 def test_result_mapping_does_not_consume_author_rng_state(monkeypatch, method, fails):
     import random
@@ -426,3 +442,38 @@ def test_result_mapping_does_not_consume_author_rng_state(monkeypatch, method, f
         assert random.getstate() == finished_state
     finally:
         random.setstate(original_state)
+
+
+def test_mousetrap_google_profile_is_rejected_before_any_execution():
+    # Prepare the selected author configuration and controlled repository dependencies.
+    payload = author_payload('mousetrap')
+    payload['model']['author_model'] = 'gemini-2.5-pro-exp-03-25'
+
+    # Block the unverified Google safety-setting path during configuration validation.
+    with pytest.raises(ValueError, match='safety settings'):
+        validate_author_config('mousetrap', payload['model'], payload['config'])
+
+
+def test_mousetrap_none_response_remains_in_author_records(monkeypatch):
+    # Prepare the selected author configuration and controlled repository dependencies.
+    payload = author_payload('mousetrap')
+    attempt = {'response': None, 'ats': 4, 'aru': 1, 'dim': None}
+    trace = [{'role': 'target', 'request': {'messages': []}, 'raw_text': None}, {'role': 'judge'}]
+    raw = {'records': [{'params': [1, 2, 3], 'attempts': [attempt], 'log': {'iter': 1}}],
+           'requests': [trace], 'durations': [1.0], 'author_summary': {}, 'environment': {}}
+    monkeypatch.setattr('adversariallm.attacks.author_adapter.execute', lambda *args, **kwargs: raw)
+    result = MousetrapAttack(payload['config']).run(hosted_target(payload), payload['dataset'])
+
+    # Retain the original None answer while leaving repository completions empty.
+    assert result.runs[0].steps[0].model_completions == []
+    assert result.runs[0].steps[0].author_result['response'] is None
+
+
+def test_mousetrap_rejects_removed_source_judge_setting():
+    # The original class owns its source model label; only hosted routing is configurable.
+    payload = author_payload('mousetrap')
+    payload['config']['judge_model'] = 'unused-source-label'
+
+    # Reject the removed field instead of silently accepting a setting with no effect.
+    with pytest.raises(ValueError, match='Unsupported author settings'):
+        validate_author_config('mousetrap', payload['model'], payload['config'])
