@@ -8,6 +8,7 @@ import subprocess
 import sys
 
 from adversariallm.attacks.flip_attack import FlipAttackConfig
+from adversariallm.attacks.equacode import EquaCodeConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,10 +18,10 @@ def author_payload(method, **overrides):
     # Environment paths are explicit so missing author environments fail instead of skipping evidence.
     env_name = f'{method.upper()}_AUTHOR_PYTHON'
     python = os.environ.get(env_name, str(ROOT / '.author_envs' / method / 'bin/python'))
-    config = asdict(FlipAttackConfig())
+    config = asdict(FlipAttackConfig() if method == 'flip_attack' else EquaCodeConfig())
     config.update(overrides)
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider',
-             'author_model': 'gpt-4-0613'}
+             'author_model': 'gpt-4-0613' if method == 'flip_attack' else 'gpt-3.5-turbo'}
     config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
     return {'method': method, 'model': model, 'config': config,
             'reference_python': python, 'shared_python': os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable),

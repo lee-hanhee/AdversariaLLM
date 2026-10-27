@@ -137,6 +137,10 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+            case "equacode":
+                from .equacode import EquaCodeAttack
+
+                return EquaCodeAttack
             case "flip_attack":
                 from .flip_attack import FlipAttack
 

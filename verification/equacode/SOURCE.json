@@ -1,0 +1,240 @@
+{
+  "method": "EquaCode",
+  "repository": "https://github.com/lzzzr123/Equacode",
+  "paper": "https://arxiv.org/abs/2512.23173",
+  "revision": "d50ba3d1d573b06713a7e868b7dbfedd0436f5b6",
+  "verified_on": "2026-10-27",
+  "verification": "Fresh official GitHub clone; git show pinned revision for each original reference. Original template values also match preserved pirc.",
+  "attribution": "Zhen Liang, Hai Huang, Zhengkui Chen.",
+  "license": {
+    "status": "No license file is supplied in the pinned repository tree.",
+    "additional_licensing_information": "User reports no additional author permission or licensing information.",
+    "reviewed_notice_paths": [
+      "README.md",
+      "Ablation/README.md"
+    ],
+    "usage_notice": "Ablation/README.md describes academic research and security testing use; no software license file was supplied.",
+    "tree_check": "git ls-tree -r --name-only d50ba3d1d573b06713a7e868b7dbfedd0436f5b6"
+  },
+  "files": [
+    {
+      "original_path": "scripts/attack.py",
+      "reference": {
+        "path": "verification/equacode/reference/scripts/attack.py",
+        "sha256": "c804755f5f0ab508b48bd0e783a9335b8466ec68e1b89ed81d40cce02f1a4003"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/equacode/equacode_prompts.py",
+          "sha256": "3946853ffd0c6c118be44a946e94bc354528b2752c2ff9ae207fd242c6f4f58d",
+          "extraction": "Prepend attribution and recorded license status only; retain all original template source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/equacode/adaptation.diff",
+            "reference_label": "reference/scripts/attack.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "main.py",
+      "reference": {
+        "path": "verification/equacode/reference/main.py",
+        "sha256": "830c2c5d718651c9175bd5716824bf2892c7fafcb03e3450b5668bc991b35666"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/equacode/equacode_driver.py",
+          "sha256": "c69a8c4cec7c496c7ed7ed261c4d4860fbd275a4a99cb93b319f6de5e8cde55a",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/equacode/diffs/equacode_driver.py.diff",
+            "reference_label": "reference/main.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "utils.py",
+      "reference": {
+        "path": "verification/equacode/reference/utils.py",
+        "sha256": "0f64ebdf401ede8794bdab8d7c49c99470bad30cf9c7a652c759f14508d5c620"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/equacode/equacode_utils.py",
+          "sha256": "0ec2ccb150d9a0e1410c88456f7fc7fd84125fb67809a17cc2245b3d49302ae4",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/equacode/diffs/equacode_utils.py.diff",
+            "reference_label": "reference/utils.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "config.py",
+      "reference": {
+        "path": "verification/equacode/reference/config.py",
+        "sha256": "3fbb6c668200744352b10ab6a4a3c96d55023c572ca7f63744e37ffc4c724df6"
+      }
+    },
+    {
+      "original_path": "requirement.txt",
+      "reference": {
+        "path": "verification/equacode/reference/requirement.txt",
+        "sha256": "60289359b9a14b82ca2d6bef0a228904162b2d808fca49ad21f71d48cd1b2478"
+      }
+    }
+  ],
+  "repository_history": {
+    "repository": "AdversariaLLM",
+    "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+    "contribution_base_revision": "60d836840ada86ea0303fa07b9471fdd91df9c2a",
+    "description": "PR 03 builds on the pushed PR 02 implementation. The official author revision is the top-level revision field."
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/equacode.py",
+        "purpose": "Repository attack entry point and author configuration defaults."
+      },
+      {
+        "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Execute the original driver with the shared OpenRouterAuthorClient and capture original records."
+      },
+      {
+        "path": "adversariallm/attacks/author_adapter.py",
+        "purpose": "Convert original records directly into repository results, retaining raw judge text."
+      }
+    ],
+    "preserved_behavior": [
+      "Four original templates and literal placeholder substitution, including the case-sensitive model-name system-message check.",
+      "Target and judge requests contain only original model/messages settings before routing fields are added; target text is retained without stripping.",
+      "Every target reply is judged. The original case-sensitive Rating check permits up to six judge calls; SDK exceptions abort without an added application retry loop.",
+      "Original example order, spreadsheet row numbering, and raw evaluation text. No RNG seed or numeric score parser is added."
+    ],
+    "changes": [
+      {
+        "area": "models_and_providers",
+        "author": "Published config selects target gpt-3.5-turbo and judge GPT-4 with both base URLs empty.",
+        "repository": "Explicit OpenRouter model IDs and provider pins for target and judge. Source labels stay at the published defaults and select author code paths.",
+        "reason": "Reuse the hosted backend. The wrapper currently supports the published source-name defaults; equivalent live model outputs are unverified."
+      },
+      {
+        "area": "dependencies",
+        "author": "OpenAI 1.76.2 plus spreadsheet dependencies for standalone output.",
+        "repository": "Reuse the existing OpenAI 1.109.1 client. Original SDK pins remain an offline verification baseline; spreadsheet dependencies are not imported during attack execution.",
+        "reason": "Use the repository environment and result storage."
+      },
+      {
+        "area": "request_transport",
+        "author": "Separate OpenAI-compatible target and judge clients using configured URLs.",
+        "repository": "One existing OpenRouter SDK client with explicit routing IDs, provider.only, allow_fallbacks=false, and require_parameters=true.",
+        "reason": "Replace transport without adding application retries or changing message content and generation controls."
+      },
+      {
+        "area": "data_and_storage",
+        "author": "Standalone question loading and Excel file creation/appending.",
+        "repository": "Repository datasets and logging. The spreadsheet callback captures the same question, prompt, response, evaluation text, and row number in memory.",
+        "reason": "Integrate with the existing runner while retaining author records."
+      },
+      {
+        "area": "configuration",
+        "author": "Editable config.py with source model names, credentials, and empty endpoint URLs.",
+        "repository": "Hydra configuration with mandatory target/judge routing IDs and providers. Generic generation overrides, runtime defenses, and RNG seeding are rejected.",
+        "reason": "Make hosted routing explicit and retain the published attack settings."
+      },
+      {
+        "area": "reporting",
+        "author": "The main execution calls gernerate(); a separate method performs spreadsheet keyword-ASR export.",
+        "repository": "Execute the original gernerate() flow and retain raw judge text. The separate keyword export is not run automatically.",
+        "reason": "Match original main control flow while using repository storage."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py equacode --official-repo /path/to/official-clone",
+      "status": "passed",
+      "result": "All bundled references match the pinned official revision. Runtime author files match after only the declared attribution docstrings."
+    },
+    "behavior": {
+      "reference_execution": "Execute the original targetLLM class with independent official templates and helpers. Replace API and spreadsheet I/O with benign scripted replies and in-memory HTTP transports; keep the original mandatory judge loop.",
+      "compared": [
+        "All four templates and literal substitution",
+        "Default request fields and omitted controls",
+        "Raw replies, including empty strings",
+        "Mandatory judging, case sensitivity, and six-call parse retry limit",
+        "SDK errors/retries and empty-choice failure behavior",
+        "Example order, row numbers, original records, and per-example traces"
+      ],
+      "allowed_comparison_differences": [
+        "OpenRouter endpoint and model IDs",
+        "Provider-routing fields"
+      ],
+      "runs": [
+        {
+          "name": "equacode_and_shared_binding",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_equacode.py",
+          "passed": 58,
+          "skipped": 0
+        },
+        {
+          "name": "full_regression",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 184,
+          "skipped": 0
+        },
+        {
+          "name": "post_utils_move",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_equacode.py tests/test_source_verification.py",
+          "passed": 76,
+          "skipped": 0
+        }
+      ],
+      "unique_tests_passed": 184,
+      "counting_note": "The focused runs overlap the 184-check full regression run. The 76-check follow-up verifies the utils move and latest shared integration; tests are counted once."
+    },
+    "environments": {
+      "repository_tests": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.28.1",
+          "torch": "2.2.2",
+          "transformers": "5.9.0"
+        }
+      },
+      "author_sdk_baseline": {
+        "python": "3.13.7",
+        "dependency_lock": "verification/equacode/environment.lock.txt",
+        "packages": {
+          "openai": "1.76.2",
+          "httpx": "0.28.1"
+        }
+      },
+      "shared_sdk_comparison": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.27.2"
+        }
+      }
+    },
+    "execution_requirements": {
+      "guide": "docs/author_execution.md",
+      "note": "Set the baseline/shared test interpreter paths as described in the guide. Intel macOS tests also use the test-process-only Torch recompile_limit setup in docs/openrouter.md; API/model/database I/O is mocked."
+    },
+    "not_tested": [
+      "live OpenRouter/model availability",
+      "MongoDB integration",
+      "GPU inference",
+      "paper benchmarks",
+      "separate repository post-run classifiers"
+    ],
+    "limitations": "Source identity and offline behavior checks do not establish equivalent live model outputs or reproduction of paper results."
+  }
+}

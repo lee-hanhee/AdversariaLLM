@@ -66,6 +66,21 @@ def run_reference(payload, factory, sleep):
         exec(compile(ast.Module(body=[loop], type_ignores=[]), 'reference-loop', 'exec'), scope)
         return records
 
+    templates = reference_symbols(base / 'scripts/attack.py', ['equacoder', 'equa', 'coder', 'origin'], {})
+    helper = reference_symbols(base / 'utils.py', ['synthesis_message'], {})
+    driver = reference_symbols(base / 'main.py', ['targetLLM'], {
+        **templates, **helper, 'os': os, 'OpenAI': openai, 'openai_key': 'test-key',
+        'base_url': 'https://original-target.example/v1', 'assessmodel': config['judge_model'],
+        'assess_base_url': 'https://original-judge.example/v1',
+        'save_data': lambda row, fields, filename: records.append({
+            'question': fields[0], 'prompt': fields[1], 'response': fields[2],
+            'evaluation': fields[3], 'row': row}),
+    })['targetLLM']
+    instance = driver(questions=questions, target_model=model['id'], text=config['variant'])
+    instance.filecheck = lambda: None
+    instance.gernerate()
+    return records
+
 
 def main():
     payload = json.load(sys.stdin)
@@ -116,7 +131,7 @@ def main():
         with redirect_stdout(sys.stderr):
             if payload.pop('reference', False):
                 base = ROOT / 'verification' / payload['method'] / 'reference'
-                requirements = base / 'requirements.txt'
+                requirements = base / ('requirements.txt' if payload['method'] == 'flip_attack' else 'requirement.txt')
                 pins = dict(line.replace(' ', '').split('==') for line in requirements.read_text().splitlines() if '==' in line)
                 for name in ('openai', 'anthropic'):
                     if name in pins:

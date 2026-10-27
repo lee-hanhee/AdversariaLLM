@@ -43,11 +43,22 @@ def run_author(method, target, config, dataset):
     for original, record, trace, duration in zip(originals, result['records'], result['requests'], result['durations']):
         target_request = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
         scores = {}
-        if 'judge_score_gpt4' in record:
-            scores['flip_attack_author'] = {key: [float(record[key])] for key in (
-                'judge_success_dict', 'judge_score_gpt4', 'judge_success_gpt4')}
-        step = AuthorStepResult(step=0, scores=scores, model_input=record['all_prompt'],
-                                model_completions=[record['output']], model_completions_raw=[target_request['raw_text']],
+        if method == 'flip_attack':
+            messages = record['all_prompt']
+            response = record['output']
+            if 'judge_score_gpt4' in record:
+                scores['flip_attack_author'] = {key: [float(record[key])] for key in (
+                    'judge_success_dict', 'judge_score_gpt4', 'judge_success_gpt4')}
+
+        elif method == 'equacode':
+            messages = target_request['request']['messages']
+            response = record['response']
+
+        else:
+            raise ValueError(f'Unknown author method: {method}')
+
+        step = AuthorStepResult(step=0, scores=scores, model_input=messages, model_completions=[response],
+                                model_completions_raw=[target_request['raw_text']],
                                 api_metadata=[target_request['metadata']], time_taken=duration,
                                 author_result=record, author_requests=trace)
         runs.append(SingleAttackRunResult(original_prompt=original, steps=[step], total_time=duration))

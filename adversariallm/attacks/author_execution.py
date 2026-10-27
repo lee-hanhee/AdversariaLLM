@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 from types import SimpleNamespace
 
-AUTHOR_METHODS = frozenset({'flip_attack'})
+AUTHOR_METHODS = frozenset({'flip_attack', 'equacode'})
 FLIP_MODELS = {
     'gpt-3.5-turbo-0125': 'openai', 'gpt-4-turbo-2024-04-09': 'openai',
     'gpt-4-0613': 'openai', 'gpt-4o-2024-08-06': 'openai',
@@ -19,8 +19,16 @@ FLIP_MODELS = {
 def validate_author_config(method, model, config):
     # Match argparse's rejection of unknown switches instead of silently ignoring overrides.
     common = {'name', 'type', 'version', 'seed'}
-    options = {'flip_mode', 'cot', 'lang_gpt', 'few_shot', 'temperature', 'max_token',
-                'retry_time', 'failed_sleep_time', 'round_sleep_time', 'evaluate', 'judge_model', 'judge'}
+    if method == 'flip_attack':
+        options = {'flip_mode', 'cot', 'lang_gpt', 'few_shot', 'temperature', 'max_token',
+                   'retry_time', 'failed_sleep_time', 'round_sleep_time', 'evaluate', 'judge_model', 'judge'}
+
+    elif method == 'equacode':
+        options = {'variant', 'judge_model', 'judge'}
+
+    else:
+        raise ValueError(f'Unknown author method: {method}')
+
     if set(config) - common - options:
         raise ValueError(f'Unsupported author settings: {set(config) - common - options}')
 
@@ -52,8 +60,13 @@ def validate_author_config(method, model, config):
         if config['judge_model'] != 'gpt-4-0613':
             raise ValueError('FlipAttack judge_model must retain the author default gpt-4-0613.')
 
-    else:
-        raise ValueError(f'Unknown author method: {method}')
+    elif method == 'equacode':
+        if model.get('author_model') != 'gpt-3.5-turbo':
+            raise ValueError('EquaCode author_model must retain gpt-3.5-turbo.')
+        if config.get('judge_model') != 'GPT-4':
+            raise ValueError('EquaCode judge_model must retain the source label GPT-4.')
+        if config['variant'] not in {'equacode', 'equation', 'code', 'origin'}:
+            raise ValueError('Unknown EquaCode variant.')
 
 
 AUTHOR_UTILS = Path(__file__).resolve().parent / 'utils'
@@ -136,34 +149,54 @@ def execute(method, model, config, dataset, *, client, sleep=None):
     questions = [conv[0]['content'] for conv in dataset]
     records = []
 
-    # Reuse original definitions with local I/O bindings; never mutate process credentials.
-    author_os = SimpleNamespace(environ=dict.fromkeys(
-        ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'), client.api_key))
-    llm = load_symbols('flip_attack/flip_attack_llm.py', ['LLM'], {
-        'os': author_os, 'time': SimpleNamespace(sleep=sleep or time.sleep),
-        'OpenAI': transport, 'Anthropic': transport, 'anthropic': SimpleNamespace(Anthropic=transport),
-    })['LLM']
-    evaluator = load_symbols('flip_attack/flip_attack_evaluator.py', ['Evaluator'], {'re': __import__('re'), 'LLM': llm})['Evaluator']
-    builder = load_symbols('flip_attack/flip_attack.py', ['FlipAttack'], {'textwrap': __import__('textwrap')})['FlipAttack']
-    args = SimpleNamespace(**config, victim_llm=model['author_model'], judge_llm=config['judge_model'],
-                           eval=config['evaluate'], begin=0, end=len(questions))
-    victim = llm(model_id=model['author_model'], **{key: config[key] for key in (
-        'temperature', 'max_token', 'retry_time', 'failed_sleep_time', 'round_sleep_time')})
-
-    # Execute the unchanged per-example loop, binding only dataset/progress and result storage.
-    source = ast.parse((AUTHOR_UTILS / 'flip_attack' / 'flip_attack_driver.py').read_bytes())
-    main = next(node for node in source.body if isinstance(node, ast.If))
-    loop = next(node for node in main.body if isinstance(node, ast.For))
-    namespace = {'args': args, 'adv_bench': {'goal': questions}, 'FlipAttack': builder,
-                 'victim_llm': victim, 'Evaluator': evaluator, 'result_dict_list': records,
-                 'all_count': 0, 'dict_success_count': 0, 'gpt_success_count': 0,
-                 'tqdm': transport.examples}
+    summary = {}
     try:
-        exec(compile(ast.Module(body=[loop], type_ignores=[]), 'author-flip-loop', 'exec'), namespace)
+        if method == 'flip_attack':
+            # Reuse original definitions with local I/O bindings; never mutate process credentials.
+            author_os = SimpleNamespace(environ=dict.fromkeys(
+                ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'), client.api_key))
+            llm = load_symbols('flip_attack/flip_attack_llm.py', ['LLM'], {
+                'os': author_os, 'time': SimpleNamespace(sleep=sleep or time.sleep),
+                'OpenAI': transport, 'Anthropic': transport, 'anthropic': SimpleNamespace(Anthropic=transport),
+            })['LLM']
+            evaluator = load_symbols('flip_attack/flip_attack_evaluator.py', ['Evaluator'], {'re': __import__('re'), 'LLM': llm})['Evaluator']
+            builder = load_symbols('flip_attack/flip_attack.py', ['FlipAttack'], {'textwrap': __import__('textwrap')})['FlipAttack']
+            args = SimpleNamespace(**config, victim_llm=model['author_model'], judge_llm=config['judge_model'],
+                                   eval=config['evaluate'], begin=0, end=len(questions))
+            victim = llm(model_id=model['author_model'], **{key: config[key] for key in (
+                'temperature', 'max_token', 'retry_time', 'failed_sleep_time', 'round_sleep_time')})
+
+            # Execute the unchanged per-example loop, binding only dataset/progress and result storage.
+            source = ast.parse((AUTHOR_UTILS / 'flip_attack' / 'flip_attack_driver.py').read_bytes())
+            main = next(node for node in source.body if isinstance(node, ast.If))
+            loop = next(node for node in main.body if isinstance(node, ast.For))
+            namespace = {'args': args, 'adv_bench': {'goal': questions}, 'FlipAttack': builder,
+                         'victim_llm': victim, 'Evaluator': evaluator, 'result_dict_list': records,
+                         'all_count': 0, 'dict_success_count': 0, 'gpt_success_count': 0,
+                         'tqdm': transport.examples}
+            exec(compile(ast.Module(body=[loop], type_ignores=[]), 'author-flip-loop', 'exec'), namespace)
+            if config['evaluate']:
+                summary = {key: namespace[key] for key in ('all_count', 'dict_success_count', 'gpt_success_count')}
+
+        elif method == 'equacode':
+            # Reuse the original EquaCode class; replace spreadsheet I/O with record capture.
+            templates = load_symbols('equacode/equacode_prompts.py', ['equacoder', 'equa', 'coder', 'origin'], {})
+            helper = load_symbols('equacode/equacode_utils.py', ['synthesis_message'], {})
+
+            def save(row, fields, filename):
+                records.append({'question': fields[0], 'prompt': fields[1], 'response': fields[2],
+                                'evaluation': fields[3], 'row': row})
+
+            driver = load_symbols('equacode/equacode_driver.py', ['targetLLM'], {
+                **templates, **helper, 'os': __import__('os'), 'OpenAI': transport,
+                'openai_key': client.api_key, 'base_url': str(client.base_url),
+                'assessmodel': config['judge_model'], 'assess_base_url': str(client.base_url), 'save_data': save,
+            })['targetLLM']
+            author = driver(questions=transport.examples(questions), target_model=model['author_model'], text=config['variant'])
+            author.filecheck = lambda: None
+            author.gernerate()
     except Exception as error:
         error.author_requests = [request for trace in transport.requests for request in trace]
         raise
-    summary = ({key: namespace[key] for key in ('all_count', 'dict_success_count', 'gpt_success_count')}
-               if config['evaluate'] else {})
     return {'records': records, 'requests': transport.requests, 'durations': transport.durations,
             'author_summary': summary, 'environment': {'openai': version('openai')}}
