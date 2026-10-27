@@ -1,5 +1,6 @@
 """Verify required OpenRouter routes and repository author-result integration."""
 
+from dataclasses import asdict
 from types import SimpleNamespace
 
 import pytest
@@ -7,6 +8,7 @@ from hydra import compose, initialize_config_dir
 from omegaconf import OmegaConf
 
 from adversariallm.attacks import Attack
+from adversariallm.attacks.author_adapter import AuthorRunResult, AuthorStepResult
 from adversariallm.attacks.author_execution import validate_author_config
 from adversariallm.attacks.flip_attack import FlipAttack
 from adversariallm.defenses.api_target import APITarget
@@ -155,6 +157,19 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
         client = OpenAI(api_key='test-openrouter-key', base_url='https://openrouter.ai/api/v1', http_client=transport)
         cls = FlipAttack
         result = cls(payload['config']).run(hosted_target(payload, client), payload['dataset'])
+    # All entry points retain full run evidence and serialize through repository dataclasses.
+    run = result.runs[0]
+    assert isinstance(run, AuthorRunResult)
+    assert all(isinstance(step, AuthorStepResult) for step in run.steps)
+    assert [step.step for step in run.steps] == list(range(len(run.steps)))
+    assert run.author_result and len(run.author_requests) == len(wire)
+    serialized = asdict(result)['runs'][0]
+    assert serialized['author_result'] == run.author_result
+    assert serialized['author_requests'] == run.author_requests
+    assert run.author_result == run.steps[0].author_result
+    assert run.author_requests == run.steps[0].author_requests
+    assert run.steps[0].time_taken == run.total_time
+
     assert result.runs[0].steps[0].model_completions == [
         'A benign answer.']
     assert [body['model'] for body in wire] == ['test/target']
@@ -221,3 +236,11 @@ def test_custom_endpoints_cannot_redirect_author_requests(method):
     with pytest.raises(ValueError, match='only https://openrouter.ai'):
         validate_author_config(method, payload['model'], payload['config'])
 
+
+@pytest.mark.parametrize('method', ['flip_attack'])
+def test_shared_entry_point_rejects_non_hosted_targets_before_execution(monkeypatch, method):
+    payload = author_payload(method)
+    monkeypatch.setattr('adversariallm.attacks.author_adapter.execute',
+                        lambda *args, **kwargs: pytest.fail('Executed with a non-hosted target'))
+    with pytest.raises(ValueError, match='requires the OpenRouter author-driver target'):
+        Attack.from_name(method)(payload['config']).run(object(), payload['dataset'])

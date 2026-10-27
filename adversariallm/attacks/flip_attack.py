@@ -2,9 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from ..defenses.api_target import APITarget
-from .author_adapter import normalize_config, run_author
-from .attack import Attack
+from .author_adapter import AuthorAttack
 
 
 @dataclass
@@ -32,15 +30,5 @@ class FlipAttackConfig:
     judge: dict = field(default_factory=lambda: {'id': None, 'provider': None})
 
 
-class FlipAttack(Attack):
+class FlipAttack(AuthorAttack):
     AUTHOR_METHOD = 'flip_attack'
-
-    def __init__(self, config):
-        # Avoid the repository base initializer's seeding; the author does not seed.
-        self.config = normalize_config(config)
-
-    def run(self, target, dataset):
-        # The author driver owns prompt construction, API calls, and evaluation.
-        if not isinstance(target, APITarget):
-            raise ValueError('FlipAttack requires the OpenRouter author-driver target.')
-        return run_author(self.AUTHOR_METHOD, target, self.config, dataset)

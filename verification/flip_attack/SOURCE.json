@@ -121,7 +121,7 @@
       },
       {
         "path": "adversariallm/attacks/author_adapter.py",
-        "purpose": "Normalize configuration and map original records into repository results."
+        "purpose": "Shared AuthorAttack entry point and AuthorRunResult per example, with AuthorStepResult entries for target turns. Explicit attack branches map original outputs; shared step construction retains metadata, records, and request traces."
       }
     ],
     "preserved_behavior": [
@@ -183,7 +183,8 @@
         "Raw and stripped replies",
         "Application/SDK retries and author sleeps",
         "Optional judging and parser edge cases",
-        "Error types, example order, result records, and per-example request traces"
+        "Error types, example order, result records, and per-example request traces",
+        "Shared repository result types, serialized run evidence, step numbering, and timing"
       ],
       "allowed_comparison_differences": [
         "OpenRouter model IDs and endpoint",
@@ -202,10 +203,16 @@
           "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py -k 'empty_api_choices or serialization or retry_count or exhaustion or grouped or repository_binding or records_map'",
           "passed": 16,
           "skipped": 0
+        },
+        {
+          "name": "shared_orchestration_refactor",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 147,
+          "skipped": 0
         }
       ],
-      "unique_tests_passed": 146,
-      "counting_note": "The full run preceded the final empty-response correction. The focused run rechecked affected paths and added two GPT/Claude empty-response cases; its other tests overlap the full run."
+      "unique_tests_passed": 147,
+      "counting_note": "The latest full regression run verifies this branch after the shared orchestration refactor, including serialized run evidence and non-hosted-target rejection. Earlier runs overlap and are not added to this count."
     },
     "environments": {
       "repository_tests": {
