@@ -78,8 +78,18 @@ def validate_defense_compatibility(
         )
 
 
-def validate_hosted_target(attack_cls, model_config, defense_config):
+def validate_hosted_target(attack_cls, model_config, defense_config, attack_config=None):
     """Reject unsupported hosted combinations before dataset or model loading."""
+
+    # Use author-specific validation before generic hosted-backend checks.
+    method = getattr(attack_cls, "AUTHOR_METHOD", None)
+    if method is not None:
+        from ..attacks.author_execution import validate_author_config
+
+        validate_author_config(method, model_config, attack_config or {})
+        if defense_config is not None and defense_config.get("name", "none") not in (None, "none"):
+            raise ValueError("Original author execution does not support runtime defenses.")
+        return
 
     # Validate ordinary hosted attacks against backend and defense capabilities.
     validate_generator_config(model_config)

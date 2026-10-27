@@ -1,0 +1,263 @@
+{
+  "method": "FlipAttack",
+  "repository": "https://github.com/yueliu1999/FlipAttack",
+  "paper": "https://arxiv.org/abs/2410.02832",
+  "revision": "c53880b4a6e8ab47686849838b3d2e11bc80a6b9",
+  "verified_on": "2026-10-26",
+  "verification": "Fresh official GitHub clone; git show pinned revision for each reference file.",
+  "attribution": "Yue Liu et al.; source copyright (c) 2026 yueliu1999.",
+  "license": {
+    "status": "MIT, independently fetched at pinned revision",
+    "path": "verification/flip_attack/LICENSE"
+  },
+  "files": [
+    {
+      "original_path": "src/flip_attack.py",
+      "reference": {
+        "path": "verification/flip_attack/reference/src/flip_attack.py",
+        "sha256": "07ffa54f0bc7675f91231832ffc71c74dc81bfb158412d785034de7aeb249694"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack.py",
+          "sha256": "782b1947786fc7018d4ae75b520bec5ebe3c27e3e6f7d09db889aba943f3a15e",
+          "extraction": "Prepend attribution/MIT header; retain exact original bytes before if __name__ == \"__main__\":; omit standalone demo only.",
+          "adaptation": {
+            "stop_before": "if __name__ == \"__main__\":",
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/adaptation.diff",
+            "reference_label": "reference/src/flip_attack.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "src/main.py",
+      "reference": {
+        "path": "verification/flip_attack/reference/src/main.py",
+        "sha256": "90acafc5c0e10c6afcb17de1f3ac7a04058c661e75b2279337200bee610191fc"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack_driver.py",
+          "sha256": "9e4cb4632e8b5fd0da2c6163300f4fa3af285a2960e6df7c737a48ac347e5b94",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/diffs/flip_attack_driver.py.diff",
+            "reference_label": "reference/src/main.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "src/llm.py",
+      "reference": {
+        "path": "verification/flip_attack/reference/src/llm.py",
+        "sha256": "5d26b3972058de930d194a6fb911de47004c692293f3a908101c8879be895e57"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack_llm.py",
+          "sha256": "d9d9b1e38095d6242017d1f052c1c6e8da9778810910e5707f19a37b35cbc0b4",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/diffs/flip_attack_llm.py.diff",
+            "reference_label": "reference/src/llm.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "LICENSE",
+      "reference": {
+        "path": "verification/flip_attack/LICENSE",
+        "sha256": "ffa10db2b68769e714438848ba5dd5d712706615f4bdc24922c858577402c773"
+      }
+    },
+    {
+      "original_path": "src/eval_util.py",
+      "reference": {
+        "path": "verification/flip_attack/reference/src/eval_util.py",
+        "sha256": "3910ea4482221d41b61b21c81cc00239181d294610e501bc6f56bab44731b4e0"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack_evaluator.py",
+          "sha256": "5c33e768edff7742522135d3ce99a621745e68ab87da30c5f11418e2995078d8",
+          "extraction": "Attribution docstring followed by unchanged original source bytes.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/flip_attack/diffs/flip_attack_evaluator.py.diff",
+            "reference_label": "reference/src/eval_util.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "requirements.txt",
+      "reference": {
+        "path": "verification/flip_attack/reference/requirements.txt",
+        "sha256": "6219a29ef713e398705ef21908220889f4bb4ade60ea8eabcd74ce087b7596bb"
+      }
+    }
+  ],
+  "repository_history": {
+    "repository": "AdversariaLLM",
+    "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+    "contribution_base_revision": "f84005ec7cc7c2a7286d4aa8c8d6a88564aec827",
+    "description": "PR 02 merges the updated PR 01 without rewriting existing history. The official author revision is the top-level revision field."
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/flip_attack.py",
+        "purpose": "Attack registration and configuration defaults."
+      },
+      {
+        "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Shared transport, source loading, configuration validation, and explicit dispatch to the attack binding."
+      },
+      {
+        "path": "adversariallm/attacks/utils/flip_attack/binding.py",
+        "purpose": "Load original definitions and driver; bind API calls to OpenRouterAuthorClient; validate configuration."
+      },
+      {
+        "path": "adversariallm/attacks/author_adapter.py",
+        "purpose": "Shared AuthorAttack entry point and AuthorRunResult per example, with AuthorStepResult entries for target turns. Explicit attack branches map original outputs; shared step construction retains metadata, records, and request traces."
+      }
+    ],
+    "preserved_behavior": [
+      "Original prompt construction, four flipping modes, guidance flags, and model-specific prompt handling.",
+      "Original request controls, application retries and sleeps, response stripping, and response-processing errors.",
+      "Optional original keyword evaluation, judge prompts, rating parser, and success counters.",
+      "Original example order and result records; no added RNG seed or application retry layer."
+    ],
+    "changes": [
+      {
+        "area": "models_and_providers",
+        "author": "Source model IDs route to OpenAI, Anthropic, or DeepInfra.",
+        "repository": "Target and judge use explicit OpenRouter model IDs and pinned providers. Source-level model names still select author code paths.",
+        "reason": "Use the repository hosted backend. Matching source-level names to the intended model family is a configuration responsibility; live output equivalence is unverified."
+      },
+      {
+        "area": "dependencies",
+        "author": "OpenAI 1.51.2 and Anthropic 0.36.0 clients.",
+        "repository": "One existing OpenAI 1.109.1 client for OpenRouter; author SDKs are retained only as verification baselines.",
+        "reason": "Reuse the repository SDK environment. Tested SDK behaviors match; compatibility outside those cases is unverified."
+      },
+      {
+        "area": "request_transport",
+        "author": "Native provider requests, including Anthropic system/message serialization.",
+        "repository": "OpenAI-compatible OpenRouter requests with provider.only, allow_fallbacks=false, and require_parameters=true. Claude system text becomes a system chat message; text blocks and its 3584-token cap remain.",
+        "reason": "Translate the provider I/O boundary while executing original client methods."
+      },
+      {
+        "area": "data_and_storage",
+        "author": "AdvBench CSV loading, begin/end arguments, and standalone JSON output.",
+        "repository": "Repository dataset selection and result logging; original records and request traces are retained.",
+        "reason": "Use the existing experiment runner and storage interfaces."
+      },
+      {
+        "area": "configuration",
+        "author": "argparse settings, fixed victim-model choices, and a configurable judge model name.",
+        "repository": "Hydra settings with required target/judge routes, input-shape validation, and source judge profile fixed to gpt-4-0613. Generic generation overrides and runtime defenses are rejected.",
+        "reason": "Keep supported author settings explicit. The wrapper supports fewer source judge profiles than the author CLI."
+      },
+      {
+        "area": "reporting",
+        "author": "Standalone CLI summary and output files; the post-loop condition uses if eval instead of args.eval.",
+        "repository": "Run the original per-example loop and expose its counters through repository results; standalone reporting is not executed.",
+        "reason": "Replace CLI reporting with the repository result interface."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py flip_attack --official-repo /path/to/official-clone",
+      "status": "passed",
+      "result": "Bundled references match the pinned official revision. Runtime author files match after only their declared attribution headers or standalone-demo extraction."
+    },
+    "behavior": {
+      "reference_execution": "Execute independent original reference definitions and driver with scripted benign replies. Native SDK serializers use in-memory HTTP transports; dataset, API, and storage I/O are controlled.",
+      "compared": [
+        "Prompt bytes and guidance variants",
+        "Request settings and omitted defaults",
+        "Raw and stripped replies",
+        "Application/SDK retries and author sleeps",
+        "Optional judging and parser edge cases",
+        "Error types, example order, result records, and per-example request traces",
+        "Shared repository result types, serialized run evidence, step numbering, and timing"
+      ],
+      "allowed_comparison_differences": [
+        "OpenRouter model IDs and endpoint",
+        "Provider-routing fields",
+        "Claude system-message serialization"
+      ],
+      "runs": [
+        {
+          "name": "full_regression",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 144,
+          "skipped": 0
+        },
+        {
+          "name": "focused_followup",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py -k 'empty_api_choices or serialization or retry_count or exhaustion or grouped or repository_binding or records_map'",
+          "passed": 16,
+          "skipped": 0
+        },
+        {
+          "name": "shared_orchestration_refactor",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 147,
+          "skipped": 0
+        },
+        {
+          "name": "post_pr_split",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_source_verification.py tests/test_attacks/test_flip_attack.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 149,
+          "skipped": 0,
+          "scope": "Full branch regression"
+        }
+      ],
+      "unique_tests_passed": 149,
+      "counting_note": "The latest full branch regression passed 149 checks after splitting the shared binding refactor and comments onto PR 02. Earlier recorded runs overlap and are not added again."
+    },
+    "environments": {
+      "repository_tests": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.28.1",
+          "torch": "2.2.2",
+          "transformers": "5.9.0"
+        }
+      },
+      "author_sdk_baseline": {
+        "python": "3.13.7",
+        "dependency_lock": "verification/flip_attack/environment.lock.txt"
+      },
+      "shared_sdk_comparison": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.27.2"
+        }
+      }
+    },
+    "execution_requirements": {
+      "guide": "docs/author_execution.md",
+      "note": "Set the baseline/shared test interpreter paths as described in the guide. Intel macOS tests also use the test-process-only Torch recompile_limit setup in docs/openrouter.md; API/model/database I/O is mocked."
+    },
+    "not_tested": [
+      "live OpenRouter/model availability",
+      "MongoDB integration",
+      "GPU inference",
+      "paper benchmarks",
+      "separate repository post-run classifiers"
+    ],
+    "limitations": "Source identity and offline behavior checks do not establish equivalent live model outputs or reproduction of paper results."
+  }
+}

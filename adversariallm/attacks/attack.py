@@ -141,6 +141,12 @@ class Attack(Generic[AttRes]):
 
                 return DirectAttack
 
+            # Load the hosted author entry points lazily through the existing attack registry.
+            case "flip_attack":
+                from .flip_attack import FlipAttack
+
+                return FlipAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 

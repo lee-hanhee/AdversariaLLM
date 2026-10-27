@@ -197,6 +197,35 @@ direct:
   version: 0.0.1
   generation_config: ${attacks._default.generation_config}
   seed: ${attacks._default.seed}
+flip_attack:
+  # Identify the repository entry point without adding RNG seeding.
+  name: flip_attack
+  type: discrete
+  version: "0.2.0"
+  seed: null
+
+  # Retain the original flipping mode and guidance switches.
+  flip_mode: FCS
+  cot: false
+  lang_gpt: false
+  few_shot: false
+
+  # Keep the original target request, retry, and sleep defaults.
+  temperature: 0
+  max_token: -1
+  retry_time: 1000
+  failed_sleep_time: 1
+  round_sleep_time: 1
+
+  # Retain optional author evaluation and its source judge label.
+  evaluate: false
+  judge_model: gpt-4-0613
+
+  # Require explicit routing even while evaluation is disabled.
+  judge:
+    id: ???
+    provider: ???
+
 gcg:
   name: gcg
   type: discrete

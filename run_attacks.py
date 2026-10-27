@@ -9,6 +9,7 @@ import torch
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from adversariallm.attacks import Attack, AttackResult
+from adversariallm.attacks.author_execution import AUTHOR_METHODS
 from adversariallm.dataset import PromptDataset
 from adversariallm.defenses import build_target_system, validate_defense_compatibility
 from adversariallm.defenses.api_target import APITarget
@@ -41,8 +42,8 @@ def collect_configs(cfg: DictConfig) -> list[RunConfig]:
 
             # Reject unsupported hosted combinations before dataset loading or storage checks.
             for _model, model_params in models_to_run:
-                if model_params.get("backend", "local") != "local":
-                    validate_hosted_target(Attack.from_name(attack), model_params, defense_params)
+                if model_params.get("backend", "local") != "local" or attack in AUTHOR_METHODS:
+                    validate_hosted_target(Attack.from_name(attack), model_params, defense_params, _attack_params)
 
     all_run_configs = []
     for model, model_params in models_to_run:
