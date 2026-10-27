@@ -135,6 +135,18 @@ def adapt_results(method, originals, result):
                 # Move the boundary forward so later turns keep their own request histories.
                 start = judgement['request_end']
 
+        elif method == 'mousetrap':
+            # Each original attempt makes one target call followed by one judge call.
+            for index, attempt in enumerate(record['attempts']):
+                turn = trace[2 * index:2 * index + 2]
+                target_request = turn[0]
+                response = attempt['response']
+                raw = target_request.get('raw_text')
+                run.add_step(target_request, messages=target_request['request']['messages'],
+                             completions=[] if response is None else [response],
+                             raw_completions=[] if raw is None else [raw],
+                             scores={'mousetrap_author': {'ats': [float(attempt['ats'])], 'aru': [float(attempt['aru'])]}},
+                             author_result=attempt, author_requests=turn)
 
         else:
             raise ValueError(f'Unknown author method: {method}')

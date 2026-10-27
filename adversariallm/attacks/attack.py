@@ -154,6 +154,10 @@ class Attack(Generic[AttRes]):
                 from .gta import GTAAttack
 
                 return GTAAttack
+            case "mousetrap":
+                from .mousetrap import MousetrapAttack
+
+                return MousetrapAttack
 
             case "gcg":
                 from .gcg import GCGAttack

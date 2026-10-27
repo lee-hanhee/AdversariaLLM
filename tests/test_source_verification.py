@@ -251,3 +251,64 @@ def test_duplicate_correspondence_is_rejected(packages, duplicate):
     # Reject duplicate original or local artifact identities.
     with pytest.raises(ValueError, match='Duplicate'):
         verifier.verify(path)
+
+
+@pytest.fixture
+def notebook_package(packages):
+    root, make = packages
+    path, manifest = make('notebook')
+    entry = manifest['files'][0]
+
+    # Mix code and markdown cells to exercise ordered, code-only notebook extraction.
+    notebook = {'cells': [{'cell_type': 'code', 'source': ['VALUE = "rainbows"\n']},
+                          {'cell_type': 'markdown', 'source': ['Description']},
+                          {'cell_type': 'code', 'source': 'SECOND = 2'}]}
+    original = json.dumps(notebook).encode()
+    (root / entry['reference']['path']).write_bytes(original)
+    entry['reference']['sha256'] = hashlib.sha256(original).hexdigest()
+
+    # Build the exact declared cell concatenation with a separate attribution header.
+    runtime = b'"""Attribution."""\n\nVALUE = "rainbows"\n\n\nSECOND = 2'
+    replace_runtime(root, manifest, runtime)
+    rule = entry['implementations'][0]['adaptation']
+    rule.update(notebook_cells=[0, 2], prepend_docstring=True, reference_label='notebook:cells=0,2')
+    source = 'VALUE = "rainbows"\n\n\nSECOND = 2'
+
+    # Record a diff against extracted code rather than the complete notebook JSON.
+    difference = ''.join(difflib.unified_diff(source.splitlines(keepends=True), runtime.decode().splitlines(keepends=True),
+                                            fromfile=rule['reference_label'], tofile=entry['implementations'][0]['path']))
+    (root / rule['diff_path']).write_bytes(difference.encode())
+    save(path, manifest)
+    return root, path, manifest
+
+
+def test_exact_notebook_extraction_and_cell_diff_are_verified(notebook_package):
+    # Build a temporary source package with explicit hashes and extraction evidence.
+    _, path, _ = notebook_package
+    verifier.verify(path)
+
+
+@pytest.mark.parametrize('indices', [[], [True], [-1], [3], [1], [2, 0], [0, 0], '0'])
+def test_invalid_notebook_cell_selection_is_rejected(notebook_package, indices):
+    # Build a temporary source package with explicit hashes and extraction evidence.
+    _, path, manifest = notebook_package
+    manifest['files'][0]['implementations'][0]['adaptation']['notebook_cells'] = indices
+    save(path, manifest)
+
+    # Reject invalid, duplicate, reordered, or non-code cell selections.
+    with pytest.raises(ValueError):
+        verifier.verify(path)
+
+
+def test_changed_cell_text_is_rejected_even_when_reference_hash_is_updated(notebook_package):
+    # Build a temporary source package with explicit hashes and extraction evidence.
+    root, path, manifest = notebook_package
+    reference = manifest['files'][0]['reference']
+    original = (root / reference['path']).read_bytes().replace(b'rainbows', b'clouds')
+    (root / reference['path']).write_bytes(original)
+    reference['sha256'] = hashlib.sha256(original).hexdigest()
+    save(path, manifest)
+
+    # Detect altered cell content even after the reference hash is refreshed.
+    with pytest.raises(ValueError, match='Original bytes changed'):
+        verifier.verify(path)

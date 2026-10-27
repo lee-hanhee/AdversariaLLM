@@ -1,0 +1,263 @@
+{
+  "method": "Mousetrap",
+  "repository": "https://github.com/EVIGBYEN/Mousetrap",
+  "paper": "https://aclanthology.org/2025.findings-acl.408/",
+  "revision": "3906547a9d18fe0e54d27bb541676162cbdbe31c",
+  "verified_on": "2026-10-27",
+  "verification": "Independent official clone; git show pinned revision for the complete notebook, README, and license.",
+  "attribution": "Yang Yao et al.; source copyright (c) 2025 YAO YANG.",
+  "license": {
+    "status": "MIT, independently fetched at the pinned revision",
+    "path": "verification/mousetrap/LICENSE"
+  },
+  "files": [
+    {
+      "original_path": "Evaluation.ipynb",
+      "reference": {
+        "path": "verification/mousetrap/reference/Evaluation.ipynb",
+        "sha256": "fb32a8b4cbc75381e99af596509fc80b6c4e9d886099ecd95bcc16e59f3bdc6b"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/mousetrap/mousetrap_clients.py",
+          "sha256": "3a40fc6a440ce411ee4f3c2660a28559d98f4bdeb7396c07b37cb7b890fde6ab",
+          "extraction": "Concatenate the listed code cells, unchanged, with two newline characters between cells.",
+          "adaptation": {
+            "notebook_cells": [
+              2,
+              3
+            ],
+            "prepend_docstring": true,
+            "diff_path": "verification/mousetrap/diffs/mousetrap_clients.py.diff",
+            "reference_label": "reference/Evaluation.ipynb:cells=2,3"
+          }
+        },
+        {
+          "path": "adversariallm/attacks/utils/mousetrap/mousetrap_pipeline.py",
+          "sha256": "c56b1bd1518b51c5b88935366ee7e6fe83d7bb2ddbc09b8a1500140513efb5db",
+          "extraction": "Concatenate the listed code cells, unchanged, with two newline characters between cells.",
+          "adaptation": {
+            "notebook_cells": [
+              5,
+              7,
+              9,
+              10
+            ],
+            "prepend_docstring": true,
+            "diff_path": "verification/mousetrap/diffs/mousetrap_pipeline.py.diff",
+            "reference_label": "reference/Evaluation.ipynb:cells=5,7,9,10"
+          }
+        },
+        {
+          "path": "adversariallm/attacks/utils/mousetrap/mousetrap_driver.py",
+          "sha256": "f47590ced1b664808f696508351eb5da94179b1ee010c44bdb80c8e4d6e16f07",
+          "extraction": "Concatenate the listed code cells, unchanged, with two newline characters between cells.",
+          "adaptation": {
+            "notebook_cells": [
+              11
+            ],
+            "prepend_docstring": true,
+            "diff_path": "verification/mousetrap/diffs/mousetrap_driver.py.diff",
+            "reference_label": "reference/Evaluation.ipynb:cells=11"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "README.md",
+      "reference": {
+        "path": "verification/mousetrap/reference/README.md",
+        "sha256": "3758b6ed708dac9095e323b6a469369af3e2006d69c293453352483b421c2421"
+      }
+    },
+    {
+      "original_path": "LICENSE",
+      "reference": {
+        "path": "verification/mousetrap/LICENSE",
+        "sha256": "61066cddc745ddd73f59793d3042aedd1221227f4ffa961186e162f1e28de3a0"
+      }
+    }
+  ],
+  "repository_history": {
+    "repository": "AdversariaLLM",
+    "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+    "contribution_base_revision": "947fc9e6eab8f27b266bcbd36e29ff0b35462e02",
+    "description": "PR 05 builds on PR 04. The official author revision is the top-level revision field."
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/mousetrap.py",
+        "purpose": "Configuration and attack registration through the shared AuthorAttack entry point."
+      },
+      {
+        "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Shared transport, source loading, configuration validation, and explicit dispatch to the attack binding."
+      },
+      {
+        "path": "adversariallm/attacks/utils/mousetrap/binding.py",
+        "purpose": "Execute unchanged notebook definitions, setup, and per-example driver body with existing role-bound SDK clients and JSONL capture."
+      },
+      {
+        "path": "adversariallm/attacks/author_adapter.py",
+        "purpose": "Map original attempts into shared AuthorRunResult/AuthorStepResult and preserve author RNG state across result bookkeeping."
+      },
+      {
+        "path": "verification/verify_source.py",
+        "purpose": "Verify exact, ordered notebook-cell extracts using the same manifest and diff checks as other author attacks."
+      }
+    ],
+    "preserved_behavior": [
+      "Exact notebook client classes and function cells, including redundant prompt assignment, capitalization, padding, duplicate word choices, and Unicode mapping quirks.",
+      "One unseeded random.sample([1, 2, 3], 3) permutation per dataset; fresh mappings on each attempt and continuous RNG state across examples.",
+      "Lengths 1, 2, 3; three complete target/judge attempts at each length; stop only after all three succeed, otherwise record iter=0.",
+      "Original pipeline_without_checker and transformed attack prompt supplied to the judge; no checker or helper request.",
+      "First bracketed score converted with int(), no score-range validation, success when score >= 4. Malformed scores and request errors propagate without repair.",
+      "Original OpenAI request omissions, Claude max_tokens=2048, raw target responses, original attempt rows and final iter logs."
+    ],
+    "changes": [
+      {
+        "area": "models_and_providers",
+        "author": "Notebook provides OpenAI o1-2024-12-17, Claude claude-3-7-sonnet-20250219, and Google gemini-2.5-pro-exp-03-25 wrappers; target/checker selection remains CheckerTarget_XXX. Judge is gpt-4o-2024-11-20.",
+        "repository": "Require an explicit supported source target profile and actual OpenRouter target/judge IDs and providers. Preserve Google source but reject its runtime profile until safety-setting forwarding is verified.",
+        "reason": "Keep target selection explicit and avoid silently losing original Google safety settings. No live model equivalence is claimed."
+      },
+      {
+        "area": "dependencies",
+        "author": "Notebook imports OpenAI, Anthropic, and Google SDKs without version pins or a requirements file.",
+        "repository": "Reuse the existing OpenAI 1.109.1 runtime client. Independent reference tests use shared OpenAI 1.109.1 and Anthropic 0.36.0; no historical SDK-version equivalence is claimed.",
+        "reason": "Use the repository hosted environment without native vendor SDK imports during attack execution."
+      },
+      {
+        "area": "request_transport",
+        "author": "Original classes call native OpenAI/Anthropic SDK methods. Claude has one user message and a 2048-token cap; OpenAI generation controls are omitted.",
+        "repository": "Bind constructors to role-specific facades over the existing SDK client. Route through OpenRouter with provider.only, allow_fallbacks=false, require_parameters=true; return the response shape expected by each original SDK wrapper.",
+        "reason": "Replace the I/O boundary and retain original class methods, message text, generation controls, and error handling. Native Anthropic wire serialization is not reproduced."
+      },
+      {
+        "area": "data_and_storage",
+        "author": "Driver reads ptq/dim JSONL and appends one original item per attempt, then a minimum-success-length log.",
+        "repository": "Repository message datasets supply ptq. As explicitly requested, dim is null because no category exists in that interface. Capture original JSONL writes in memory; repository results retain attempts, params, log, and request traces.",
+        "reason": "Integrate with existing datasets/logging. Per-attempt file durability and standalone input/category selection are not retained."
+      },
+      {
+        "area": "configuration",
+        "author": "Notebook has placeholder credentials, target/checker selectors, and input/output file paths. The active pipeline never calls checker.",
+        "repository": "Hydra requires the target source profile and explicit routes, rejects Google execution, generic generation overrides, runtime defenses, and RNG seeding. No checker is instantiated. The fixed judge label remains in the original class and this manifest; no editable judge_model setting is exposed.",
+        "reason": "Expose the original active protocol without unsupported controls or unused credential initialization."
+      },
+      {
+        "area": "reporting",
+        "author": "Original driver produces attempt JSONL and iter logs; the paper describes score > 4 while the notebook uses >= 4.",
+        "repository": "Execute original notebook scoring and stop logic; expose score and success flag in repository scores, original records at run/step level. Restore author RNG state after repository result construction; measure only per-example duration.",
+        "reason": "Follow released code rather than silently changing its scoring rule to the paper wording. Original datasets and paper-only variants are outside this slice."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py mousetrap --official-repo /path/to/official-clone",
+      "status": "passed",
+      "result": "All three bundled references match the pinned official Git objects. Runtime files are exact declared code-cell concatenations with attribution docstrings only."
+    },
+    "behavior": {
+      "reference_execution": "Independently read complete original notebook cells, compile original client classes, execute original function cells and the full original driver cell. Replace API/file I/O only, using native SDK serializers and in-memory HTTP/files. The production driver instead binds the original per-example AST body; comparisons include original records and final RNG state.",
+      "compared": [
+        "OpenAI and Claude source request bodies, message roles, omitted controls, and Claude token cap",
+        "Three-by-three stopping at every length and full failure; no partial-attempt early exit",
+        "Mapping permutation, shared RNG state across examples, fresh transformations and reversed decoding instructions",
+        "Original attempt records, dim=null, iter logs, raw/empty/None replies and malformed score errors",
+        "Out-of-range scores, API errors, empty choices, SDK retries and retry delays",
+        "Unicode mapping outputs/errors; empty datasets; common result types, serialization and bookkeeping RNG isolation"
+      ],
+      "allowed_comparison_differences": [
+        "OpenRouter endpoint/model IDs and provider routing fields",
+        "Native Anthropic response shape represented through the OpenRouter chat client",
+        "Repository dataset/output bindings, dim=null, and timing metadata"
+      ],
+      "runs": [
+        {
+          "name": "mousetrap_shared_binding_and_verifier",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_source_verification.py tests/test_attacks/test_mousetrap.py",
+          "passed": 149,
+          "skipped": 0
+        },
+        {
+          "name": "full_regression",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 305,
+          "skipped": 0
+        },
+        {
+          "name": "binding_layout_shared",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_source_verification.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py",
+          "passed": 176,
+          "skipped": 0
+        },
+        {
+          "name": "binding_layout_drivers",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py",
+          "passed": 77,
+          "skipped": 0
+        },
+        {
+          "name": "post_pr_split_review_check",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_source_verification.py tests/test_attacks/test_mousetrap.py",
+          "passed": 158,
+          "skipped": 0,
+          "scope": "Shared integration, verifier, and Mousetrap after restacking on the committed PR 01\u201304 changes; PR 05 remains uncommitted."
+        },
+        {
+          "name": "fixed_judge_configuration_cleanup",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_mousetrap.py",
+          "passed": 130,
+          "skipped": 0,
+          "scope": "After removing the unused Mousetrap judge_model configuration field; shared integration and Mousetrap behavior, including rejection of the removed setting."
+        }
+      ],
+      "unique_tests_passed": 305,
+      "counting_note": "The 305-check full run includes the earlier focused checks. After moving per-attack I/O bindings into utils/<attack>/binding.py, 176 shared/verifier/GTA/Mousetrap checks and 77 FlipAttack/EquaCode checks passed (253 distinct focused checks). These overlap the full run and are not added to the 305 total; unchanged core-only suites were not repeated for the layout move. After distributing PR 01\u201304 changes to their branches, the final 158-check shared/verifier/Mousetrap run passed on PR 05. These checks overlap the recorded full suite and are not added to its total. After removing the unused Mousetrap judge_model configuration field, 130 focused checks passed; the full suite was not repeated for this cleanup. One source-label default comparison was replaced by a removed-setting rejection check, so the focused test count is unchanged."
+    },
+    "environments": {
+      "repository_tests": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.28.1",
+          "torch": "2.2.2",
+          "transformers": "5.9.0"
+        }
+      },
+      "reference_sdk_baseline": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.109.1",
+          "anthropic": "0.36.0",
+          "httpx": "0.27.2"
+        },
+        "description": "Test baseline versions, not author pins. Shared baseline selected via AUTHOR_SHARED_PYTHON."
+      }
+    },
+    "execution_requirements": {
+      "documentation": "docs/author_execution.md",
+      "baseline_python": "AUTHOR_SHARED_PYTHON selects the shared SDK comparison interpreter. Existing FlipAttack/EquaCode regression tests also require their documented baseline environments.",
+      "source_profiles": [
+        "o1-2024-12-17",
+        "claude-3-7-sonnet-20250219"
+      ],
+      "required_routes": [
+        "target model ID/provider",
+        "judge model ID/provider"
+      ],
+      "test_process": "Intel macOS test process adds the Torch recompile_limit option as documented in docs/openrouter.md."
+    },
+    "not_tested": [
+      "Live model availability or effectiveness",
+      "Google/OpenRouter safety-setting enforcement (runtime path rejected)",
+      "MongoDB integration",
+      "GPU inference",
+      "Paper benchmarks, original dataset campaigns, or paper-only checker/learned Chaos Machine variants"
+    ],
+    "limitations": "Exact source extracts and scripted behavior comparisons do not establish identical live model outputs, native vendor serialization, historical dependency equivalence, or reproduction of paper results."
+  }
+}

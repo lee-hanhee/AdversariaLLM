@@ -8,7 +8,7 @@ import time
 from types import SimpleNamespace
 
 # List the original-driver integrations available to the experiment runner.
-AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta'})
+AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta', 'mousetrap'})
 
 # Retain the source model names that select FlipAttack's original client branches.
 FLIP_MODELS = {
@@ -32,6 +32,8 @@ def validate_author_config(method, model, config):
     elif method == 'gta':
         options = {'rounds', 'attacker', 'judge'}
 
+    elif method == 'mousetrap':
+        options = {'judge'}
 
     else:
         raise ValueError(f'Unknown author method: {method}')
@@ -92,6 +94,11 @@ def validate_author_config(method, model, config):
         if isinstance(config['rounds'], bool) or not isinstance(config['rounds'], int):
             raise ValueError('GTA rounds must match the author CLI integer argument.')
 
+    elif method == 'mousetrap':
+        if model.get('author_model') == 'gemini-2.5-pro-exp-03-25':
+            raise ValueError('Mousetrap Google execution is unavailable until OpenRouter safety settings are verified.')
+        if model.get('author_model') not in {'o1-2024-12-17', 'claude-3-7-sonnet-20250219'}:
+            raise ValueError('Mousetrap author_model must select a supported notebook target.')
 
 
 AUTHOR_UTILS = Path(__file__).resolve().parent / 'utils'
@@ -214,6 +221,10 @@ def execute(method, model, config, dataset, *, client, sleep=None):
 
             records, summary = gta.execute(transport, model, config, questions, sleep)
 
+        elif method == 'mousetrap':
+            from .utils.mousetrap import binding as mousetrap
+
+            records, summary = mousetrap.execute(transport, model, config, questions, sleep)
     except Exception as error:
         # Expose the attempted calls when the original driver aborts.
         error.author_requests = [request for trace in transport.requests for request in trace]

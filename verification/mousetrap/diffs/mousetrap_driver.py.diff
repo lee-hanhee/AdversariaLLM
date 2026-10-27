@@ -1,0 +1,14 @@
+--- reference/Evaluation.ipynb:cells=11
++++ adversariallm/attacks/utils/mousetrap/mousetrap_driver.py
+@@ -1,3 +1,11 @@
++"""Preserved author notebook cells 11 (zero-based).
++
++Source: https://github.com/EVIGBYEN/Mousetrap
++Revision: 3906547a9d18fe0e54d27bb541676162cbdbe31c
++MIT License; Copyright (c) 2025 YAO YANG.
++License, original notebook, and extraction diff: verification/mousetrap/.
++"""
++
+ input_file_path = 'INPUT_PATH.JSONL'
+ output_file_path = f'OUTPUT_PATH.JSONL'
+ output_log_path = f'LOG_PATH.JSONL'

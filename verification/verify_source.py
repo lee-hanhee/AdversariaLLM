@@ -57,16 +57,35 @@ def verify(manifest_path, official_repo=None):
             rule = implementation.get('adaptation')
             require(isinstance(rule, dict) and 'diff_path' in rule,
                     f'Missing adaptation/diff: {local_path}')
-            allowed = {'diff_path', 'stop_before', 'prepend_docstring', 'reference_label'}
+            allowed = {'diff_path', 'stop_before', 'prepend_docstring', 'reference_label', 'notebook_cells'}
             require(not set(rule) - allowed, f'Unsupported adaptation fields: {set(rule) - allowed}')
 
             # Support unchanged copies or exact prefixes ending at one unique marker.
-            expected = original
+            comparison = original
+            if 'notebook_cells' in rule:
+                # Keep notebook extraction explicit and compare exact code-cell text.
+                cells = json.loads(original)['cells']
+
+                # Require unique, ordered code-cell indices before trusting a notebook extraction.
+                indices = rule['notebook_cells']
+                require(isinstance(indices, list) and bool(indices), 'Expected notebook cell indices')
+                require(all(type(i) is int and 0 <= i < len(cells) for i in indices),
+                        'Invalid notebook cell index')
+                require(indices == sorted(set(indices)), 'Notebook cells must be unique and ordered')
+                require(all(cells[i]['cell_type'] == 'code' for i in indices), 'Expected code cells')
+
+                # Join exact cell source text using the manifest's documented separator.
+                sources = [cells[i]['source'] for i in indices]
+                require(all(isinstance(source, str) or isinstance(source, list)
+                            and all(isinstance(line, str) for line in source) for source in sources),
+                        'Invalid notebook source')
+                comparison = '\n\n'.join(''.join(source) for source in sources).encode()
+            expected = comparison
             if 'stop_before' in rule:
                 marker = rule['stop_before'].encode()
-                require(bool(marker) and original.count(marker) == 1,
+                require(bool(marker) and expected.count(marker) == 1,
                         f'Extraction marker must occur exactly once: {reference["path"]}')
-                expected = original.split(marker, 1)[0]
+                expected = expected.split(marker, 1)[0]
 
             # An optional Python attribution docstring may precede otherwise unchanged author bytes.
             if rule.get('prepend_docstring', False):
@@ -83,7 +102,7 @@ def verify(manifest_path, official_repo=None):
 
             # Regenerate each recorded diff so it stays consistent with the files under review.
             difference = ''.join(difflib.unified_diff(
-                original.decode().splitlines(keepends=True), runtime.decode().splitlines(keepends=True),
+                comparison.decode().splitlines(keepends=True), runtime.decode().splitlines(keepends=True),
                 fromfile=rule.get('reference_label', reference['path']),
                 tofile=local_path,
             ))
