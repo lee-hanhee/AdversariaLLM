@@ -1,5 +1,10 @@
 openrouter:
+  # Select the repository hosted transport.
   backend: openrouter
-  id: ???  # Exact OpenRouter model ID; set in the experiment or command line.
-  provider: ???  # One explicit OpenRouter provider slug; fallback is disabled.
+
+  # Require an explicit model ID and a single provider; routing fallback stays disabled.
+  id: ???
+  provider: ???
+
+  # Declare assistant-prefill support before allowing a nonempty assistant prefix.
   supports_assistant_prefill: false

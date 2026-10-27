@@ -27,6 +27,8 @@ class DirectConfig:
 
 class DirectAttack(Attack):
     """A baseline attack that simply prompts the model with the original prompt."""
+
+    # Allow this baseline to run through generation-only hosted targets.
     SUPPORTS_HOSTED_TARGET = True
 
     def __init__(self, config: DirectConfig):
@@ -64,6 +66,7 @@ class DirectAttack(Attack):
             conv_for_generation[-1]["content"] = ""
             generation_conversations.append(conv_for_generation)
 
+            # Build local token/loss inputs only when the target exposes a tokenizer.
             if target.tokenizer is not None:
                 token_tensors = prepare_conversation(target.tokenizer, conv_for_generation)
                 flat_prompt_tokens = [t for turn_tokens in token_tensors for t in turn_tokens]
@@ -98,6 +101,8 @@ class DirectAttack(Attack):
             initial_batch_size=B * self.config.generation_config.num_return_sequences,
         )
         completions = generation_result.gen
+
+        # Hosted calls retain API metadata while local calls also retain input tokens.
         generation_input_ids = generation_result.require_input_ids("Direct", expected_len=B) if target.tokenizer is not None else [None] * B
         t_end_gen = time.time()
         gen_time_total = t_end_gen - t_start_gen
@@ -123,6 +128,8 @@ class DirectAttack(Attack):
                 model_input=model_input,
                 model_input_tokens=model_input_tokens,
                 defense_metadata=generation_result.defense_metadata_for(i),
+
+                # Preserve the hosted request metadata for this example.
                 api_metadata=generation_result.api_metadata[i] if generation_result.api_metadata is not None else None,
             )
 

@@ -63,6 +63,8 @@ class AttackStepResult:
 
     # Optional defense metadata (kept optional for backward compatibility).
     defense_metadata: Optional[list[dict[str, Any]]] = None
+
+    # Keep hosted request metadata optional for existing local attack results.
     api_metadata: Optional[list[dict[str, Any]]] = None
 
 
@@ -96,6 +98,7 @@ class AttackResult:
 AttRes = TypeVar("AttRes", bound=AttackResult)
 
 class Attack(Generic[AttRes]):
+    # Require each ordinary attack to opt into generation-only hosted targets.
     SUPPORTS_HOSTED_TARGET = False
 
     def __init__(self, config):
@@ -137,10 +140,13 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+
+            # Load the hosted author entry points lazily through the existing attack registry.
             case "flip_attack":
                 from .flip_attack import FlipAttack
 
                 return FlipAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 

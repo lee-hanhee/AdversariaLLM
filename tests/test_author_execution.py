@@ -18,6 +18,7 @@ from tests.author_test_utils import ROOT, author_payload
 
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_registry_and_yaml_retain_original_defaults(method):
+    # Keep registry selection and composed settings aligned with the source profile.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         overrides = ['hydra/launcher=basic', f'models={method}_author', f'model={method}_author',
                      f'attack={method}']
@@ -27,6 +28,8 @@ def test_registry_and_yaml_retain_original_defaults(method):
     settings, model = cfg.attacks[method], cfg.models[method + '_author']
     cls = Attack.from_name(method)
     validate_hosted_target(cls, model, None, settings)
+
+    # Keep registry selection and composed settings aligned with the source profile.
     assert settings.seed is None and 'generation_config' not in settings
     if method == 'flip_attack':
         assert model.author_model == 'gpt-4-0613' and model.id == 'test/target'
@@ -37,8 +40,11 @@ def test_registry_and_yaml_retain_original_defaults(method):
 @pytest.mark.parametrize('method', ['flip_attack'])
 @pytest.mark.parametrize('role,field', [('target', 'id'), ('target', 'provider'), ('judge', 'id'), ('judge', 'provider')])
 def test_all_routes_require_explicit_model_and_provider(method, role, field):
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     (payload['model'] if role == 'target' else payload['config']['judge'])[field] = None
+
+    # Require each configured role to specify both routing fields.
     with pytest.raises(ValueError, match='explicit OpenRouter'):
         validate_author_config(method, payload['model'], payload['config'])
 
@@ -46,6 +52,7 @@ def test_all_routes_require_explicit_model_and_provider(method, role, field):
 @pytest.mark.parametrize('method', ['flip_attack'])
 @pytest.mark.parametrize('change', ['openrouter', 'model', 'provider', 'seed', 'generation_config'])
 def test_substitutions_and_generic_overrides_are_rejected(method, change):
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     if change == 'openrouter':
         payload['model']['backend'] = 'local'
@@ -57,12 +64,15 @@ def test_substitutions_and_generic_overrides_are_rejected(method, change):
         payload['config']['seed'] = 0
     else:
         payload['config']['generation_config'] = {'max_new_tokens': 150}
+
+    # Reject settings that would silently change the supported author protocol.
     with pytest.raises(ValueError):
         validate_author_config(method, payload['model'], payload['config'])
 
 
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_no_global_rng_seed_is_applied(monkeypatch, method):
+    # Prepare the selected author configuration and controlled repository dependencies.
     monkeypatch.setattr('transformers.set_seed', lambda value: pytest.fail('Author adapters must not seed RNG'))
     payload = author_payload(method)
     cls = FlipAttack
@@ -78,6 +88,7 @@ def hosted_target(payload, client=None):
 
 
 def test_author_records_map_to_repository_results_without_reinterpreting_scores(monkeypatch):
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload('flip_attack')
     record = {'output': 'Answer.', 'all_prompt': [{'role': 'user', 'content': 'Question'}],
               'judge_success_dict': 1, 'judge_score_gpt4': 10, 'judge_success_gpt4': 1}
@@ -87,6 +98,8 @@ def test_author_records_map_to_repository_results_without_reinterpreting_scores(
     monkeypatch.setattr('adversariallm.attacks.author_adapter.execute', lambda *args, **kwargs: result)
     output = FlipAttack(payload['config']).run(hosted_target(payload), payload['dataset'])
     step = output.runs[0].steps[0]
+
+    # Carry original records, raw replies, and author scores into repository results.
     assert step.model_completions == ['Answer.'] and step.model_completions_raw == ['  Answer.\n']
     assert step.author_result == record and step.author_requests == trace
     assert step.scores['flip_attack_author']['judge_score_gpt4'] == [10.0]
@@ -94,6 +107,7 @@ def test_author_records_map_to_repository_results_without_reinterpreting_scores(
 
 
 def test_original_exception_propagates_without_conversion(monkeypatch):
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload('flip_attack')
     failure = UnboundLocalError('response')
 
@@ -103,11 +117,15 @@ def test_original_exception_propagates_without_conversion(monkeypatch):
     monkeypatch.setattr('adversariallm.attacks.author_adapter.execute', execute)
     with pytest.raises(UnboundLocalError) as caught:
         FlipAttack(payload['config']).run(hosted_target(payload), payload['dataset'])
+
+    # Keep the exact original exception object when author execution fails.
     assert caught.value is failure
 
 
 def test_runner_uses_author_target_without_loading_weights(monkeypatch):
     import run_attacks
+
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload('flip_attack')
     target, results = object(), object()
 
@@ -128,6 +146,8 @@ def test_runner_uses_author_target_without_loading_weights(monkeypatch):
     rc = run_attacks.RunConfig(model='author', dataset='d', attack='flip_attack', defense=None,
                               model_params=payload['model'], dataset_params={}, attack_params=payload['config'])
     run_attacks.run_attacks([rc], OmegaConf.create({}), 'test')
+
+    # Use the hosted author target through the normal runner and logging interface.
     assert logged[0][1] is results
 
 
@@ -135,6 +155,8 @@ def test_runner_uses_author_target_without_loading_weights(monkeypatch):
 def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credentials(monkeypatch, method):
     import httpx
     from openai import OpenAI
+
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     wire = []
     monkeypatch.setenv('OPENROUTER_API_KEY', 'test-openrouter-key')
@@ -142,6 +164,7 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
         monkeypatch.delenv(key, raising=False)
     monkeypatch.setattr('adversariallm.attacks.author_execution.time.sleep', lambda value: None)
 
+    # Use real SDK serialization with scripted in-memory HTTP responses.
     def http(request):
         import json
         body = json.loads(request.content)
@@ -153,12 +176,15 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
             'model': body['model'], 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': text},
             'finish_reason': 'stop'}]}, request=request)
 
+    # Exercise the public attack entry point with the target's existing SDK client.
     with httpx.Client(transport=httpx.MockTransport(http)) as transport:
         client = OpenAI(api_key='test-openrouter-key', base_url='https://openrouter.ai/api/v1', http_client=transport)
         cls = FlipAttack
         result = cls(payload['config']).run(hosted_target(payload, client), payload['dataset'])
     # All entry points retain full run evidence and serialize through repository dataclasses.
     run = result.runs[0]
+
+    # Keep the real SDK on OpenRouter and retain complete run/step evidence.
     assert isinstance(run, AuthorRunResult)
     assert all(isinstance(step, AuthorStepResult) for step in run.steps)
     assert [step.step for step in run.steps] == list(range(len(run.steps)))
@@ -181,6 +207,8 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_collection_rejects_provider_substitution_before_dataset_access(monkeypatch, method):
     import run_attacks
+
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     payload['model']['backend'] = 'local'
     monkeypatch.setattr(run_attacks.PromptDataset, 'from_name', lambda name: pytest.fail('Dataset loaded first'))
@@ -188,6 +216,8 @@ def test_collection_rejects_provider_substitution_before_dataset_access(monkeypa
                            'datasets': {'d': {}}, 'dataset': 'd',
                            'attacks': {method: payload['config']}, 'attack': method,
                            'defenses': {'none': {'name': 'none'}}, 'defense': 'none'})
+
+    # Validate the hosted route before touching the dataset.
     with pytest.raises(ValueError, match='backend=openrouter'):
         run_attacks.collect_configs(cfg)
 
@@ -197,7 +227,11 @@ def test_defaults_match_independent_author_files(method):
     import ast
     from adversariallm.attacks.author_execution import FLIP_MODELS
     from adversariallm.attacks.flip_attack import FlipAttackConfig
+
+    # Prepare the selected author configuration and controlled repository dependencies.
     base = ROOT / 'verification' / method / 'reference'
+
+    # Compare repository defaults with independently bundled original declarations.
     if method == 'flip_attack':
         main = ast.parse((base / 'src/main.py').read_bytes())
         arguments = {node.args[0].value: {kw.arg: ast.literal_eval(kw.value) for kw in node.keywords
@@ -214,33 +248,85 @@ def test_defaults_match_independent_author_files(method):
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_sdk_transient_retry_serialization_and_delay_match_original_baselines(method):
     from tests.author_test_utils import compare_author
+
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     payload['replies'] = [{'status': 500}, {'text': 'Answer.'}]
+
+    # Run the independent original and integrated paths with identical scripted replies.
     _, result = compare_author(payload)
+
+    # Keep SDK retry bodies and delays equivalent to the declared baseline.
     assert len(result['sdk_sleeps']) == 1
     assert len(result['wire']) == 2
 
 
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_unknown_settings_are_not_silently_ignored(method):
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     payload['config']['unknown_override'] = True
+
+    # Reject undeclared configuration fields rather than silently accepting them.
     with pytest.raises(ValueError, match='Unsupported author settings'):
         validate_author_config(method, payload['model'], payload['config'])
 
 
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_custom_endpoints_cannot_redirect_author_requests(method):
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     payload['model']['base_url'] = 'https://api.openai.com/v1'
+
+    # Reject endpoint overrides on the fixed author OpenRouter transport.
     with pytest.raises(ValueError, match='only https://openrouter.ai'):
         validate_author_config(method, payload['model'], payload['config'])
 
 
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_shared_entry_point_rejects_non_hosted_targets_before_execution(monkeypatch, method):
+    # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
     monkeypatch.setattr('adversariallm.attacks.author_adapter.execute',
                         lambda *args, **kwargs: pytest.fail('Executed with a non-hosted target'))
+
+    # Reject incompatible targets before the original driver is called.
     with pytest.raises(ValueError, match='requires the OpenRouter author-driver target'):
         Attack.from_name(method)(payload['config']).run(object(), payload['dataset'])
+
+
+@pytest.mark.parametrize('method', ['flip_attack'])
+@pytest.mark.parametrize('fails', [False, True])
+def test_result_mapping_does_not_consume_author_rng_state(monkeypatch, method, fails):
+    import random
+    from adversariallm.attacks.author_adapter import adapt_results
+
+    # Prepare the selected author configuration and controlled repository dependencies.
+    original_state = random.getstate()
+    payload = author_payload(method)
+    finished_state = random.Random(123).getstate()
+
+    def execute(*args, **kwargs):
+        random.setstate(finished_state)
+        return {'records': [], 'requests': [], 'durations': [], 'author_summary': {}, 'environment': {}}
+
+    # Simulate result bookkeeping that consumes RNG state and can also fail.
+    def mapping(*args):
+        random.random()
+        if fails:
+            raise ValueError('Bookkeeping failed')
+        return adapt_results(*args)
+
+    monkeypatch.setattr('adversariallm.attacks.author_adapter.execute', execute)
+    monkeypatch.setattr('adversariallm.attacks.author_adapter.adapt_results', mapping)
+
+    # Keep the post-driver RNG state intact on successful and failed result conversion.
+    try:
+        if fails:
+            with pytest.raises(ValueError, match='Bookkeeping failed'):
+                Attack.from_name(method)(payload['config']).run(hosted_target(payload), payload['dataset'])
+        else:
+            Attack.from_name(method)(payload['config']).run(hosted_target(payload), payload['dataset'])
+        assert random.getstate() == finished_state
+    finally:
+        random.setstate(original_state)
