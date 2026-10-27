@@ -64,6 +64,9 @@ class AttackStepResult:
     # Optional defense metadata (kept optional for backward compatibility).
     defense_metadata: Optional[list[dict[str, Any]]] = None
 
+    # Keep hosted request metadata optional for existing local attack results.
+    api_metadata: Optional[list[dict[str, Any]]] = None
+
 
 @beartype
 @dataclass
@@ -95,6 +98,9 @@ class AttackResult:
 AttRes = TypeVar("AttRes", bound=AttackResult)
 
 class Attack(Generic[AttRes]):
+    # Require each ordinary attack to opt into generation-only hosted targets.
+    SUPPORTS_HOSTED_TARGET = False
+
     def __init__(self, config):
         self.config = config
         transformers.set_seed(config.seed)
@@ -134,6 +140,7 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 
