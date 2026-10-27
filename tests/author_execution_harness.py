@@ -38,6 +38,10 @@ def run_reference(payload, factory, sleep):
     model = {**model, 'id': model['author_model']}
     questions = [conv[0]['content'] for conv in payload['dataset']]
     base = ROOT / 'verification' / method / 'reference'
+    if method == 'gta':
+        from gta_reference import run_reference_gta
+        return run_reference_gta(payload, factory, sleep, base)
+
     openai = lambda **kw: factory('openai', kw)
     anthropic = lambda **kw: factory('anthropic', kw)
     records = []
@@ -99,6 +103,9 @@ def main():
     def http(request):
         body = json.loads(request.content)
         wire.append({'url': str(request.url), 'body': body})
+        if payload['method'] == 'gta':
+            from gta_reference import gta_role
+            wire[-1]['role'] = gta_role(body['messages'])
         if request.url.host == 'openrouter.ai':
             assert request.headers['authorization'] == 'Bearer test-openrouter-key'
         item = next(scripted)
@@ -124,14 +131,15 @@ def main():
         if provider == 'anthropic':
             from anthropic import Anthropic
             return Anthropic(**options, http_client=transport)
-        from openai import OpenAI
-        return OpenAI(**options, http_client=transport)
+        from openai import OpenAI, AzureOpenAI
+        client = AzureOpenAI if provider == 'azure' else OpenAI
+        return client(**options, http_client=transport)
 
     try:
         with redirect_stdout(sys.stderr):
             if payload.pop('reference', False):
                 base = ROOT / 'verification' / payload['method'] / 'reference'
-                requirements = base / ('requirements.txt' if payload['method'] == 'flip_attack' else 'requirement.txt')
+                requirements = base / ('requirement.txt' if payload['method'] == 'equacode' else 'requirements.txt')
                 pins = dict(line.replace(' ', '').split('==') for line in requirements.read_text().splitlines() if '==' in line)
                 for name in ('openai', 'anthropic'):
                     if name in pins:

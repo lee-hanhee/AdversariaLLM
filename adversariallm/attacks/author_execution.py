@@ -7,7 +7,7 @@ from pathlib import Path
 import time
 from types import SimpleNamespace
 
-AUTHOR_METHODS = frozenset({'flip_attack', 'equacode'})
+AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta'})
 FLIP_MODELS = {
     'gpt-3.5-turbo-0125': 'openai', 'gpt-4-turbo-2024-04-09': 'openai',
     'gpt-4-0613': 'openai', 'gpt-4o-2024-08-06': 'openai',
@@ -26,6 +26,9 @@ def validate_author_config(method, model, config):
     elif method == 'equacode':
         options = {'variant', 'judge_model', 'judge'}
 
+    elif method == 'gta':
+        options = {'rounds', 'attacker', 'judge'}
+
     else:
         raise ValueError(f'Unknown author method: {method}')
 
@@ -35,7 +38,10 @@ def validate_author_config(method, model, config):
     # Routing IDs are explicit and independent of names used by the author logic.
     if model.get('backend') != 'openrouter':
         raise ValueError(f'{method} requires backend=openrouter.')
-    for role, route in [('target', model), ('judge', config.get('judge') or {})]:
+    routes = [('target', model), ('judge', config.get('judge') or {})]
+    if method == 'gta':
+        routes.append(('attacker', config.get('attacker') or {}))
+    for role, route in routes:
         for field in ('id', 'provider'):
             value = route.get(field)
             if not isinstance(value, str) or not value.strip() or value == '???':
@@ -68,6 +74,12 @@ def validate_author_config(method, model, config):
         if config['variant'] not in {'equacode', 'equation', 'code', 'origin'}:
             raise ValueError('Unknown EquaCode variant.')
 
+    elif method == 'gta':
+        if model.get('author_model') != 'deepseek_r1':
+            raise ValueError('GTA initially supports the published deepseek_r1 target profile only.')
+        if isinstance(config['rounds'], bool) or not isinstance(config['rounds'], int):
+            raise ValueError('GTA rounds must match the author CLI integer argument.')
+
 
 AUTHOR_UTILS = Path(__file__).resolve().parent / 'utils'
 
@@ -88,7 +100,8 @@ class OpenRouterAuthorClient:
     """Bind author client interfaces to one SDK client and retain per-example traces."""
 
     def __init__(self, client, model, judge):
-        self.client, self.model, self.judge = client, model, judge
+        self.client = client
+        self.routes = {'target': model, 'judge': judge}
         self.requests, self.durations = [], []
         self.index, self.phase = -1, 'target'
 
@@ -101,8 +114,12 @@ class OpenRouterAuthorClient:
         return self
 
     def create(self, **kwargs):
-        route = self.model if self.phase == 'target' else self.judge
-        record = {'example': self.index, 'role': self.phase, 'endpoint': str(self.client.base_url),
+        return self.create_for(self.phase, **kwargs)
+
+    def create_for(self, role, **kwargs):
+        # Explicit roles allow multi-agent attacks to interleave target/attacker/judge calls.
+        route = self.routes[role]
+        record = {'example': self.index, 'role': role, 'endpoint': str(self.client.base_url),
                   'request': copy.deepcopy(kwargs)}
         self.requests[self.index].append(record)
 
@@ -141,6 +158,78 @@ class OpenRouterAuthorClient:
             started = time.perf_counter()
             yield value
             self.durations.append(time.perf_counter() - started)
+
+
+
+def _execute_gta(transport, config, questions, sleep):
+    import re
+
+    prompts = load_symbols('gta/gta_prompts.py', ['model_a_background_base', 'model_b_background_base',
+                                               'model_c_background_base', 'judge_system_prompt'], {})
+    transport.routes.update(Police=config['attacker'], Thomas=transport.routes['target'],
+                            Marcos=transport.routes['target'], Judge=config['judge'])
+    clock = SimpleNamespace(sleep=sleep or time.sleep)
+    records = []
+    for goal in transport.examples(questions):
+        agents, calls, judgements = {}, [], []
+
+        def agent_class(role, filename, name):
+            # Bind the unchanged models.chat per role, including DeepSeek processing and invalid fallback.
+            sdk = SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(
+                create=lambda **kwargs: transport.create_for(role, **kwargs))))
+            original_chat = load_symbols('gta/gta_models.py', ['chat'], {
+                'client_gpt': sdk, 'client_azure': sdk,
+            })['chat']
+
+            def chat(model, messages, temperature=0.1):
+                call = {'role': role, 'model': model, 'messages': copy.deepcopy(messages), 'temperature': temperature}
+                calls.append(call)
+                try:
+                    call['response'] = original_chat(model, messages, temperature)
+                    return call['response']
+                except Exception as error:
+                    call['error_type'] = type(error).__name__
+                    raise
+
+            base = load_symbols('gta/base_agent.py', ['BaseAgent'], {'chat': chat})['BaseAgent']
+            return load_symbols('gta/' + filename, [name], {
+                'BaseAgent': base, 're': re, 'time': clock, 'chat': chat,
+            })[name]
+
+        def capture_agent(cls, **kwargs):
+            instance = cls(**kwargs)
+            agents[kwargs['role_name']] = instance
+            return instance
+
+        police = agent_class('Police', 'attack_agent.py', 'AttackAgent')
+        thomas = agent_class('Thomas', 'target_agent.py', 'TargetAgent')
+        marcos = agent_class('Marcos', 'target_agent.py', 'TargetAgent')
+        judge = agent_class('Judge', 'judge_agent.py', 'JudgeAgent')
+
+        class RecordingJudge(judge):
+            def judge(self, response):
+                # Capture the author's returned rating; never parse or recompute it here.
+                rating, analysis = super().judge(response)
+                judgements.append({'role': 'Thomas' if len(judgements) % 2 == 0 else 'Marcos',
+                                   'round': len(judgements) // 2 + 1, 'response': response,
+                                   'rating': rating, 'analysis': analysis,
+                                   'request_end': len(transport.requests[transport.index])})
+                return rating, analysis
+
+        def save(conversation, num, output_dir):
+            records.append({'id': num, 'conversation': copy.deepcopy(conversation),
+                            'judgements': judgements, 'calls': calls,
+                            'histories': {role: copy.deepcopy(agent.message_memory) for role, agent in agents.items()}})
+
+        driver = load_symbols('gta/gta_driver.py', ['ours_attack'], {
+            **prompts, 'os': SimpleNamespace(makedirs=lambda *args, **kwargs: None), 'save_conversation': save,
+            'AttackAgent': lambda **kwargs: capture_agent(police, **kwargs),
+            'TargetAgent': lambda **kwargs: capture_agent(thomas if kwargs['role_name'] == 'Thomas' else marcos, **kwargs),
+            'JudgeAgent': lambda **kwargs: capture_agent(RecordingJudge, **kwargs),
+        })['ours_attack']
+        driver(rounds=config['rounds'], prompt=goal, num=transport.index,
+               target_model_1='deepseek_r1', target_model_2='deepseek_r1', attack_model='gpt-4o-mini', output_dir='')
+    return records
 
 
 def execute(method, model, config, dataset, *, client, sleep=None):
@@ -195,6 +284,9 @@ def execute(method, model, config, dataset, *, client, sleep=None):
             author = driver(questions=transport.examples(questions), target_model=model['author_model'], text=config['variant'])
             author.filecheck = lambda: None
             author.gernerate()
+
+        elif method == 'gta':
+            records = _execute_gta(transport, config, questions, sleep)
     except Exception as error:
         error.author_requests = [request for trace in transport.requests for request in trace]
         raise

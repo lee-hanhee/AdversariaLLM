@@ -12,18 +12,21 @@ from adversariallm.attacks.author_adapter import AuthorRunResult, AuthorStepResu
 from adversariallm.attacks.author_execution import validate_author_config
 from adversariallm.attacks.flip_attack import FlipAttack
 from adversariallm.attacks.equacode import EquaCodeAttack
+from adversariallm.attacks.gta import GTAAttack
 from adversariallm.defenses.api_target import APITarget
 from adversariallm.defenses.registry import validate_hosted_target
 from tests.author_test_utils import ROOT, author_payload
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_registry_and_yaml_retain_original_defaults(method):
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         overrides = ['hydra/launcher=basic', f'models={method}_author', f'model={method}_author',
                      f'attack={method}']
         overrides += [f'models.{method}_author.id=test/target', f'models.{method}_author.provider=target-provider',
                       f'attacks.{method}.judge.id=test/judge', f'attacks.{method}.judge.provider=judge-provider']
+        if method == 'gta':
+            overrides += ['attacks.gta.attacker.id=test/attacker', 'attacks.gta.attacker.provider=attacker-provider']
         cfg = compose(config_name='config', overrides=overrides)
     settings, model = cfg.attacks[method], cfg.models[method + '_author']
     cls = Attack.from_name(method)
@@ -33,11 +36,13 @@ def test_registry_and_yaml_retain_original_defaults(method):
         assert model.author_model == 'gpt-4-0613' and model.id == 'test/target'
         assert settings.retry_time == 1000 and settings.failed_sleep_time == settings.round_sleep_time == 1
         assert settings.max_token == -1 and settings.evaluate is False
-    else:
+    elif method == 'equacode':
         assert model.author_model == 'gpt-3.5-turbo' and settings.judge_model == 'GPT-4'
+    elif method == 'gta':
+        assert model.author_model == 'deepseek_r1' and settings.rounds == 5
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 @pytest.mark.parametrize('role,field', [('target', 'id'), ('target', 'provider'), ('judge', 'id'), ('judge', 'provider')])
 def test_all_routes_require_explicit_model_and_provider(method, role, field):
     payload = author_payload(method)
@@ -46,7 +51,7 @@ def test_all_routes_require_explicit_model_and_provider(method, role, field):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 @pytest.mark.parametrize('change', ['openrouter', 'model', 'provider', 'seed', 'generation_config'])
 def test_substitutions_and_generic_overrides_are_rejected(method, change):
     payload = author_payload(method)
@@ -64,11 +69,11 @@ def test_substitutions_and_generic_overrides_are_rejected(method, change):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_no_global_rng_seed_is_applied(monkeypatch, method):
     monkeypatch.setattr('transformers.set_seed', lambda value: pytest.fail('Author adapters must not seed RNG'))
     payload = author_payload(method)
-    cls = FlipAttack if method == 'flip_attack' else EquaCodeAttack
+    cls = {'flip_attack': FlipAttack, 'equacode': EquaCodeAttack, 'gta': GTAAttack}[method]
     cls(payload['config'])
 
 
@@ -134,11 +139,13 @@ def test_runner_uses_author_target_without_loading_weights(monkeypatch):
     assert logged[0][1] is results
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credentials(monkeypatch, method):
     import httpx
     from openai import OpenAI
     payload = author_payload(method)
+    if method == 'gta':
+        payload['config']['rounds'] = 1
     wire = []
     monkeypatch.setenv('OPENROUTER_API_KEY', 'test-openrouter-key')
     for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
@@ -151,14 +158,18 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
         wire.append(body)
         assert request.url.host == 'openrouter.ai'
         assert request.headers['authorization'] == 'Bearer test-openrouter-key'
-        text = '  A benign answer.\n' if len(wire) == 1 else 'Rating: [[7]]'
+        if method == 'gta':
+            text = ['<think>Plan.</think><response>Explain rainbows.</response>',
+                    '<think>Reason.</think>  A benign answer.\n', 'Rating: [[7]]'][(len(wire) - 1) % 3]
+        else:
+            text = '  A benign answer.\n' if len(wire) == 1 else 'Rating: [[7]]'
         return httpx.Response(200, json={'id': 'test', 'object': 'chat.completion', 'created': 0,
             'model': body['model'], 'choices': [{'index': 0, 'message': {'role': 'assistant', 'content': text},
             'finish_reason': 'stop'}]}, request=request)
 
     with httpx.Client(transport=httpx.MockTransport(http)) as transport:
         client = OpenAI(api_key='test-openrouter-key', base_url='https://openrouter.ai/api/v1', http_client=transport)
-        cls = FlipAttack if method == 'flip_attack' else EquaCodeAttack
+        cls = {'flip_attack': FlipAttack, 'equacode': EquaCodeAttack, 'gta': GTAAttack}[method]
         result = cls(payload['config']).run(hosted_target(payload, client), payload['dataset'])
     # All entry points retain full run evidence and serialize through repository dataclasses.
     run = result.runs[0]
@@ -169,22 +180,30 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
     serialized = asdict(result)['runs'][0]
     assert serialized['author_result'] == run.author_result
     assert serialized['author_requests'] == run.author_requests
-    assert run.author_result == run.steps[0].author_result
-    assert run.author_requests == run.steps[0].author_requests
-    assert run.steps[0].time_taken == run.total_time
+    if method in ('flip_attack', 'equacode'):
+        assert run.author_result == run.steps[0].author_result
+        assert run.author_requests == run.steps[0].author_requests
+        assert run.steps[0].time_taken == run.total_time
 
     assert result.runs[0].steps[0].model_completions == [
         'A benign answer.' if method == 'flip_attack' else '  A benign answer.\n']
-    assert [body['model'] for body in wire] == (['test/target'] if method == 'flip_attack' else ['test/target', 'test/judge'])
+    expected = (['test/target'] if method == 'flip_attack' else
+                ['test/target', 'test/judge'] if method == 'equacode' else
+                ['test/attacker', 'test/target', 'test/judge'] * 2)
+    assert [body['model'] for body in wire] == expected
+    if method == 'gta':
+        assert len(result.runs[0].steps) == 2
+        assert result.runs[0].steps[0].scores == {'gta_author': {'rating': [7.0]}}
+        assert result.runs[0].author_result['conversation'][0][0] == 'Thomas Background'
     if method == 'equacode':
         assert result.runs[0].steps[0].author_result['evaluation'] == 'Rating: [[7]]'
         assert result.runs[0].steps[0].scores == {}
     for body in wire:
-        role = 'target' if body['model'] == 'test/target' else 'judge'
+        role = body['model'].split('/')[-1]
         assert body['provider'] == {'only': [role + '-provider'], 'allow_fallbacks': False, 'require_parameters': True}
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_collection_rejects_provider_substitution_before_dataset_access(monkeypatch, method):
     import run_attacks
     payload = author_payload(method)
@@ -198,7 +217,7 @@ def test_collection_rejects_provider_substitution_before_dataset_access(monkeypa
         run_attacks.collect_configs(cfg)
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_defaults_match_independent_author_files(method):
     import ast
     from adversariallm.attacks.author_execution import FLIP_MODELS
@@ -215,27 +234,39 @@ def test_defaults_match_independent_author_files(method):
             assert getattr(defaults, field) == arguments['--' + field]['default']
         assert defaults.judge_model == arguments['--judge_llm']['default']
         assert set(FLIP_MODELS) == set(arguments['--victim_llm']['choices'])
-    else:
+    elif method == 'equacode':
         from adversariallm.attacks.equacode import EquaCodeConfig
         values = {node.targets[0].id: ast.literal_eval(node.value)
                   for node in ast.parse((base / 'config.py').read_bytes()).body if isinstance(node, ast.Assign)}
         assert EquaCodeConfig().judge_model == values['assessmodel']
         assert values['base_url'] == values['assess_base_url'] == ''
+    elif method == 'gta':
+        from adversariallm.attacks.gta import GTAConfig
+        tree = ast.parse((base / 'utils.py').read_bytes())
+        driver = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == 'ours_attack')
+        assert GTAConfig().rounds == ast.literal_eval(driver.args.defaults[0])
+        script = (base / 'run_attacks.sh').read_text()
+        assert '--target1 deepseek_r1 --target2 deepseek_r1 --attacker gpt-4o-mini' in script
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_sdk_transient_retry_serialization_and_delay_match_original_baselines(method):
     from tests.author_test_utils import compare_author
     payload = author_payload(method)
     payload['replies'] = [{'status': 500}, {'text': 'Answer.'}]
     if method == 'equacode':
         payload['replies'].append({'text': 'Rating: [[1]]'})
+    elif method == 'gta':
+        from tests.test_attacks.test_gta import round_replies
+        payload['config']['rounds'] = 1
+        payload['replies'] = [{'status': 500}, *round_replies()]
     _, result = compare_author(payload)
     assert len(result['sdk_sleeps']) == 1
-    assert len(result['wire']) == (2 if method == 'flip_attack' else 3)
+    assert len(result['wire']) == {'flip_attack': 2, 'equacode': 3, 'gta': 7}[method]
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_unknown_settings_are_not_silently_ignored(method):
     payload = author_payload(method)
     payload['config']['unknown_override'] = True
@@ -243,7 +274,7 @@ def test_unknown_settings_are_not_silently_ignored(method):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_custom_endpoints_cannot_redirect_author_requests(method):
     payload = author_payload(method)
     payload['model']['base_url'] = 'https://api.openai.com/v1'
@@ -251,7 +282,46 @@ def test_custom_endpoints_cannot_redirect_author_requests(method):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode'])
+
+@pytest.mark.parametrize('field', ['id', 'provider'])
+def test_gta_requires_explicit_attacker_routing(field):
+    payload = author_payload('gta')
+    payload['config']['attacker'][field] = None
+    with pytest.raises(ValueError, match='attacker requires an explicit OpenRouter'):
+        validate_author_config('gta', payload['model'], payload['config'])
+
+
+@pytest.mark.parametrize('value', [True, '5', 1.5])
+def test_gta_rounds_match_author_cli_integer_type(value):
+    payload = author_payload('gta', rounds=value)
+    with pytest.raises(ValueError, match='integer'):
+        validate_author_config('gta', payload['model'], payload['config'])
+
+
+def test_gta_preserves_caught_none_response_without_inventing_a_refusal(monkeypatch):
+    payload = author_payload('gta')
+    record = {'conversation': [['Thomas', None]], 'judgements': [
+        {'role': 'Thomas', 'round': 1, 'response': None, 'rating': -1, 'analysis': '', 'request_end': 1}]}
+    result = {'records': [record], 'requests': [[{'role': 'Thomas', 'request': {'messages': []},
+                                               'error_type': 'NotFoundError'}]],
+              'durations': [1.0], 'author_summary': {}, 'environment': {}}
+    monkeypatch.setattr('adversariallm.attacks.author_adapter.execute', lambda *args, **kwargs: result)
+    output = GTAAttack(payload['config']).run(hosted_target(payload), payload['dataset'])
+    assert output.runs[0].author_result['judgements'][0]['response'] is None
+    assert output.runs[0].steps[0].model_completions == []
+    assert output.runs[0].steps[0].scores == {'gta_author': {'rating': [-1.0]}}
+
+
+def test_gta_background_only_results_remain_available_without_target_steps(monkeypatch):
+    payload = author_payload('gta', rounds=0)
+    record = {'conversation': [['Thomas Background', 'Original']], 'judgements': []}
+    result = {'records': [record], 'requests': [[]], 'durations': [0.0], 'author_summary': {}, 'environment': {}}
+    monkeypatch.setattr('adversariallm.attacks.author_adapter.execute', lambda *args, **kwargs: result)
+    output = GTAAttack(payload['config']).run(hosted_target(payload), payload['dataset'])
+    assert output.runs[0].steps == [] and output.runs[0].author_result == record
+
+
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta'])
 def test_shared_entry_point_rejects_non_hosted_targets_before_execution(monkeypatch, method):
     payload = author_payload(method)
     monkeypatch.setattr('adversariallm.attacks.author_adapter.execute',

@@ -1,0 +1,14 @@
+--- reference/agent/base_agent.py
++++ adversariallm/attacks/utils/gta/base_agent.py
+@@ -1,3 +1,11 @@
++"""Preserved GTA author source; attribution docstring added for repository integration.
++
++Source: https://github.com/Vincent-HKUSTGZ/Jailbreaking-LLMs-via-the-Game-Theory-Scenarios
++Revision: 9eccd19e6f35ebef5202aba8c0ba29b8f937746b
++License: Apache-2.0; see verification/gta/LICENSE.
++Original source and extraction diffs: verification/gta/.
++"""
++
+ from models import chat
+ 
+ class BaseAgent:

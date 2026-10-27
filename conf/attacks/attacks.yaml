@@ -226,6 +226,18 @@ flip_attack:
   judge:
     id: ???  # Required even when evaluate=false, so enabling it never selects a model silently.
     provider: ???
+gta:
+  name: gta
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  rounds: 5
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
 gcg:
   name: gcg
   type: discrete

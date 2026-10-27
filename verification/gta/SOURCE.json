@@ -1,0 +1,372 @@
+{
+  "method": "GTA",
+  "repository": "https://github.com/Vincent-HKUSTGZ/Jailbreaking-LLMs-via-the-Game-Theory-Scenarios",
+  "paper": "To Survive, I Must Defect: Jailbreaking LLMs via Game-Theoretic Scenarios",
+  "revision": "9eccd19e6f35ebef5202aba8c0ba29b8f937746b",
+  "verified_on": "2026-10-27",
+  "verification": "Independent official clone; git show pinned revision for every reference.",
+  "attribution": "GTA authors; official Vincent-HKUSTGZ repository.",
+  "license": {
+    "status": "Apache-2.0 at the pinned revision",
+    "path": "verification/gta/LICENSE",
+    "notice": "No separate NOTICE file is present in the pinned repository tree."
+  },
+  "files": [
+    {
+      "original_path": "prompts.py",
+      "reference": {
+        "path": "verification/gta/reference/prompts.py",
+        "sha256": "938813dcd90e195a8ccef8cf4a5846ab0a534935ee15e52dc85c129516a32804"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/gta/gta_prompts.py",
+          "sha256": "e55c2f42d368ae3f510786ce205331534a7067efbb08433a31e4e9705325f586",
+          "extraction": "Prepend attribution docstring only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "reference_label": "reference/prompts.py",
+            "diff_path": "verification/gta/diffs/gta_prompts.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "models.py",
+      "reference": {
+        "path": "verification/gta/reference/models.py",
+        "sha256": "f7f7a613571e61364742324cbae5a75b4fe4f4858acd9285a5eccff7acf41048"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/gta/gta_models.py",
+          "sha256": "9309a4ce47a0e0119e680e3f5e4f00358af18bdc6947fcc8763a9900d45178ff",
+          "extraction": "Prepend attribution docstring only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "reference_label": "reference/models.py",
+            "diff_path": "verification/gta/diffs/gta_models.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "utils.py",
+      "reference": {
+        "path": "verification/gta/reference/utils.py",
+        "sha256": "3b4705f672809251eeb776b41fa9ee7147370c91b820a93dca78f4b826dd5bb6"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/gta/gta_driver.py",
+          "sha256": "4f62f891d5114aeec35509ff3efcd146c6f0da89230ed998bc05d9497992efa2",
+          "extraction": "Prepend attribution docstring only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "reference_label": "reference/utils.py",
+            "diff_path": "verification/gta/diffs/gta_driver.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "agent/base_agent.py",
+      "reference": {
+        "path": "verification/gta/reference/agent/base_agent.py",
+        "sha256": "7051cf269b30edd87a863330e8d2bb465b7b52db9ddf911a9623b192016944d2"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/gta/base_agent.py",
+          "sha256": "284b01d9e1fbc82ab41e559fa700d91189fce6482ce52b91f76f9b87e139bed5",
+          "extraction": "Prepend attribution docstring only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "reference_label": "reference/agent/base_agent.py",
+            "diff_path": "verification/gta/diffs/base_agent.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "agent/attack_agent.py",
+      "reference": {
+        "path": "verification/gta/reference/agent/attack_agent.py",
+        "sha256": "fa5ec15c99cce075a28d7312daaa68684fe37a4649d45d82063905cd3b80430d"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/gta/attack_agent.py",
+          "sha256": "72e896bf1d26ebb8698befe3d60ca31d8e2a9bcf503599a0ffe6772e83851bde",
+          "extraction": "Prepend attribution docstring only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "reference_label": "reference/agent/attack_agent.py",
+            "diff_path": "verification/gta/diffs/attack_agent.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "agent/target_agent.py",
+      "reference": {
+        "path": "verification/gta/reference/agent/target_agent.py",
+        "sha256": "cb26a9d839a9886b093e8582f746e9eea0df232db4025c965ec48b5c7a0bbf52"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/gta/target_agent.py",
+          "sha256": "42cd7aff365d7e28ffeb767e16d65458fc4a62621b4b36e22e3a45db1f2a17c0",
+          "extraction": "Prepend attribution docstring only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "reference_label": "reference/agent/target_agent.py",
+            "diff_path": "verification/gta/diffs/target_agent.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "agent/judge_agent.py",
+      "reference": {
+        "path": "verification/gta/reference/agent/judge_agent.py",
+        "sha256": "d31024cb143cc9a4d2e199a282ed218ecd3a077431785204bd00e49312910350"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/gta/judge_agent.py",
+          "sha256": "27138409deeb7cc91456357a20ff98f39adcb7ab29f0715a3bd0536d31962b45",
+          "extraction": "Prepend attribution docstring only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "reference_label": "reference/agent/judge_agent.py",
+            "diff_path": "verification/gta/diffs/judge_agent.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "agent/__init__.py",
+      "reference": {
+        "path": "verification/gta/reference/agent/__init__.py",
+        "sha256": "77111ae7f9f8bcd494d7ffccfcb8957edd2ecaafb5ea8a7af3f92f7215554832"
+      }
+    },
+    {
+      "original_path": "helpers.py",
+      "reference": {
+        "path": "verification/gta/reference/helpers.py",
+        "sha256": "f1e77a905eea38133de6f5b107b8aed6bae6e7aa9ff3f96a0b4c695726d3b52a"
+      }
+    },
+    {
+      "original_path": "jailbreak.py",
+      "reference": {
+        "path": "verification/gta/reference/jailbreak.py",
+        "sha256": "43061e39a3076838278d2707e08abfce67b9d81e0428276fb4f4aa78fa9a0371"
+      }
+    },
+    {
+      "original_path": "run_attacks.sh",
+      "reference": {
+        "path": "verification/gta/reference/run_attacks.sh",
+        "sha256": "b7b7c6ba35afc859376293b9c498f31bea951018a5ab351440b2f63c8a207118"
+      }
+    },
+    {
+      "original_path": "requirements.txt",
+      "reference": {
+        "path": "verification/gta/reference/requirements.txt",
+        "sha256": "410883862b055f9146dd0f94a5d361b1cbf6a9cdd2926874e60e73acc1523b73"
+      }
+    },
+    {
+      "original_path": "README.md",
+      "reference": {
+        "path": "verification/gta/reference/README.md",
+        "sha256": "0474a126377c3b5f5287f594d00040b7c838b84416e840fa4cd137506dec59aa"
+      }
+    },
+    {
+      "original_path": "eval.py",
+      "reference": {
+        "path": "verification/gta/reference/eval.py",
+        "sha256": "0a6a2f1fe2747f7a533f9f03e2ea1d5e55692bee53ee728aa74ad63651c97b3e"
+      }
+    },
+    {
+      "original_path": "LICENSE",
+      "reference": {
+        "path": "verification/gta/LICENSE",
+        "sha256": "c71d239df91726fc519c6eb72d318ec65820627232b2f796219e87dcf35d0ab4"
+      }
+    }
+  ],
+  "repository_history": {
+    "repository": "AdversariaLLM",
+    "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+    "contribution_base_revision": "57493015c3ed95236b8005fb47409a9a4fb5b654",
+    "description": "PR 04 builds on PR 03. The official author revision is the top-level revision field."
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/gta.py",
+        "purpose": "Attack entry point with five-round author default and required attacker/judge routes."
+      },
+      {
+        "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Bind unchanged author agents, models.chat, and ours_attack to explicit roles, OpenRouter, and result capture."
+      },
+      {
+        "path": "adversariallm/attacks/author_adapter.py",
+        "purpose": "Shared AuthorAttack entry point, AuthorRunResult per example, and AuthorStepResult per target turn for all author attacks. Explicit attack branches map original outputs; shared step construction retains metadata, records, and request traces."
+      }
+    ],
+    "preserved_behavior": [
+      "Original ours_attack function, prompts, agent definitions, and published DeepSeek-R1 target / GPT-4o-mini attacker / GPT-4o judge source profiles.",
+      "Thomas and Marcos have separate histories while sharing one configured target model/provider. The Police alternates between them and sees the author literal Thomas placeholders.",
+      "Five rounds by default. No success-based early stopping, even after a rating of 10. Police format parsing retries up to three times and retains its final raw fallback.",
+      "Original temperatures: 0.3 for Police/targets and 0.0 for the judge. No added generation cap or RNG seed.",
+      "Original DeepSeek think removal and caught API errors returning None. Original judge parsing, memory clearing, and unsupported gpt-4o_u fallback with three two-second sleeps and final -1.",
+      "Original background/log ordering, messages, final per-agent histories, and returned judge values. Zero/negative integer rounds preserve background-only logs."
+    ],
+    "changes": [
+      {
+        "area": "models_and_providers",
+        "author": "Published shell script selects DeepSeek-R1 targets and GPT-4o-mini attacker; the driver selects GPT-4o judge. GPT paths use Azure and DeepSeek uses an OpenAI-compatible client.",
+        "repository": "Explicit OpenRouter target, attacker, and judge IDs/providers replace endpoints and routing IDs. Both suspect roles share the target route, with independent histories.",
+        "reason": "Use the hosted backend while retaining source model labels and models.chat behavior. Other author model paths are unsupported in this PR."
+      },
+      {
+        "area": "dependencies",
+        "author": "openai>=1.0.0, plus optional vendor/native-model dependencies. No exact OpenAI SDK version is pinned.",
+        "repository": "Reuse OpenAI 1.109.1, which satisfies the declared range. The independent reference uses native Azure/OpenAI serializers from that SDK. Native/Gemini/Claude dependencies are not imported.",
+        "reason": "Keep the published run-script profiles usable in the shared hosted environment; no historical environment reconstruction is claimed."
+      },
+      {
+        "area": "request_transport",
+        "author": "Agents call models.chat; its GPT paths call Azure clients and DeepSeek calls client_gpt.",
+        "repository": "Compile the original chat function separately per role and bind its existing SDK globals to OpenRouter clients. Add provider.only, allow_fallbacks=false, and require_parameters=true. Unsupported fallback names remain unsupported and issue no API request.",
+        "reason": "Replace only the transport boundary while preserving model-specific response/error handling."
+      },
+      {
+        "area": "data_and_storage",
+        "author": "CLI CSV loading and helpers.save_conversation write timestamped CSV, Markdown and JSON files.",
+        "repository": "Repository datasets replace CSV loading. File/directory callbacks capture the original log in memory and repository logging stores it with original histories and API traces.",
+        "reason": "Integrate with existing experiment storage without changing the conversation sequence."
+      },
+      {
+        "area": "configuration",
+        "author": "CLI target1/target2 may differ; script selects the same DeepSeek-R1 target for both. The script includes --attack but jailbreak.py defines no such flag.",
+        "repository": "Use the confirmed shared target configuration and fixed published source profiles. Require separate explicit attacker/judge routes. Invoke the original ours_attack function directly, preserving integer rounds without adding a positive-only constraint.",
+        "reason": "Follow the agreed initial hosted scope and avoid executing the standalone CLI defect or credential initialization."
+      },
+      {
+        "area": "reporting",
+        "author": "jailbreak.py imports the separate eval.py after running attacks; that file also loads a local guard and evaluates hardcoded directories.",
+        "repository": "Preserve in-attack JudgeAgent behavior only. Exclude separate post-run evaluation, extra game scenarios, and score-only ablation. Retain None outputs in original records and expose absent completions as empty lists rather than refusals.",
+        "reason": "Keep the PR focused on the confirmed hosted attack flow. Per-example duration is measured; per-turn duration is not measured."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py gta --official-repo /path/to/official-clone",
+      "status": "passed",
+      "result": "Every reference matches the independently cloned pinned revision; all runtime copies add attribution docstrings only."
+    },
+    "behavior": {
+      "reference_execution": "Import complete original agent and utils modules with controlled models/prompts/helpers modules. Execute the original models.chat function with native Azure/OpenAI SDK clients and in-memory HTTP. Capture original logs, agent histories, logical chat calls, and returned judge tuples independently of our source loader and transport.",
+      "compared": [
+        "Prompt bytes, Unicode/whitespace and empty-goal interpolation",
+        "Role ordering, separate histories, cross-target feedback and Thomas placeholders",
+        "Native request fields, source temperatures and omitted caps",
+        "Police format retries and final raw fallback",
+        "Judge score parsing, memory clearing, invalid-model fallback and sleeps",
+        "DeepSeek think removal, SDK failures returning None, and absent repository completions",
+        "All configured rounds despite success scores; background-only runs",
+        "SDK retry request bodies and delays; original logs, histories, and per-turn records"
+      ],
+      "allowed_comparison_differences": [
+        "OpenRouter endpoints/authentication and model IDs",
+        "Explicit provider-routing fields",
+        "Repository input/output and timing metadata"
+      ],
+      "runs": [
+        {
+          "name": "gta_and_shared_binding",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_gta.py",
+          "passed": 79,
+          "skipped": 0
+        },
+        {
+          "name": "full_regression",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_gta.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 226,
+          "skipped": 0
+        },
+        {
+          "name": "gta_cleanup",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_gta.py",
+          "passed": 18,
+          "skipped": 0
+        },
+        {
+          "name": "shared_orchestration_refactor",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_gta.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 229,
+          "skipped": 0
+        },
+        {
+          "name": "post_stack_split",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_gta.py",
+          "passed": 82,
+          "skipped": 0
+        }
+      ],
+      "unique_tests_passed": 229,
+      "counting_note": "The 229-test full regression run preceded redistribution across the PR branches; the final Python implementation matches that tested version. After the split, PR 02 passed 147 full regression checks, PR 03 passed 186 full regression checks, and PR 04 passed 82 shared-binding/GTA checks. Runs overlap; the 229-test combined suite is counted once."
+    },
+    "environments": {
+      "repository_tests": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.28.1",
+          "torch": "2.2.2",
+          "transformers": "5.9.0"
+        }
+      },
+      "author_sdk_baseline": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.27.2"
+        },
+        "description": "Shared SDK satisfies the author openai>=1.0.0 constraint. The reference uses its native Azure/OpenAI clients; the adapter uses its OpenRouter client."
+      },
+      "shared_sdk_comparison": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.109.1",
+          "httpx": "0.27.2"
+        }
+      }
+    },
+    "execution_requirements": {
+      "guide": "docs/author_execution.md",
+      "note": "Set the baseline/shared test interpreter paths as described in the guide. Intel macOS tests also use the test-process-only Torch recompile_limit setup in docs/openrouter.md; API/model/database I/O is mocked."
+    },
+    "not_tested": [
+      "Live OpenRouter/model availability",
+      "Historical SDK environment",
+      "Claude/Gemini/native Llama/Qwen source paths",
+      "Separate post-run eval.py and local guard model",
+      "Extra scenarios and score-only ablation",
+      "MongoDB integration",
+      "Paper benchmarks"
+    ],
+    "limitations": "Source identity and scripted comparisons establish the declared code/behavior correspondence, not identical live outputs or paper-result reproduction."
+  }
+}

@@ -1,0 +1,5 @@
+gta_author:
+  backend: openrouter
+  id: ???  # Shared target route for Thomas and Marcos; histories stay separate.
+  provider: ???
+  author_model: deepseek_r1  # Published run-script source profile.
