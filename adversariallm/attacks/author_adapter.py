@@ -4,7 +4,8 @@ from dataclasses import asdict, dataclass, field, is_dataclass
 
 from omegaconf import OmegaConf
 
-from .attack import AttackResult, AttackStepResult, SingleAttackRunResult
+from ..defenses.api_target import APITarget
+from .attack import Attack, AttackResult, AttackStepResult, SingleAttackRunResult
 from .author_execution import execute
 
 
@@ -24,9 +25,40 @@ class AuthorStepResult(AttackStepResult):
 
 
 @dataclass
+class AuthorRunResult(SingleAttackRunResult):
+    """Keep the full author record even when a run produces no target steps."""
+
+    author_result: dict = field(default_factory=dict)
+    author_requests: list[dict] = field(default_factory=list)
+
+    def add_step(self, request, *, messages, completions, raw_completions,
+                 author_result, author_requests, scores=None, time_taken=0.0):
+        # Share repository bookkeeping; attack branches supply the original values.
+        self.steps.append(AuthorStepResult(
+            step=len(self.steps), model_input=messages,
+            model_completions=completions, model_completions_raw=raw_completions,
+            api_metadata=[request['metadata']] if 'metadata' in request else [],
+            scores=scores if scores is not None else {}, time_taken=time_taken,
+            author_result=author_result, author_requests=author_requests))
+
+
+@dataclass
 class AuthorAttackResult(AttackResult):
     author_summary: dict = field(default_factory=dict)
     author_environment: dict = field(default_factory=dict)
+
+
+class AuthorAttack(Attack):
+    """Shared repository entry point; subclasses select the preserved author driver."""
+
+    def __init__(self, config):
+        # The author drivers do not seed RNG, so bypass Attack.__init__.
+        self.config = normalize_config(config)
+
+    def run(self, target, dataset):
+        if not isinstance(target, APITarget):
+            raise ValueError(f'{self.AUTHOR_METHOD} requires the OpenRouter author-driver target.')
+        return run_author(self.AUTHOR_METHOD, target, self.config, dataset)
 
 
 def run_author(method, target, config, dataset):
@@ -41,26 +73,28 @@ def run_author(method, target, config, dataset):
     # Adapt source artifacts to the existing result and logging interface only.
     runs = []
     for original, record, trace, duration in zip(originals, result['records'], result['requests'], result['durations']):
-        target_request = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
-        scores = {}
+        run = AuthorRunResult(original_prompt=original, total_time=duration,
+                              author_result=record, author_requests=trace)
+
         if method == 'flip_attack':
-            messages = record['all_prompt']
-            response = record['output']
+            target_request = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
+            scores = {}
             if 'judge_score_gpt4' in record:
                 scores['flip_attack_author'] = {key: [float(record[key])] for key in (
                     'judge_success_dict', 'judge_score_gpt4', 'judge_success_gpt4')}
+            run.add_step(target_request, messages=record['all_prompt'],
+                         completions=[record['output']], raw_completions=[target_request['raw_text']],
+                         scores=scores, time_taken=duration, author_result=record, author_requests=trace)
 
         elif method == 'equacode':
-            messages = target_request['request']['messages']
-            response = record['response']
+            target_request = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
+            run.add_step(target_request, messages=target_request['request']['messages'],
+                         completions=[record['response']], raw_completions=[target_request['raw_text']],
+                         time_taken=duration, author_result=record, author_requests=trace)
 
         else:
             raise ValueError(f'Unknown author method: {method}')
 
-        step = AuthorStepResult(step=0, scores=scores, model_input=messages, model_completions=[response],
-                                model_completions_raw=[target_request['raw_text']],
-                                api_metadata=[target_request['metadata']], time_taken=duration,
-                                author_result=record, author_requests=trace)
-        runs.append(SingleAttackRunResult(original_prompt=original, steps=[step], total_time=duration))
+        runs.append(run)
     return AuthorAttackResult(runs=runs, author_summary=result['author_summary'],
                               author_environment=result['environment'])

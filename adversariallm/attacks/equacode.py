@@ -2,9 +2,7 @@
 
 from dataclasses import dataclass, field
 
-from ..defenses.api_target import APITarget
-from .author_adapter import normalize_config, run_author
-from .attack import Attack
+from .author_adapter import AuthorAttack
 
 
 @dataclass
@@ -21,15 +19,5 @@ class EquaCodeConfig:
     judge: dict = field(default_factory=lambda: {'id': None, 'provider': None})
 
 
-class EquaCodeAttack(Attack):
+class EquaCodeAttack(AuthorAttack):
     AUTHOR_METHOD = 'equacode'
-
-    def __init__(self, config):
-        # Keep the original unseeded behavior rather than invoking Attack.__init__.
-        self.config = normalize_config(config)
-
-    def run(self, target, dataset):
-        # The unchanged driver owns target and judge control flow; transport uses OpenRouter.
-        if not isinstance(target, APITarget):
-            raise ValueError('EquaCode requires the OpenRouter author-driver target.')
-        return run_author(self.AUTHOR_METHOD, target, self.config, dataset)

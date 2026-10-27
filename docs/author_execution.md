@@ -55,7 +55,15 @@ retry behavior. No additional application retry layer is added.
 | Integration | Repository datasets and results replace CSV loading, spreadsheet output, and CLI reporting. No RNG seed or generic generation overrides are introduced. |
 
 The adapter runs directly in the runner and reuses the existing `APITarget` SDK
-client. `OpenRouterAuthorClient` keeps routing and request traces together; the
+client. All author entry points inherit `AuthorAttack`, which handles configuration
+and hosted-target checks without adding RNG seeding. Results share one hierarchy:
+`AuthorAttackResult` contains an `AuthorRunResult` per dataset example, with
+`AuthorStepResult` entries for individual target turns. Both runs and steps retain
+`author_result` and `author_requests`; a run keeps the complete record even when
+it has no steps. Explicit attack branches select the values, and shared step
+construction handles repository metadata and indexing.
+
+`OpenRouterAuthorClient` keeps routing and request traces together; the
 adapter converts original author records into repository results once. No extra
 client is constructed during author execution. Original
 post-loop reporting is outside the binding: FlipAttack's standalone reporting

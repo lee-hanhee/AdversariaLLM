@@ -92,8 +92,8 @@
   "repository_history": {
     "repository": "AdversariaLLM",
     "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
-    "contribution_base_revision": "60d836840ada86ea0303fa07b9471fdd91df9c2a",
-    "description": "PR 03 builds on the pushed PR 02 implementation. The official author revision is the top-level revision field."
+    "contribution_base_revision": "f19efb7abecaf2bb1710183012c3c5dbb21ec19c",
+    "description": "PR 03 merges the updated PR 02 shared orchestration without rewriting the existing contribution history. The official author revision is the top-level revision field."
   },
   "integration": {
     "files": [
@@ -107,7 +107,7 @@
       },
       {
         "path": "adversariallm/attacks/author_adapter.py",
-        "purpose": "Convert original records directly into repository results, retaining raw judge text."
+        "purpose": "Shared AuthorAttack entry point and AuthorRunResult per example, with AuthorStepResult entries for target turns. Explicit attack branches map original outputs; shared step construction retains metadata, records, and request traces."
       }
     ],
     "preserved_behavior": [
@@ -169,7 +169,8 @@
         "Raw replies, including empty strings",
         "Mandatory judging, case sensitivity, and six-call parse retry limit",
         "SDK errors/retries and empty-choice failure behavior",
-        "Example order, row numbers, original records, and per-example traces"
+        "Example order, row numbers, original records, and per-example traces",
+        "Shared repository result types, serialized run evidence, step numbering, and timing"
       ],
       "allowed_comparison_differences": [
         "OpenRouter endpoint and model IDs",
@@ -193,10 +194,16 @@
           "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_equacode.py tests/test_source_verification.py",
           "passed": 76,
           "skipped": 0
+        },
+        {
+          "name": "shared_orchestration_refactor",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 186,
+          "skipped": 0
         }
       ],
-      "unique_tests_passed": 184,
-      "counting_note": "The focused runs overlap the 184-check full regression run. The 76-check follow-up verifies the utils move and latest shared integration; tests are counted once."
+      "unique_tests_passed": 186,
+      "counting_note": "The latest full regression run verifies this branch after the shared orchestration refactor, including serialized run evidence and non-hosted-target rejection. Earlier runs overlap and are not added to this count."
     },
     "environments": {
       "repository_tests": {
