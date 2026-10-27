@@ -27,8 +27,11 @@ class FlipAttackConfig:
     # Match the optional --eval switch and the original judge-model default.
     evaluate: bool = False
     judge_model: str = 'gpt-4-0613'
+
+    # Require an explicit OpenRouter model and provider for the author judge.
     judge: dict = field(default_factory=lambda: {'id': None, 'provider': None})
 
 
 class FlipAttack(AuthorAttack):
+    # Select the driver handled by the shared author entry point.
     AUTHOR_METHOD = 'flip_attack'

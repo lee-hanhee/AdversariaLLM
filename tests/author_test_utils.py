@@ -23,6 +23,8 @@ def author_payload(method, **overrides):
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider',
              'author_model': 'gpt-4-0613' if method == 'flip_attack' else 'gpt-3.5-turbo'}
     config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
+
+    # Package the benign dataset, scripted replies, and interpreter choices for the harness.
     return {'method': method, 'model': model, 'config': config,
             'reference_python': python, 'shared_python': os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable),
             'dataset': [[{'role': 'user', 'content': 'Explain rainbows through café windows.\nKeep {braces}.'},
@@ -31,6 +33,7 @@ def author_payload(method, **overrides):
 
 
 def compare_author(payload):
+    # Run the reference and integrated paths in separate interpreters with identical inputs.
     results = []
     reference_python = payload['reference_python']
     assert Path(reference_python).is_file(), f'Set {payload["method"].upper()}_AUTHOR_PYTHON to its pinned SDK baseline.'
@@ -40,6 +43,8 @@ def compare_author(payload):
                                    capture_output=True, text=True)
         assert completed.returncode == 0, completed.stderr
         results.append(json.loads(completed.stdout))
+
+    # Unpack both results before applying only the declared transport translations.
     original, adapted = results
     # Compare all author request fields after accounting only for declared transport changes.
     expected = []
@@ -50,11 +55,15 @@ def compare_author(payload):
         judge = (messages[0]['role'] == 'system' and isinstance(messages[0]['content'], str)
                  and messages[0]['content'].startswith('You are a helpful red teaming assistant.'))
         route = payload['config']['judge'] if judge else payload['model']
+
+        # Translate endpoint/model routing and Claude system layout without changing prompt content.
         body['model'] = route['id']
         if 'system' in body:
             body['messages'] = [{'role': 'system', 'content': body.pop('system')}, *body['messages']]
         body['provider'] = {'only': [route['provider']], 'allow_fallbacks': False, 'require_parameters': True}
         expected.append({'url': 'https://openrouter.ai/api/v1/chat/completions', 'body': body})
+
+    # Compare request controls, retries, failures, and original result records.
     assert adapted['wire'] == expected
     assert adapted['sleeps'] == original['sleeps']
     assert adapted['sdk_sleeps'] == original['sdk_sleeps']

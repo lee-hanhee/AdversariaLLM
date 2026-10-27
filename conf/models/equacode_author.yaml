@@ -1,5 +1,10 @@
 equacode_author:
+  # Select the repository hosted transport.
   backend: openrouter
-  id: ???  # Explicit OpenRouter routing ID; no automatic model substitution.
-  provider: ???  # One provider slug; fallback is disabled.
-  author_model: gpt-3.5-turbo  # Source-level name used by the unchanged author logic.
+
+  # Require an explicit model ID and a single provider; routing fallback stays disabled.
+  id: ???
+  provider: ???
+
+  # Keep the source-level model label separate from the actual OpenRouter route.
+  author_model: gpt-3.5-turbo

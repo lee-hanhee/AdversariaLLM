@@ -19,6 +19,7 @@ def require(condition, message):
 
 
 def verify(manifest_path, official_repo=None):
+    # Track artifact identities across the complete source correspondence manifest.
     manifest = json.loads(Path(manifest_path).read_text())
     paths, originals = set(), set()
 
@@ -39,6 +40,8 @@ def verify(manifest_path, official_repo=None):
         reference = entry.get('reference')
         require(isinstance(reference, dict), f'Missing reference: {original_path}')
         original = read_artifact(reference)
+
+        # Compare bundled reference bytes with the independently fetched pinned Git object.
         if official_repo:
             official = subprocess.check_output([
                 'git', '-C', str(official_repo), 'show',
@@ -49,6 +52,8 @@ def verify(manifest_path, official_repo=None):
         for implementation in entry.get('implementations', []):
             local_path = implementation['path']
             runtime = read_artifact(implementation)
+
+            # Require an explicit extraction rule and reject unsupported transformations.
             rule = implementation.get('adaptation')
             require(isinstance(rule, dict) and 'diff_path' in rule,
                     f'Missing adaptation/diff: {local_path}')
@@ -99,9 +104,13 @@ if __name__ == '__main__':
     parser.add_argument('attack', nargs='?', help='Method directory; omit to check all bundled manifests')
     parser.add_argument('--official-repo', type=Path, help='Independent official clone for one selected method')
     args = parser.parse_args()
+
+    # An independent clone applies to one selected attack rather than every bundled package.
     if args.official_repo and not args.attack:
         parser.error('--official-repo requires a selected attack')
     manifests = [BASE / args.attack / 'SOURCE.json'] if args.attack else sorted(BASE.glob('*/SOURCE.json'))
+
+    # Fail explicitly when the requested verification scope has no source packages.
     if not manifests:
         parser.error('No source manifests found')
     try:

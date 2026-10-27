@@ -205,6 +205,8 @@ class GenerationResult:
     input_ids: Optional[list[list[int]]] = None
     raw_gen: Optional[list[list[str]]] = None
     defense_decisions: Optional[list[list[dict[str, Any]]]] = None
+
+    # Align hosted response metadata with the batch and sample dimensions of gen.
     api_metadata: Optional[list[list[dict[str, Any]]]] = None
 
     @property
@@ -489,6 +491,8 @@ class APITextGenerator(TextGenerator):
 
         self.default_generate_kwargs = default_generate_kwargs or {}
         self.retry_policy = RetryPolicy()
+
+        # Store hosted routing defaults and the strict error-handling policy.
         self.api_kwargs = api_kwargs or {}
         self.raise_on_error = raise_on_error
         self.last_response_metadata: dict[str, Any] = {}
@@ -512,6 +516,8 @@ class APITextGenerator(TextGenerator):
             return GenerationResult(gen=[], input_ids=[])
 
         effective_policy = self.retry_policy.merge(retry_overrides)
+
+        # Resolve caller retry overrides before building the API request.
         api_policy = effective_policy.api.merge(APIRetryOverrides(
             max_attempts=max_retries, sleep_seconds=retry_sleep, backoff=retry_backoff,
         ))
@@ -530,9 +536,12 @@ class APITextGenerator(TextGenerator):
 
         common_generate_args_dict = common_generate_args.to_api_args()
 
+        # Merge routing defaults with explicit generation controls and normalize Hydra values.
         params = {**self.api_kwargs, **common_generate_args_dict, **kwargs}
         if OmegaConf.is_config(params.get("extra_body")):
             params["extra_body"] = OmegaConf.to_container(params["extra_body"], resolve=True)
+
+        # Translate OpenRouter-specific parameters and keep the configured provider pin authoritative.
         is_openrouter = self.client is self.clients.get("openrouter")
         if is_openrouter:
             extra_body = {**self.api_kwargs.get("extra_body", {}), **params.get("extra_body", {})}
@@ -543,11 +552,15 @@ class APITextGenerator(TextGenerator):
                 extra_body["top_k"] = params.pop("top_k")
             if extra_body:
                 params["extra_body"] = extra_body
+
+        # Use OpenRouter's output-token field while preserving the requested limit.
         if is_openrouter and "max_completion_tokens" in params:
             params["max_tokens"] = params.pop("max_completion_tokens")
         # OpenRouter providers do not uniformly support n; sample with separate calls.
         samples = params.pop("n", 1) if is_openrouter else 1
         responses: list[list[str]] = []
+
+        # Keep request metadata aligned with each conversation and returned sample.
         metadata: list[list[dict[str, Any]]] = []
         for conv in convs:
             row, row_metadata = [], []
@@ -571,6 +584,7 @@ class APITextGenerator(TextGenerator):
         # Resolve the .env explicitly.
         load_dotenv(Path(__file__).resolve().parents[2] / ".env", override=False)
 
+        # Initialize OpenRouter only when its credentials are explicitly available.
         openrouter_api_key = _get_env_variable("OPENROUTER_API_KEY")
         if openrouter_api_key:
             self.clients["openrouter"] = OpenAI(
@@ -604,6 +618,8 @@ class APITextGenerator(TextGenerator):
 
     def _get_client(self, model_name: str) -> OpenAI:
         """Select appropriate client based on the given model name."""
+
+        # Honor an explicit client prefix before applying legacy model-name routing.
         provider, separator, api_model_name = model_name.partition("/")
         if separator and (provider in self.clients or provider == "openrouter"):
             if not api_model_name:
@@ -641,6 +657,7 @@ class APITextGenerator(TextGenerator):
 
         for attempt in range(1, attempts + 1):
             try:
+                # Capture usage and finish reasons even when a billed response contains no usable text.
                 self.last_response_metadata = {}
                 completion = self.client.chat.completions.create(model=self.model_name, messages=messages, **kwargs)
                 resp = [choice.message.content for choice in completion.choices]
@@ -652,6 +669,8 @@ class APITextGenerator(TextGenerator):
                     "usage": usage.model_dump() if usage is not None else None,
                     "finish_reasons": [choice.finish_reason for choice in completion.choices],
                 }
+
+                # Surface empty hosted responses without inventing an answer.
                 if self.raise_on_error and (not resp or any(not isinstance(text, str) or not text for text in resp)):
                     raise ValueError(f"API response has no text completion; finish reasons: {self.last_response_metadata['finish_reasons']}")
                 return resp
@@ -659,6 +678,8 @@ class APITextGenerator(TextGenerator):
                 logging.warning(
                     "API_CALL Error on attempt %d/%d for model %s: %s", attempt, attempts, self.model_name, e
                 )
+
+                # Preserve strict hosted failures while retaining the legacy retry/empty-result behavior.
                 if self.raise_on_error and isinstance(e, ValueError):
                     raise  # Retrying an empty billed completion does not fix its token budget.
                 if attempt == attempts:
@@ -674,6 +695,8 @@ class APITextGenerator(TextGenerator):
 
 def validate_generator_config(cfg) -> None:
     """Check a model backend before loading models or making requests."""
+
+    # Check backend selection before any model weights or API clients are initialized.
     backend = cfg.get("backend", "local")
     if backend not in {"local", "openrouter"}:
         raise ValueError(f"Unknown model backend: {backend}")
@@ -686,14 +709,20 @@ def validate_generator_config(cfg) -> None:
 
 def build_text_generator(cfg, *, default_generate_kwargs=None) -> TextGenerator:
     """Build a local or provider-pinned OpenRouter generator from model settings."""
+
+    # Build a provider-pinned hosted generator or retain the existing local loader path.
     validate_generator_config(cfg)
     if cfg.get("backend", "local") == "openrouter":
         extra_body = {"provider": {
             "only": [cfg["provider"]], "allow_fallbacks": False, "require_parameters": True,
         }}
+
+        # Forward reasoning controls only when the model configuration explicitly provides them.
         if cfg.get("reasoning") is not None:
             reasoning = cfg["reasoning"]
             extra_body["reasoning"] = OmegaConf.to_container(reasoning, resolve=True) if OmegaConf.is_config(reasoning) else reasoning
+
+        # Attach the routing defaults to the existing SDK generator and propagate failures.
         return APITextGenerator(
             f"openrouter/{cfg['id']}",
             default_generate_kwargs=default_generate_kwargs,

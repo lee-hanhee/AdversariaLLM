@@ -1,6 +1,7 @@
 """Map author execution into the repository's hosted target and result interfaces."""
 
 from dataclasses import asdict, dataclass, field, is_dataclass
+import random
 
 from omegaconf import OmegaConf
 
@@ -20,6 +21,7 @@ def normalize_config(config):
 
 @dataclass(kw_only=True)
 class AuthorStepResult(AttackStepResult):
+    # Keep the source step record and the calls that produced it.
     author_result: dict = field(default_factory=dict)
     author_requests: list[dict] = field(default_factory=list)
 
@@ -44,6 +46,7 @@ class AuthorRunResult(SingleAttackRunResult):
 
 @dataclass
 class AuthorAttackResult(AttackResult):
+    # Retain driver-wide counters and the SDK environment alongside example results.
     author_summary: dict = field(default_factory=dict)
     author_environment: dict = field(default_factory=dict)
 
@@ -56,8 +59,11 @@ class AuthorAttack(Attack):
         self.config = normalize_config(config)
 
     def run(self, target, dataset):
+        # Require the hosted client interface used by the original-driver bindings.
         if not isinstance(target, APITarget):
             raise ValueError(f'{self.AUTHOR_METHOD} requires the OpenRouter author-driver target.')
+
+        # Delegate execution and result conversion through the common author path.
         return run_author(self.AUTHOR_METHOD, target, self.config, dataset)
 
 
@@ -65,23 +71,42 @@ def run_author(method, target, config, dataset):
     # Reuse the repository's hosted client, while the original driver owns calls and retries.
     model = normalize_config(target.config)
     originals = list(dataset)
+
+    # Validate each dataset item before the author driver starts making requests.
     for conv in originals:
         if len(conv) != 2 or [message['role'] for message in conv] != ['user', 'assistant']:
             raise ValueError('Author attacks require a user request and an assistant reference answer.')
+
+    # Run the selected author driver with the target's existing SDK client.
     result = execute(method, model, config, originals, client=target.text_generator.client)
 
+    # Repository dataclass validation must not consume the author's random stream.
+    state = random.getstate()
+    try:
+        return adapt_results(method, originals, result)
+    finally:
+        random.setstate(state)
+
+
+def adapt_results(method, originals, result):
     # Adapt source artifacts to the existing result and logging interface only.
     runs = []
     for original, record, trace, duration in zip(originals, result['records'], result['requests'], result['durations']):
+        # Keep the complete author evidence at example level, including runs with no steps.
         run = AuthorRunResult(original_prompt=original, total_time=duration,
                               author_result=record, author_requests=trace)
 
+        # Convert each attack's records into the same repository result hierarchy.
         if method == 'flip_attack':
             target_request = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
             scores = {}
+
+            # Copy optional author evaluation fields without adding another evaluator.
             if 'judge_score_gpt4' in record:
                 scores['flip_attack_author'] = {key: [float(record[key])] for key in (
                     'judge_success_dict', 'judge_score_gpt4', 'judge_success_gpt4')}
+
+            # Pair the processed answer with its raw API response and original call trace.
             run.add_step(target_request, messages=record['all_prompt'],
                          completions=[record['output']], raw_completions=[target_request['raw_text']],
                          scores=scores, time_taken=duration, author_result=record, author_requests=trace)
@@ -92,9 +117,14 @@ def run_author(method, target, config, dataset):
                          completions=[record['response']], raw_completions=[target_request['raw_text']],
                          time_taken=duration, author_result=record, author_requests=trace)
 
+
+
         else:
             raise ValueError(f'Unknown author method: {method}')
 
+        # Collect the completed example after its attack-specific steps have been mapped.
         runs.append(run)
+
+    # Attach the original run summary and SDK environment to the full dataset result.
     return AuthorAttackResult(runs=runs, author_summary=result['author_summary'],
                               author_environment=result['environment'])

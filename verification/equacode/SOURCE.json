@@ -92,8 +92,8 @@
   "repository_history": {
     "repository": "AdversariaLLM",
     "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
-    "contribution_base_revision": "f19efb7abecaf2bb1710183012c3c5dbb21ec19c",
-    "description": "PR 03 merges the updated PR 02 shared orchestration without rewriting the existing contribution history. The official author revision is the top-level revision field."
+    "contribution_base_revision": "3293962ba57dfca3c200632a756aa743c2c0162a",
+    "description": "PR 03 merges the updated PR 02 without rewriting existing history. The official author revision is the top-level revision field."
   },
   "integration": {
     "files": [
@@ -103,6 +103,10 @@
       },
       {
         "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Shared transport, source loading, configuration validation, and explicit dispatch to the attack binding."
+      },
+      {
+        "path": "adversariallm/attacks/utils/equacode/binding.py",
         "purpose": "Execute the original driver with the shared OpenRouterAuthorClient and capture original records."
       },
       {
@@ -200,10 +204,17 @@
           "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
           "passed": 186,
           "skipped": 0
+        },
+        {
+          "name": "post_pr_split",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_source_verification.py tests/test_attacks/test_equacode.py",
+          "passed": 82,
+          "skipped": 0,
+          "scope": "Shared author integration, source verifier, and this attack; unchanged earlier driver/core suites were not repeated."
         }
       ],
-      "unique_tests_passed": 186,
-      "counting_note": "The latest full regression run verifies this branch after the shared orchestration refactor, including serialized run evidence and non-hosted-target rejection. Earlier runs overlap and are not added to this count."
+      "unique_tests_passed": 190,
+      "counting_note": "The previous full branch run passed 186 checks. The latest 82-check focused run validates the binding move and shared integration, including 4 new RNG success/failure cases. Other cases overlap earlier runs; 190 distinct cases have passed across recorded runs. Unchanged earlier driver/core suites were not repeated for this layer."
     },
     "environments": {
       "repository_tests": {
