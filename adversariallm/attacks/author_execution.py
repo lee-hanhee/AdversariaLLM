@@ -32,9 +32,9 @@ def validate_author_config(method, model, config):
             value = route.get(field)
             if not isinstance(value, str) or not value.strip() or value == '???':
                 raise ValueError(f'{role} requires an explicit OpenRouter {field}.')
-    if config.get('seed') is not None or 'generation_config' in config:
-        raise ValueError('Author execution does not seed RNG or accept generic generation_config overrides.')
-    if model.get('base_url') or 'judge_base_url' in config:
+    if config.get('seed') is not None:
+        raise ValueError('Author execution does not seed RNG.')
+    if model.get('base_url'):
         raise ValueError('Author transport uses only https://openrouter.ai/api/v1.')
 
     # Preserve the original CLI model choices and request controls.
@@ -56,12 +56,12 @@ def validate_author_config(method, model, config):
         raise ValueError(f'Unknown author method: {method}')
 
 
-DATA = Path(__file__).resolve().parent / 'data'
+AUTHOR_UTILS = Path(__file__).resolve().parent / 'utils'
 
 
 def load_symbols(filename, names, bindings):
     # Execute only declared author definitions; bind imports and storage I/O explicitly.
-    path = DATA / filename
+    path = AUTHOR_UTILS / filename
     tree = ast.parse(path.read_bytes())
     nodes = [node for node in tree.body if (
         isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in names
@@ -139,19 +139,19 @@ def execute(method, model, config, dataset, *, client, sleep=None):
     # Reuse original definitions with local I/O bindings; never mutate process credentials.
     author_os = SimpleNamespace(environ=dict.fromkeys(
         ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'), client.api_key))
-    llm = load_symbols('flip_attack_llm.py', ['LLM'], {
+    llm = load_symbols('flip_attack/flip_attack_llm.py', ['LLM'], {
         'os': author_os, 'time': SimpleNamespace(sleep=sleep or time.sleep),
         'OpenAI': transport, 'Anthropic': transport, 'anthropic': SimpleNamespace(Anthropic=transport),
     })['LLM']
-    evaluator = load_symbols('flip_attack_evaluator.py', ['Evaluator'], {'re': __import__('re'), 'LLM': llm})['Evaluator']
-    builder = load_symbols('flip_attack.py', ['FlipAttack'], {'textwrap': __import__('textwrap')})['FlipAttack']
+    evaluator = load_symbols('flip_attack/flip_attack_evaluator.py', ['Evaluator'], {'re': __import__('re'), 'LLM': llm})['Evaluator']
+    builder = load_symbols('flip_attack/flip_attack.py', ['FlipAttack'], {'textwrap': __import__('textwrap')})['FlipAttack']
     args = SimpleNamespace(**config, victim_llm=model['author_model'], judge_llm=config['judge_model'],
                            eval=config['evaluate'], begin=0, end=len(questions))
     victim = llm(model_id=model['author_model'], **{key: config[key] for key in (
         'temperature', 'max_token', 'retry_time', 'failed_sleep_time', 'round_sleep_time')})
 
     # Execute the unchanged per-example loop, binding only dataset/progress and result storage.
-    source = ast.parse((DATA / 'flip_attack_driver.py').read_bytes())
+    source = ast.parse((AUTHOR_UTILS / 'flip_attack' / 'flip_attack_driver.py').read_bytes())
     main = next(node for node in source.body if isinstance(node, ast.If))
     loop = next(node for node in main.body if isinstance(node, ast.For))
     namespace = {'args': args, 'adv_bench': {'goal': questions}, 'FlipAttack': builder,

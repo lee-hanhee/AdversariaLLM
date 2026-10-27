@@ -19,7 +19,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/data/flip_attack.py",
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack.py",
           "sha256": "782b1947786fc7018d4ae75b520bec5ebe3c27e3e6f7d09db889aba943f3a15e",
           "extraction": "Prepend attribution/MIT header; retain exact original bytes before if __name__ == \"__main__\":; omit standalone demo only.",
           "adaptation": {
@@ -39,7 +39,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/data/flip_attack_driver.py",
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack_driver.py",
           "sha256": "9e4cb4632e8b5fd0da2c6163300f4fa3af285a2960e6df7c737a48ac347e5b94",
           "extraction": "Attribution docstring followed by unchanged original source bytes.",
           "adaptation": {
@@ -58,7 +58,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/data/flip_attack_llm.py",
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack_llm.py",
           "sha256": "d9d9b1e38095d6242017d1f052c1c6e8da9778810910e5707f19a37b35cbc0b4",
           "extraction": "Attribution docstring followed by unchanged original source bytes.",
           "adaptation": {
@@ -84,7 +84,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/data/flip_attack_evaluator.py",
+          "path": "adversariallm/attacks/utils/flip_attack/flip_attack_evaluator.py",
           "sha256": "5c33e768edff7742522135d3ce99a621745e68ab87da30c5f11418e2995078d8",
           "extraction": "Attribution docstring followed by unchanged original source bytes.",
           "adaptation": {

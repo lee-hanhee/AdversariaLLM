@@ -16,7 +16,6 @@ from tests.author_test_utils import ROOT, author_payload
 
 @pytest.mark.parametrize('method', ['flip_attack'])
 def test_registry_and_yaml_retain_original_defaults(method):
-    payload = author_payload(method)
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         overrides = ['hydra/launcher=basic', f'models={method}_author', f'model={method}_author',
                      f'attack={method}']
