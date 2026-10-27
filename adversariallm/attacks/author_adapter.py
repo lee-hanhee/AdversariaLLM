@@ -117,6 +117,23 @@ def adapt_results(method, originals, result):
                          completions=[record['response']], raw_completions=[target_request['raw_text']],
                          time_taken=duration, author_result=record, author_requests=trace)
 
+        elif method == 'gta':
+            # A GTA run has multiple judged turns, or just backgrounds for zero rounds.
+            start = 0
+            for judgement in record['judgements']:
+                # Slice the calls belonging to this suspect turn and its author judge.
+                turn = trace[start:judgement['request_end']]
+                target_request = next(request for request in turn if request['role'] == judgement['role'])
+                response = judgement['response']
+                raw = target_request.get('raw_text')
+                run.add_step(target_request, messages=target_request['request']['messages'],
+                             completions=[] if response is None else [response],
+                             raw_completions=[] if raw is None else [raw],
+                             scores={'gta_author': {'rating': [float(judgement['rating'])]}},
+                             author_result=judgement, author_requests=turn)
+
+                # Move the boundary forward so later turns keep their own request histories.
+                start = judgement['request_end']
 
 
         else:

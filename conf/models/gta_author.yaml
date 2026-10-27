@@ -1,0 +1,10 @@
+gta_author:
+  # Select the repository hosted transport.
+  backend: openrouter
+
+  # Require an explicit model ID and a single provider; routing fallback stays disabled.
+  id: ???
+  provider: ???
+
+  # Keep the source-level model label separate from the actual OpenRouter route.
+  author_model: deepseek_r1

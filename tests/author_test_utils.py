@@ -9,6 +9,7 @@ import sys
 
 from adversariallm.attacks.flip_attack import FlipAttackConfig
 from adversariallm.attacks.equacode import EquaCodeConfig
+from adversariallm.attacks.gta import GTAConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,11 +19,15 @@ def author_payload(method, **overrides):
     # Environment paths are explicit so missing author environments fail instead of skipping evidence.
     env_name = f'{method.upper()}_AUTHOR_PYTHON'
     python = os.environ.get(env_name, str(ROOT / '.author_envs' / method / 'bin/python'))
-    config = asdict(FlipAttackConfig() if method == 'flip_attack' else EquaCodeConfig())
+    configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig, 'gta': GTAConfig}
+    config = asdict(configs[method]())
     config.update(overrides)
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider',
-             'author_model': 'gpt-4-0613' if method == 'flip_attack' else 'gpt-3.5-turbo'}
+             'author_model': {'flip_attack': 'gpt-4-0613', 'equacode': 'gpt-3.5-turbo', 'gta': 'deepseek_r1'}[method]}
     config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
+    if method == 'gta':
+        config['attacker'] = {'id': 'test/attacker', 'provider': 'attacker-provider'}
+        python = os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable)
 
     # Package the benign dataset, scripted replies, and interpreter choices for the harness.
     return {'method': method, 'model': model, 'config': config,
@@ -54,7 +59,12 @@ def compare_author(payload):
         messages = body['messages']
         judge = (messages[0]['role'] == 'system' and isinstance(messages[0]['content'], str)
                  and messages[0]['content'].startswith('You are a helpful red teaming assistant.'))
-        route = payload['config']['judge'] if judge else payload['model']
+        if payload['method'] == 'gta':
+            role = request['role']
+            route = {'Police': payload['config']['attacker'], 'Judge': payload['config']['judge'],
+                     'Thomas': payload['model'], 'Marcos': payload['model']}[role]
+        else:
+            route = payload['config']['judge'] if judge else payload['model']
 
         # Translate endpoint/model routing and Claude system layout without changing prompt content.
         body['model'] = route['id']
@@ -62,6 +72,8 @@ def compare_author(payload):
             body['messages'] = [{'role': 'system', 'content': body.pop('system')}, *body['messages']]
         body['provider'] = {'only': [route['provider']], 'allow_fallbacks': False, 'require_parameters': True}
         expected.append({'url': 'https://openrouter.ai/api/v1/chat/completions', 'body': body})
+        if payload['method'] == 'gta':
+            expected[-1]['role'] = request['role']
 
     # Compare request controls, retries, failures, and original result records.
     assert adapted['wire'] == expected

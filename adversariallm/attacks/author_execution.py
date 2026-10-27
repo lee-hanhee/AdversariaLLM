@@ -8,7 +8,7 @@ import time
 from types import SimpleNamespace
 
 # List the original-driver integrations available to the experiment runner.
-AUTHOR_METHODS = frozenset({'flip_attack', 'equacode'})
+AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta'})
 
 # Retain the source model names that select FlipAttack's original client branches.
 FLIP_MODELS = {
@@ -29,6 +29,8 @@ def validate_author_config(method, model, config):
     elif method == 'equacode':
         options = {'variant', 'judge_model', 'judge'}
 
+    elif method == 'gta':
+        options = {'rounds', 'attacker', 'judge'}
 
 
     else:
@@ -41,6 +43,8 @@ def validate_author_config(method, model, config):
     if model.get('backend') != 'openrouter':
         raise ValueError(f'{method} requires backend=openrouter.')
     routes = [('target', model), ('judge', config.get('judge') or {})]
+    if method == 'gta':
+        routes.append(('attacker', config.get('attacker') or {}))
     for role, route in routes:
         for field in ('id', 'provider'):
             value = route.get(field)
@@ -82,6 +86,11 @@ def validate_author_config(method, model, config):
         if config['variant'] not in {'equacode', 'equation', 'code', 'origin'}:
             raise ValueError('Unknown EquaCode variant.')
 
+    elif method == 'gta':
+        if model.get('author_model') != 'deepseek_r1':
+            raise ValueError('GTA initially supports the published deepseek_r1 target profile only.')
+        if isinstance(config['rounds'], bool) or not isinstance(config['rounds'], int):
+            raise ValueError('GTA rounds must match the author CLI integer argument.')
 
 
 
@@ -200,6 +209,10 @@ def execute(method, model, config, dataset, *, client, sleep=None):
 
             records, summary = equacode.execute(transport, model, config, questions, sleep)
 
+        elif method == 'gta':
+            from .utils.gta import binding as gta
+
+            records, summary = gta.execute(transport, model, config, questions, sleep)
 
     except Exception as error:
         # Expose the attempted calls when the original driver aborts.

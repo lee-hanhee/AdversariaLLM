@@ -245,6 +245,26 @@ flip_attack:
     id: ???
     provider: ???
 
+gta:
+  # Identify the repository entry point without adding RNG seeding.
+  name: gta
+  type: discrete
+  version: "0.1.0"
+  seed: null
+
+  # Retain the published five-round protocol.
+  rounds: 5
+
+  # Require an explicit OpenRouter route for the Police attacker.
+  attacker:
+    id: ???
+    provider: ???
+
+  # Require an explicit OpenRouter route for the in-attack judge.
+  judge:
+    id: ???
+    provider: ???
+
 gcg:
   name: gcg
   type: discrete

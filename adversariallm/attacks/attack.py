@@ -150,6 +150,10 @@ class Attack(Generic[AttRes]):
                 from .flip_attack import FlipAttack
 
                 return FlipAttack
+            case "gta":
+                from .gta import GTAAttack
+
+                return GTAAttack
 
             case "gcg":
                 from .gcg import GCGAttack

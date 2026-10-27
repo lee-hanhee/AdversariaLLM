@@ -47,6 +47,11 @@ def run_reference(payload, factory, sleep):
     questions = [conv[0]['content'] for conv in payload['dataset']]
     base = ROOT / 'verification' / method / 'reference'
 
+    # Delegate the larger original-module and notebook oracles to their reference runners.
+    if method == 'gta':
+        from gta_reference import run_reference_gta
+        return run_reference_gta(payload, factory, sleep, base)
+
     # Construct native SDK clients for the independent original-source path.
     openai = lambda **kw: factory('openai', kw)
     anthropic = lambda **kw: factory('anthropic', kw)
@@ -120,6 +125,9 @@ def main():
         # Capture the real SDK request body and check hosted authentication.
         body = json.loads(request.content)
         wire.append({'url': str(request.url), 'body': body})
+        if payload['method'] == 'gta':
+            from gta_reference import gta_role
+            wire[-1]['role'] = gta_role(body['messages'])
         if request.url.host == 'openrouter.ai':
             assert request.headers['authorization'] == 'Bearer test-openrouter-key'
 
@@ -152,15 +160,16 @@ def main():
         if provider == 'anthropic':
             from anthropic import Anthropic
             return Anthropic(**options, http_client=transport)
-        from openai import OpenAI
-        return OpenAI(**options, http_client=transport)
+        from openai import OpenAI, AzureOpenAI
+        client = AzureOpenAI if provider == 'azure' else OpenAI
+        return client(**options, http_client=transport)
 
     try:
         # Keep author printouts separate from the JSON comparison result.
         with redirect_stdout(sys.stderr):
             if payload.pop('reference', False):
                 base = ROOT / 'verification' / payload['method'] / 'reference'
-                requirements = base / ('requirements.txt' if payload['method'] == 'flip_attack' else 'requirement.txt')
+                requirements = base / ('requirement.txt' if payload['method'] == 'equacode' else 'requirements.txt')
                 pins = dict(line.replace(' ', '').split('==') for line in requirements.read_text().splitlines() if '==' in line)
 
                 # Enforce source SDK pins when the original release declares them.
