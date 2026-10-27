@@ -16,8 +16,11 @@ class EquaCodeConfig:
     # Retain the main-script template selection and literal judge ID.
     variant: str = 'equacode'
     judge_model: str = 'GPT-4'
+
+    # Require an explicit OpenRouter model and provider for the author judge.
     judge: dict = field(default_factory=lambda: {'id': None, 'provider': None})
 
 
 class EquaCodeAttack(AuthorAttack):
+    # Select the driver handled by the shared author entry point.
     AUTHOR_METHOD = 'equacode'

@@ -75,6 +75,14 @@ and hosted-target checks without adding RNG seeding. Results share one hierarchy
 it has no steps. Explicit attack branches select the values, and shared step
 construction handles repository metadata and indexing.
 
+Our per-attack I/O binding lives in `adversariallm/attacks/utils/<attack>/binding.py`,
+beside that attack's preserved author files. `author_execution.py` owns the shared
+client, source loader, validation, and explicit dispatch; `author_adapter.py`
+converts outputs into repository results. All bindings expose the same
+`execute(transport, model, config, questions, sleep)` interface. Manifests list
+our binding under `integration.files`; preserved author correspondence remains
+under `files`.
+
 `OpenRouterAuthorClient` keeps routing and request traces together; the
 adapter converts original author records into repository results once. No extra
 client is constructed during author execution. Original

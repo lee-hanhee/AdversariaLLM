@@ -205,8 +205,8 @@
   "repository_history": {
     "repository": "AdversariaLLM",
     "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
-    "contribution_base_revision": "57493015c3ed95236b8005fb47409a9a4fb5b654",
-    "description": "PR 04 builds on PR 03. The official author revision is the top-level revision field."
+    "contribution_base_revision": "5203538b3d51279edcb38f5cb91baffdc6cc9cfb",
+    "description": "PR 04 merges the updated PR 03 without rewriting existing history. The official author revision is the top-level revision field."
   },
   "integration": {
     "files": [
@@ -216,6 +216,10 @@
       },
       {
         "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Shared transport, source loading, configuration validation, and explicit dispatch to the attack binding."
+      },
+      {
+        "path": "adversariallm/attacks/utils/gta/binding.py",
         "purpose": "Bind unchanged author agents, models.chat, and ours_attack to explicit roles, OpenRouter, and result capture."
       },
       {
@@ -323,10 +327,17 @@
           "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_gta.py",
           "passed": 82,
           "skipped": 0
+        },
+        {
+          "name": "post_pr_split",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_source_verification.py tests/test_attacks/test_gta.py",
+          "passed": 106,
+          "skipped": 0,
+          "scope": "Shared author integration, source verifier, and this attack; unchanged earlier driver/core suites were not repeated."
         }
       ],
-      "unique_tests_passed": 229,
-      "counting_note": "The 229-test full regression run preceded redistribution across the PR branches; the final Python implementation matches that tested version. After the split, PR 02 passed 147 full regression checks, PR 03 passed 186 full regression checks, and PR 04 passed 82 shared-binding/GTA checks. Runs overlap; the 229-test combined suite is counted once."
+      "unique_tests_passed": 235,
+      "counting_note": "The previous full branch run passed 229 checks. The latest 106-check focused run validates the binding move and shared integration, including 6 new RNG success/failure cases. Other cases overlap earlier runs; 235 distinct cases have passed across recorded runs. Unchanged earlier driver/core suites were not repeated for this layer."
     },
     "environments": {
       "repository_tests": {

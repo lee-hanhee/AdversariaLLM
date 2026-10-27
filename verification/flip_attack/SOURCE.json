@@ -106,8 +106,8 @@
   "repository_history": {
     "repository": "AdversariaLLM",
     "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
-    "contribution_base_revision": "8e20d5385d0d830af880ebed4dcfe7bae64350b8",
-    "description": "Local project history used for the integration. The official author revision is the top-level revision field."
+    "contribution_base_revision": "f84005ec7cc7c2a7286d4aa8c8d6a88564aec827",
+    "description": "PR 02 merges the updated PR 01 without rewriting existing history. The official author revision is the top-level revision field."
   },
   "integration": {
     "files": [
@@ -117,6 +117,10 @@
       },
       {
         "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Shared transport, source loading, configuration validation, and explicit dispatch to the attack binding."
+      },
+      {
+        "path": "adversariallm/attacks/utils/flip_attack/binding.py",
         "purpose": "Load original definitions and driver; bind API calls to OpenRouterAuthorClient; validate configuration."
       },
       {
@@ -209,10 +213,17 @@
           "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
           "passed": 147,
           "skipped": 0
+        },
+        {
+          "name": "post_pr_split",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_source_verification.py tests/test_attacks/test_flip_attack.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 149,
+          "skipped": 0,
+          "scope": "Full branch regression"
         }
       ],
-      "unique_tests_passed": 147,
-      "counting_note": "The latest full regression run verifies this branch after the shared orchestration refactor, including serialized run evidence and non-hosted-target rejection. Earlier runs overlap and are not added to this count."
+      "unique_tests_passed": 149,
+      "counting_note": "The latest full branch regression passed 149 checks after splitting the shared binding refactor and comments onto PR 02. Earlier recorded runs overlap and are not added again."
     },
     "environments": {
       "repository_tests": {

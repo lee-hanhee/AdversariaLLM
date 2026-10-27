@@ -17,9 +17,11 @@ spec.loader.exec_module(verifier)
 
 @pytest.fixture
 def packages(tmp_path, monkeypatch):
+    # Keep all source-verifier fixture reads and writes inside the temporary package.
     monkeypatch.setattr(verifier, 'ROOT', tmp_path)
 
     def make(name, prefix=False):
+        # Create original and runtime artifacts for exact-copy or prefix-extraction cases.
         base = tmp_path / 'verification' / name
         base.mkdir(parents=True)
         body = b'VALUE = "rainbows"\n'
@@ -27,6 +29,8 @@ def packages(tmp_path, monkeypatch):
         marker = 'if __name__ == "__main__":'
         expected = original.split(marker.encode(), 1)[0] if prefix else original
         runtime = b'"""Attribution."""\n\n' + expected if prefix else original
+
+        # Give each artifact a manifest path and an independently recorded hash.
         reference_path = f'verification/{name}/original.py'
         local_path = f'{name}.py'
         diff_path = f'verification/{name}/adaptation.diff'
@@ -36,6 +40,8 @@ def packages(tmp_path, monkeypatch):
             original.decode().splitlines(keepends=True), runtime.decode().splitlines(keepends=True),
             fromfile=reference_path, tofile=local_path,
         )))
+
+        # Describe original-to-local correspondence and the recorded extraction diff.
         manifest = {
             'method': name, 'revision': 'pinned-revision',
             'files': [{
@@ -47,10 +53,16 @@ def packages(tmp_path, monkeypatch):
                 }],
             }],
         }
+
+        # Declare the allowed attribution/header extraction for prefix fixtures.
         if prefix:
             manifest['files'][0]['implementations'][0]['adaptation'].update(
                 stop_before=marker, prepend_docstring=True)
+
+        # Write a complete manifest that the shared verifier can consume.
         path = base / 'SOURCE.json'
+
+        # Save fixture metadata independently of the artifact files under test.
         path.write_text(json.dumps(manifest))
         return path, manifest
 
@@ -69,6 +81,7 @@ def replace_runtime(root, manifest, data):
 
 
 def test_two_different_methods_share_the_same_verifier(packages):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     _, make = packages
     for name, prefix in [('alpha', False), ('beta', True)]:
         path, _ = make(name, prefix)
@@ -76,15 +89,19 @@ def test_two_different_methods_share_the_same_verifier(packages):
 
 
 def test_changed_reference_is_rejected(packages):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     root, make = packages
     path, manifest = make('alpha')
     (root / manifest['files'][0]['reference']['path']).write_text('Changed reference')
+
+    # Reject a reference whose bytes no longer match its declared hash.
     with pytest.raises(ValueError, match='Hash mismatch'):
         verifier.verify(path)
 
 
 @pytest.mark.parametrize('tampering', ['body', 'whitespace', 'extra_code', 'missing_header'])
 def test_extraction_rejects_tampering_even_with_updated_hash(packages, tampering):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     root, make = packages
     path, manifest = make('beta', prefix=True)
     runtime = (root / manifest['files'][0]['implementations'][0]['path']).read_bytes()
@@ -98,20 +115,26 @@ def test_extraction_rejects_tampering_even_with_updated_hash(packages, tampering
         runtime = runtime.split(b'\n\n', 1)[1]
     replace_runtime(root, manifest, runtime)
     save(path, manifest)
+
+    # Detect changed author bytes independently of an updated runtime hash.
     with pytest.raises(ValueError, match='Original bytes changed|Extra syntax|Expected an attribution'):
         verifier.verify(path)
 
 
 def test_recorded_diff_cannot_become_stale(packages):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     root, make = packages
     path, manifest = make('beta', prefix=True)
     (root / manifest['files'][0]['implementations'][0]['adaptation']['diff_path']).write_text('Outdated diff')
+
+    # Reject a recorded extraction diff that no longer matches the artifacts.
     with pytest.raises(ValueError, match='Outdated adaptation diff'):
         verifier.verify(path)
 
 
 @pytest.mark.parametrize('issue', ['missing_rule', 'unknown_rule', 'missing_marker', 'missing_reference'])
 def test_incomplete_or_unsupported_extraction_rules_fail(packages, issue):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     _, make = packages
     path, manifest = make('beta', prefix=True)
     if issue == 'missing_rule':
@@ -123,11 +146,14 @@ def test_incomplete_or_unsupported_extraction_rules_fail(packages, issue):
     else:
         del manifest['files'][0]['reference']
     save(path, manifest)
+
+    # Require a complete, supported extraction declaration.
     with pytest.raises(ValueError):
         verifier.verify(path)
 
 
 def test_official_comparison_uses_the_pin_and_original_path(packages, monkeypatch):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     root, make = packages
     path, manifest = make('alpha')
     original = (root / manifest['files'][0]['reference']['path']).read_bytes()
@@ -139,6 +165,8 @@ def test_official_comparison_uses_the_pin_and_original_path(packages, monkeypatc
 
     monkeypatch.setattr(verifier.subprocess, 'check_output', show)
     verifier.verify(path, official_repo='/independent/clone')
+
+    # Read the declared pinned Git object and reject mismatched official bytes.
     assert calls == [['git', '-C', '/independent/clone', 'show', 'pinned-revision:src/original.py']]
     monkeypatch.setattr(verifier.subprocess, 'check_output', lambda command: b'Different official bytes')
     with pytest.raises(ValueError, match='Official source mismatch'):
@@ -146,6 +174,7 @@ def test_official_comparison_uses_the_pin_and_original_path(packages, monkeypatc
 
 
 def test_checks_remain_active_under_python_optimization(packages):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     root, make = packages
     path, manifest = make('alpha')
     (root / manifest['files'][0]['reference']['path']).write_text('Changed reference')
@@ -158,10 +187,13 @@ def test_checks_remain_active_under_python_optimization(packages):
         f'module.verify({str(path)!r})\n'
     )
     result = subprocess.run([sys.executable, '-O', '-c', code], capture_output=True, text=True)
+
+    # Keep source checks active when Python assertions are optimized away.
     assert result.returncode != 0 and 'Hash mismatch' in result.stderr
 
 
 def test_recorded_diff_preserves_crlf_source_lines(packages):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     root, make = packages
     path, manifest = make('crlf', prefix=True)
     artifacts = [manifest['files'][0]['reference'], *manifest['files'][0]['implementations']]
@@ -178,11 +210,14 @@ def test_recorded_diff_preserves_crlf_source_lines(packages):
     save(path, manifest)
     verifier.verify(path)
     (root / rule['diff_path']).write_bytes(difference.replace('\r\n', '\n').encode())
+
+    # Verify recorded diffs against the exact original line endings.
     with pytest.raises(ValueError, match='Outdated adaptation diff'):
         verifier.verify(path)
 
 
 def test_reference_only_entry_and_multiple_implementations(packages):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     root, make = packages
     path, manifest = make('alpha')
     entry = manifest['files'][0]
@@ -201,6 +236,7 @@ def test_reference_only_entry_and_multiple_implementations(packages):
 
 @pytest.mark.parametrize('duplicate', ['original', 'reference', 'implementation'])
 def test_duplicate_correspondence_is_rejected(packages, duplicate):
+    # Build a temporary source package with explicit hashes and extraction evidence.
     _, make = packages
     path, manifest = make('alpha')
     entry = manifest['files'][0]
@@ -211,5 +247,7 @@ def test_duplicate_correspondence_is_rejected(packages, duplicate):
     else:
         entry['implementations'].append(entry['implementations'][0].copy())
     save(path, manifest)
+
+    # Reject duplicate original or local artifact identities.
     with pytest.raises(ValueError, match='Duplicate'):
         verifier.verify(path)

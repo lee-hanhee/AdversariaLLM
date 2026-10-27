@@ -197,47 +197,74 @@ direct:
   version: 0.0.1
   generation_config: ${attacks._default.generation_config}
   seed: ${attacks._default.seed}
+
 equacode:
+  # Identify the repository entry point without adding RNG seeding.
   name: equacode
   type: discrete
   version: "0.2.0"
   seed: null
-  variant: equacode  # Alternatives: equation, code, origin.
-  judge_model: GPT-4  # Source label only; judge.id controls OpenRouter routing.
+
+  # Choose the original template: equacode, equation, code, or origin.
+  variant: equacode
+
+  # Keep the literal source judge label; judge.id controls the actual hosted model.
+  judge_model: GPT-4
+
+  # Require an explicit OpenRouter route for the mandatory author judge.
   judge:
-    id: ???  # Explicit OpenRouter judge model ID.
-    provider: ???  # One provider slug; fallback is disabled.
+    id: ???
+    provider: ???
+
 flip_attack:
+  # Identify the repository entry point without adding RNG seeding.
   name: flip_attack
   type: discrete
   version: "0.2.0"
   seed: null
+
+  # Retain the original flipping mode and guidance switches.
   flip_mode: FCS
   cot: false
   lang_gpt: false
   few_shot: false
+
+  # Keep the original target request, retry, and sleep defaults.
   temperature: 0
   max_token: -1
   retry_time: 1000
   failed_sleep_time: 1
   round_sleep_time: 1
+
+  # Retain optional author evaluation and its source judge label.
   evaluate: false
   judge_model: gpt-4-0613
+
+  # Require explicit routing even while evaluation is disabled.
   judge:
-    id: ???  # Required even when evaluate=false, so enabling it never selects a model silently.
+    id: ???
     provider: ???
+
 gta:
+  # Identify the repository entry point without adding RNG seeding.
   name: gta
   type: discrete
   version: "0.1.0"
   seed: null
+
+  # Retain the published five-round protocol.
   rounds: 5
+
+  # Require an explicit OpenRouter route for the Police attacker.
   attacker:
     id: ???
     provider: ???
+
+  # Require an explicit OpenRouter route for the in-attack judge.
   judge:
     id: ???
     provider: ???
+
 gcg:
   name: gcg
   type: discrete
