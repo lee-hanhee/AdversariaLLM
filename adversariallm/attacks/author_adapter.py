@@ -111,6 +111,11 @@ def adapt_results(method, originals, result):
                          completions=[record['output']], raw_completions=[target_request['raw_text']],
                          scores=scores, time_taken=duration, author_result=record, author_requests=trace)
 
+        elif method == 'equacode':
+            target_request = next(request for request in trace if request['role'] == 'target' and 'metadata' in request)
+            run.add_step(target_request, messages=target_request['request']['messages'],
+                         completions=[record['response']], raw_completions=[target_request['raw_text']],
+                         time_taken=duration, author_result=record, author_requests=trace)
 
 
 

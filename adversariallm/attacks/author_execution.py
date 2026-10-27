@@ -8,7 +8,7 @@ import time
 from types import SimpleNamespace
 
 # List the original-driver integrations available to the experiment runner.
-AUTHOR_METHODS = frozenset({'flip_attack'})
+AUTHOR_METHODS = frozenset({'flip_attack', 'equacode'})
 
 # Retain the source model names that select FlipAttack's original client branches.
 FLIP_MODELS = {
@@ -26,6 +26,8 @@ def validate_author_config(method, model, config):
         options = {'flip_mode', 'cot', 'lang_gpt', 'few_shot', 'temperature', 'max_token',
                    'retry_time', 'failed_sleep_time', 'round_sleep_time', 'evaluate', 'judge_model', 'judge'}
 
+    elif method == 'equacode':
+        options = {'variant', 'judge_model', 'judge'}
 
 
 
@@ -72,6 +74,13 @@ def validate_author_config(method, model, config):
         if config['judge_model'] != 'gpt-4-0613':
             raise ValueError('FlipAttack judge_model must retain the author default gpt-4-0613.')
 
+    elif method == 'equacode':
+        if model.get('author_model') != 'gpt-3.5-turbo':
+            raise ValueError('EquaCode author_model must retain gpt-3.5-turbo.')
+        if config.get('judge_model') != 'GPT-4':
+            raise ValueError('EquaCode judge_model must retain the source label GPT-4.')
+        if config['variant'] not in {'equacode', 'equation', 'code', 'origin'}:
+            raise ValueError('Unknown EquaCode variant.')
 
 
 
@@ -186,6 +195,10 @@ def execute(method, model, config, dataset, *, client, sleep=None):
 
             records, summary = flip_attack.execute(transport, model, config, questions, sleep)
 
+        elif method == 'equacode':
+            from .utils.equacode import binding as equacode
+
+            records, summary = equacode.execute(transport, model, config, questions, sleep)
 
 
     except Exception as error:

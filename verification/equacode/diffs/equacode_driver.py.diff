@@ -1,0 +1,15 @@
+--- reference/main.py
++++ adversariallm/attacks/utils/equacode/equacode_driver.py
+@@ -1,3 +1,12 @@
++"""EquaCode author execution source, preserved unchanged.
++
++Authors: Zhen Liang, Hai Huang, Zhengkui Chen.
++Source: https://github.com/lzzzr123/Equacode
++Revision: d50ba3d1d573b06713a7e868b7dbfedd0436f5b6
++No license file is supplied at this revision; no additional licensing information
++was provided. Source references and comparisons: verification/equacode/.
++"""
++
+ from openai import OpenAI
+ import time
+ import os

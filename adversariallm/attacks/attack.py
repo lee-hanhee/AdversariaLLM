@@ -140,6 +140,10 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+            case "equacode":
+                from .equacode import EquaCodeAttack
+
+                return EquaCodeAttack
 
             # Load the hosted author entry points lazily through the existing attack registry.
             case "flip_attack":

@@ -197,6 +197,25 @@ direct:
   version: 0.0.1
   generation_config: ${attacks._default.generation_config}
   seed: ${attacks._default.seed}
+
+equacode:
+  # Identify the repository entry point without adding RNG seeding.
+  name: equacode
+  type: discrete
+  version: "0.2.0"
+  seed: null
+
+  # Choose the original template: equacode, equation, code, or origin.
+  variant: equacode
+
+  # Keep the literal source judge label; judge.id controls the actual hosted model.
+  judge_model: GPT-4
+
+  # Require an explicit OpenRouter route for the mandatory author judge.
+  judge:
+    id: ???
+    provider: ???
+
 flip_attack:
   # Identify the repository entry point without adding RNG seeding.
   name: flip_attack
