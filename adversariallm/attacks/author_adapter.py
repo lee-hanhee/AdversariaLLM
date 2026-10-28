@@ -148,6 +148,16 @@ def adapt_results(method, originals, result):
                              scores={'mousetrap_author': {'ats': [float(attempt['ats'])], 'aru': [float(attempt['aru'])]}},
                              author_result=attempt, author_requests=turn)
 
+        elif method == 'query_attack':
+            # Physical input lines remain separate target calls within their originating example.
+            targets = [request for request in trace if request['role'] == 'target']
+            if len(targets) != len(record['lines']):
+                raise ValueError('QueryAttack target trace does not match its source-line records.')
+            for line, request in zip(record['lines'], targets):
+                run.add_step(request, messages=request['request']['messages'],
+                             completions=[line['response']], raw_completions=[request['raw_text']],
+                             author_result=line, author_requests=[request])
+
         else:
             raise ValueError(f'Unknown author method: {method}')
 

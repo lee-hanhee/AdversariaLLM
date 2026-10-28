@@ -159,6 +159,11 @@ class Attack(Generic[AttRes]):
 
                 return MousetrapAttack
 
+            case "query_attack":
+                from .query_attack import QueryAttack
+
+                return QueryAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 

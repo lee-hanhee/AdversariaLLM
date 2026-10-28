@@ -11,6 +11,7 @@ from adversariallm.attacks.flip_attack import FlipAttackConfig
 from adversariallm.attacks.equacode import EquaCodeConfig
 from adversariallm.attacks.gta import GTAConfig
 from adversariallm.attacks.mousetrap import MousetrapConfig
+from adversariallm.attacks.query_attack import QueryAttackConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,19 +22,30 @@ def author_payload(method, **overrides):
     env_name = f'{method.upper()}_AUTHOR_PYTHON'
     python = os.environ.get(env_name, str(ROOT / '.author_envs' / method / 'bin/python'))
 
-    # Build attack defaults with fake, explicit target and judge routes.
-    configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig, 'gta': GTAConfig, 'mousetrap': MousetrapConfig}
+    # Build attack defaults with fake, explicit routes for each required role.
+    configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig,
+               'gta': GTAConfig, 'mousetrap': MousetrapConfig, 'query_attack': QueryAttackConfig}
     config = asdict(configs[method]())
     config.update(overrides)
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider',
-             'author_model': {'flip_attack': 'gpt-4-0613', 'equacode': 'gpt-3.5-turbo', 'gta': 'deepseek_r1', 'mousetrap': 'o1-2024-12-17'}[method]}
-    config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
+             'author_model': {'flip_attack': 'gpt-4-0613', 'equacode': 'gpt-3.5-turbo',
+                              'gta': 'deepseek_r1', 'mousetrap': 'o1-2024-12-17',
+                              'query_attack': 'gpt-4-1106-preview'}[method]}
+    if method == 'query_attack':
+        config['translator'] = {'id': 'test/translator', 'provider': 'translator-provider'}
+    else:
+        config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
     if method == 'gta':
         config['attacker'] = {'id': 'test/attacker', 'provider': 'attacker-provider'}
 
     # Use the declared shared comparison environment for releases without exact SDK pins.
     if method in ('gta', 'mousetrap'):
         python = os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable)
+
+    if method == 'query_attack':
+        shared_python = os.environ.get('QUERY_ATTACK_SHARED_PYTHON', sys.executable)
+    else:
+        shared_python = os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable)
 
     # Keep successful Mousetrap fixtures ASCII; dedicated cases check original Unicode quirks.
     question = 'Explain rainbows through café windows.\nKeep {braces}.'
@@ -42,7 +54,7 @@ def author_payload(method, **overrides):
 
     # Package the benign dataset, scripted replies, and interpreter choices for the harness.
     return {'method': method, 'model': model, 'config': config,
-            'reference_python': python, 'shared_python': os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable),
+            'reference_python': python, 'shared_python': shared_python,
             'dataset': [[{'role': 'user', 'content': question},
                          {'role': 'assistant', 'content': 'Reference answer.'}]],
             'replies': [{'text': '  A benign answer.\n'}]}
@@ -74,6 +86,8 @@ def compare_author(payload):
             role = request['role']
             route = {'Police': payload['config']['attacker'], 'Judge': payload['config']['judge'],
                      'Thomas': payload['model'], 'Marcos': payload['model']}[role]
+        elif payload['method'] == 'query_attack':
+            route = payload['model'] if len(messages) == 4 else payload['config']['translator']
         elif payload['method'] == 'mousetrap':
             route = payload['config']['judge'] if messages[0]['role'] == 'system' else payload['model']
         else:
@@ -99,4 +113,6 @@ def compare_author(payload):
         assert adapted['rng_state'] == original['rng_state']
     if 'error' not in original:
         assert adapted['records'] == original['records']
+        if payload['method'] == 'query_attack':
+            assert adapted['author_summary'] == original['author_summary']
     return original, adapted

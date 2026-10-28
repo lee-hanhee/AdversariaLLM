@@ -8,7 +8,7 @@ import time
 from types import SimpleNamespace
 
 # List the original-driver integrations available to the experiment runner.
-AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta', 'mousetrap'})
+AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta', 'mousetrap', 'query_attack'})
 
 # Retain the source model names that select FlipAttack's original client branches.
 FLIP_MODELS = {
@@ -35,6 +35,10 @@ def validate_author_config(method, model, config):
     elif method == 'mousetrap':
         options = {'judge'}
 
+    elif method == 'query_attack':
+        options = {'translation_language', 'target_language', 'trans_verify', 'temperate',
+                   'top_p', 'max_new_tokens', 'request_seed', 'translator'}
+
     else:
         raise ValueError(f'Unknown author method: {method}')
 
@@ -44,7 +48,11 @@ def validate_author_config(method, model, config):
     # Routing IDs are explicit and independent of names used by the author logic.
     if model.get('backend') != 'openrouter':
         raise ValueError(f'{method} requires backend=openrouter.')
-    routes = [('target', model), ('judge', config.get('judge') or {})]
+    routes = [('target', model)]
+    if method == 'query_attack':
+        routes.append(('translator', config.get('translator') or {}))
+    else:
+        routes.append(('judge', config.get('judge') or {}))
     if method == 'gta':
         routes.append(('attacker', config.get('attacker') or {}))
     for role, route in routes:
@@ -99,6 +107,26 @@ def validate_author_config(method, model, config):
             raise ValueError('Mousetrap Google execution is unavailable until OpenRouter safety settings are verified.')
         if model.get('author_model') not in {'o1-2024-12-17', 'claude-3-7-sonnet-20250219'}:
             raise ValueError('Mousetrap author_model must select a supported notebook target.')
+
+    elif method == 'query_attack':
+        # Keep the original translation and target CLI selections independent.
+        languages = {'C++', 'C', 'C#', 'Python', 'Go', 'SQL', 'Java', 'JavaScript', 'URL'}
+        if config['target_language'] not in languages:
+            raise ValueError('QueryAttack target_language must select an original target language.')
+        if config['translation_language'] not in languages | {'ALL'}:
+            raise ValueError('Unknown QueryAttack translation_language.')
+        if model.get('author_model') != 'gpt-4-1106-preview':
+            raise ValueError('QueryAttack retains the original gpt-4-1106-preview source label.')
+        if not isinstance(config['trans_verify'], bool):
+            raise ValueError('QueryAttack trans_verify must be boolean.')
+
+        # The source seed controls the API request only, without seeding local RNG.
+        for option in ('max_new_tokens', 'request_seed'):
+            if isinstance(config[option], bool) or not isinstance(config[option], int):
+                raise ValueError(f'{option} must match the author CLI integer argument.')
+        for option in ('temperate', 'top_p'):
+            if isinstance(config[option], bool) or not isinstance(config[option], (int, float)):
+                raise ValueError(f'{option} must match the author CLI float argument.')
 
 
 AUTHOR_UTILS = Path(__file__).resolve().parent / 'utils'
@@ -202,7 +230,7 @@ class OpenRouterAuthorClient:
 def execute(method, model, config, dataset, *, client, sleep=None):
     # Validate before preparing a shared transport and dataset question sequence.
     validate_author_config(method, model, config)
-    transport = OpenRouterAuthorClient(client, model, config['judge'])
+    transport = OpenRouterAuthorClient(client, model, config.get('judge', {}))
     questions = [conv[0]['content'] for conv in dataset]
     try:
         # Dispatch to each attack's I/O binding through the same execution interface.
@@ -225,6 +253,11 @@ def execute(method, model, config, dataset, *, client, sleep=None):
             from .utils.mousetrap import binding as mousetrap
 
             records, summary = mousetrap.execute(transport, model, config, questions, sleep)
+
+        elif method == 'query_attack':
+            from .utils.query_attack import binding as query_attack
+
+            records, summary = query_attack.execute(transport, model, config, questions, sleep)
     except Exception as error:
         # Expose the attempted calls when the original driver aborts.
         error.author_requests = [request for trace in transport.requests for request in trace]
