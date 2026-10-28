@@ -1,0 +1,8 @@
+query_attack_author:
+  # Route the original target requests through the shared hosted client.
+  backend: openrouter
+  id: ???
+  provider: ???
+
+  # Retain the source label without claiming equivalence to the selected hosted model.
+  author_model: gpt-4-1106-preview

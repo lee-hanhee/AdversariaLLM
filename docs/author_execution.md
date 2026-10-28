@@ -1,16 +1,16 @@
 # Running author attacks through OpenRouter
 
-FlipAttack, EquaCode, GTA, and Mousetrap execute the pinned author attack logic
-with an OpenRouter transport binding. Targets and author judges use `openai==1.109.1` as a client
-for `https://openrouter.ai/api/v1`. Only `OPENROUTER_API_KEY` is needed; no direct
+FlipAttack, EquaCode, GTA, Mousetrap, and QueryAttack execute pinned author
+attack logic with an OpenRouter transport binding. Target, helper, and judge
+calls use `openai==1.109.1` as a client for `https://openrouter.ai/api/v1`. Only `OPENROUTER_API_KEY` is needed; no direct
 OpenAI, Anthropic, or DeepInfra credentials are used.
 
 ## Configuration
 
 Use the normal repository dependency setup and MongoDB configuration. The
 repository lock already selects OpenAI 1.109.1; no extra runtime environment or
-requirements file is needed. Both target and judge
-require an explicit OpenRouter model ID and one provider slug. There are no
+requirements file is needed. Each required target, helper, or judge route
+needs an explicit OpenRouter model ID and one provider slug. There are no
 routing defaults, including for FlipAttack's disabled-by-default judge.
 
 Preview a configuration without making requests:
@@ -61,6 +61,35 @@ judge label is recorded in `verification/mousetrap/SOURCE.json` and the preserve
 author class; configure the actual route using `attacks.mousetrap.judge.id` and
 `attacks.mousetrap.judge.provider`.
 
+For QueryAttack, select `models=query_attack_author model=query_attack_author attack=query_attack`.
+Supply `models.query_attack_author.id/provider` and
+`attacks.query_attack.translator.id/provider`. The helper route handles sentence
+splitting, extraction, and optional translation verification; no post-run judge
+route is used. Preview without inference:
+
+```bash
+python run_attacks.py --cfg job hydra/launcher=basic \
+  models=query_attack_author model=query_attack_author attack=query_attack \
+  models.query_attack_author.id=TARGET_MODEL_ID \
+  models.query_attack_author.provider=TARGET_PROVIDER \
+  attacks.query_attack.translator.id=HELPER_MODEL_ID \
+  attacks.query_attack.translator.provider=HELPER_PROVIDER classifiers=null
+```
+
+Install the declared `nltk~=3.9.1` dependency and provision its original English
+resources before running: `python -m nltk.downloader punkt_tab averaged_perceptron_tagger_eng`.
+Use `NLTK_DATA` if they are installed outside NLTK's default search paths. The
+attack checks for resources before requests and never downloads them at runtime.
+
+QueryAttack retains the two scripts' independent defaults:
+`translation_language=ALL`, `target_language=SQL`, `trans_verify=false`,
+`temperate=0`, `top_p=1`, `max_new_tokens=512`, and `request_seed=0`. The last
+setting is sent as the original API `seed`; the repository `seed` stays `null`
+and Python RNG is not seeded. Select any of the nine original target languages.
+A single translation language must produce the file required by the selected
+target language. The original single-language C++ path does not write a file,
+so it fails; the default `ALL` translation does produce its C++ file.
+
 The model configuration's `author_model` is the source-level name used by the
 unchanged author code. It is **not** sent to OpenRouter. FlipAttack uses it to
 choose GPT/Claude/Llama/Mixtral handling; EquaCode uses its case-sensitive name
@@ -85,10 +114,11 @@ retry behavior. No additional application retry layer is added.
 | EquaCode | Four original templates, literal substitution, raw target text, mandatory judging, and up to six judge calls until a reply contains case-sensitive `Rating`. |
 | GTA | Original Police/Thomas/Marcos/Judge agents and `ours_attack` orchestration, including format retries, distinct histories, source temperatures, DeepSeek think removal/error handling, and no success-based early stopping. |
 | Mousetrap | Original notebook SDK wrappers, chaos mappings, overwritten prompt assignment, parser, and three attempts at each of three chain lengths; no checker call. Claude retains `max_tokens=2048`; OpenAI target and judge controls remain omitted. |
+| QueryAttack | Original helper request defaults, >13-token splitting gate, extraction retries, optional verification/reversal, all nine templates, CSV round trip, target context, generation controls, and newline escaping. |
 | GTA fallback | Preserve the unsupported source `gpt-4o_u` fallback: three model-selection failures with two-second sleeps and a final `-1` rating. No invented fallback API route. |
 | Transport | OpenRouter replaces original endpoints and model IDs. FlipAttack's Claude system field becomes a system chat message and its 3,584-token cap remains. Mousetrap's Claude request has no system field and retains its 2,048-token cap. Native Anthropic serialization is not reproduced. |
 | SDK | Shared OpenAI 1.109.1 replaces the original SDK clients; SDK retries may differ for failures outside the tested cases. |
-| Integration | Repository datasets and results replace CSV loading, spreadsheet output, and CLI reporting. No RNG seed or generic generation overrides are introduced. |
+| Integration | Repository datasets and results replace standalone input selection and durable output storage. QueryAttack retains temporary CSV/text file stages. No RNG seed or generic generation overrides are introduced. |
 
 The adapter runs directly in the runner and reuses the existing `APITarget` SDK
 client. All author entry points inherit `AuthorAttack`, which handles configuration
@@ -139,6 +169,27 @@ stored through the repository logger; per-attempt file durability is not retaine
 Only per-example duration is measured. Original datasets and paper-only variants
 are outside this slice.
 
+QueryAttack writes each repository message followed by a newline into the
+original input-file shape. The original reader strips each physical line;
+multiline messages therefore produce multiple source requests, grouped under
+their originating `AuthorRunResult`. Translation for the complete batch finishes
+before target generation. Output files are captured in `author_summary.files`
+before temporary storage is removed; phrase rows and escaped responses remain
+in each run's source-line records. Raw API text stays in request traces and step
+raw completions. Timing covers helper and target execution, excluding file-stage
+bookkeeping.
+
+The original writer uses `----` separators while the reader splits on `---`,
+leaving one trailing hyphen after non-final records and four after the final
+record (its final newline is stripped before splitting). Separator text inside
+extracted fields can create extra target requests; these calls are preserved,
+and each fragment records its source-line index and batch target index. Other
+source quirks remain, including the ineffective temporary-list assignment in
+NLTK filtering and the original verification loops without added retry limits.
+`evaluate_responses.py` and its harmfulness scoring are reference-only and are
+not executed. The pinned tree does not contain the README's `test_gemini.py`;
+this integration uses the published `test.py` target path.
+
 ## Verification baselines
 
 Older SDK environments are used only to run independent original-source
@@ -170,3 +221,17 @@ author prompts, request controls, retries, sleeps, evaluation, and records,
 accounting explicitly for routing and Claude serialization changes. They do not
 establish live model equivalence or benchmark results. See each
 `verification/<attack>/SOURCE.json` and the [verification guide](../verification/verification.md).
+
+For QueryAttack, create a test-only baseline with
+`python -m pip install -r verification/query_attack/environment.lock.txt` and set
+`QUERY_ATTACK_AUTHOR_PYTHON` to its interpreter. It uses OpenAI 1.54.3 and NLTK
+3.9.1, satisfying the author's compatible-version requirements; HTTPX 0.27.2 is
+an added compatibility pin. Set `QUERY_ATTACK_SHARED_PYTHON` to another isolated
+interpreter using `openai==1.109.1 nltk==3.9.1 httpx==0.27.2`, and provision the
+same NLTK data for both. These interpreters compare complete official scripts
+against the binding without importing the ML stack.
+
+```bash
+python -m pytest -q tests/test_attacks/test_query_attack.py
+python verification/verify_source.py query_attack --official-repo /path/to/official-clone
+```

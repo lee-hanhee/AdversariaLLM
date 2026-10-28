@@ -530,3 +530,26 @@ mousetrap:
   judge:
     id: ???
     provider: ???
+
+query_attack:
+  # Use original source behavior without adding local RNG seeding.
+  name: query_attack
+  type: discrete
+  version: 0.1.0
+  seed: null
+
+  # Keep translation and target CLI selections independent, as in the author scripts.
+  translation_language: ALL
+  target_language: SQL
+  trans_verify: false
+
+  # Preserve the target API controls; request_seed does not seed Python RNG.
+  temperate: 0
+  top_p: 1
+  max_new_tokens: 512
+  request_seed: 0
+
+  # Require explicit routing for the original helper's extraction and verification calls.
+  translator:
+    id: ???
+    provider: ???

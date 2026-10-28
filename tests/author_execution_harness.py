@@ -56,6 +56,10 @@ def run_reference(payload, factory, sleep):
         from mousetrap_reference import run_reference_mousetrap
         return run_reference_mousetrap(payload, factory, base)
 
+    if method == 'query_attack':
+        from query_attack_reference import run_reference_query_attack
+        return run_reference_query_attack(payload, factory, base)
+
     # Construct native SDK clients for the independent original-source path.
     openai = lambda **kw: factory('openai', kw)
     anthropic = lambda **kw: factory('anthropic', kw)
@@ -179,11 +183,19 @@ def main():
                     requirements = base / ('requirement.txt' if payload['method'] == 'equacode' else 'requirements.txt')
                     pins = dict(line.replace(' ', '').split('==') for line in requirements.read_text().splitlines() if '==' in line)
 
+                if payload['method'] == 'query_attack':
+                    assert version('openai') == '1.54.3'
+                    assert version('nltk') == '3.9.1'
+
                 # Enforce source SDK pins when the original release declares them.
                 for name in ('openai', 'anthropic'):
                     if name in pins:
                         assert version(name) == pins[name]
-                result = {'records': run_reference(payload, factory, sleeps.append)}
+                reference_result = run_reference(payload, factory, sleeps.append)
+                if payload['method'] == 'query_attack':
+                    result = reference_result
+                else:
+                    result = {'records': reference_result}
             else:
                 for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
                     os.environ.pop(key, None)

@@ -1,0 +1,365 @@
+{
+  "method": "QueryAttack",
+  "repository": "https://github.com/horizonsinzqs/QueryAttack",
+  "revision": "93a19806cf0e21a0b28b6fee18a895d57f170bb6",
+  "verified_on": "2026-10-27",
+  "verification": "Pinned GitHub file downloads independently compared byte-for-byte with git show from a fresh official clone.",
+  "license": {
+    "status": "MIT, independently fetched at the pinned revision",
+    "path": "verification/query_attack/LICENSE"
+  },
+  "files": [
+    {
+      "original_path": "LICENSE",
+      "reference": {
+        "path": "verification/query_attack/reference/LICENSE",
+        "sha256": "0bcbdd2875cef13c3d7d58720d4ac53961140d12b70b709f309d63bc03446da6"
+      }
+    },
+    {
+      "original_path": "README.md",
+      "reference": {
+        "path": "verification/query_attack/reference/README.md",
+        "sha256": "464bc0490bfbe1056be1138ea416c69aae444989be2626f12d3305072aeb7c8b"
+      }
+    },
+    {
+      "original_path": "all_template.py",
+      "reference": {
+        "path": "verification/query_attack/reference/all_template.py",
+        "sha256": "651c495851d70f3f964510ede12e7dac56e5776bd466d794c955fecd9ea802b8"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/query_attack/all_template.py",
+          "sha256": "06965dd2431b2457f6f17af28d858027f0561f93b07f3c3c1863c2e8ebfb9be7",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/query_attack/diffs/all_template.py.diff",
+            "reference_label": "reference/all_template.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "evaluate_responses.py",
+      "reference": {
+        "path": "verification/query_attack/reference/evaluate_responses.py",
+        "sha256": "87e7491b204ccc2f771c86394944e5416b03344f35d677a017da09eaae5948ed"
+      }
+    },
+    {
+      "original_path": "gpt_judge.py",
+      "reference": {
+        "path": "verification/query_attack/reference/gpt_judge.py",
+        "sha256": "188f9b9b82c3d0de5f9fc7e5a3e530d404628bacacfd54a524c069ff4684b0aa"
+      }
+    },
+    {
+      "original_path": "openai_log.py",
+      "reference": {
+        "path": "verification/query_attack/reference/openai_log.py",
+        "sha256": "33c3206c87783ffc5cc63760ef797810d83fb73722829af520e42f528c92492c"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/query_attack/openai_log.py",
+          "sha256": "0c2960c5f55b68a969be5d81e1e1cbf9767f3b47dde654ade71f469e59544736",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/query_attack/diffs/openai_log.py.diff",
+            "reference_label": "reference/openai_log.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "requirements.txt",
+      "reference": {
+        "path": "verification/query_attack/reference/requirements.txt",
+        "sha256": "e0a03e75bf2375fb7b9a91608bb213ec116ca2e5826d425f4e3c0f802e473b92"
+      }
+    },
+    {
+      "original_path": "split_sentence_llms.py",
+      "reference": {
+        "path": "verification/query_attack/reference/split_sentence_llms.py",
+        "sha256": "ef0f359af1980c2ffb0876c2971af4da9470d1bf053cbf6053e72578e370e451"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/query_attack/split_sentence_llms.py",
+          "sha256": "cb2a39f718c541be422013feb4497ab8c70c41de42ecf072c7ac1b0dbc76f58c",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/query_attack/diffs/split_sentence_llms.py.diff",
+            "reference_label": "reference/split_sentence_llms.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "test.py",
+      "reference": {
+        "path": "verification/query_attack/reference/test.py",
+        "sha256": "8e0375a97f8b04d0e3e634e87f4a6a65e0981e2ed43033b989d31c757c49aad0"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/query_attack/queryattack_driver.py",
+          "sha256": "9a647da9cb3ce83a3deeb607340d97896d088b9ed56fcd76b0ed1e77866bc8d2",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/query_attack/diffs/queryattack_driver.py.diff",
+            "reference_label": "reference/test.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "trans_llms.py",
+      "reference": {
+        "path": "verification/query_attack/reference/trans_llms.py",
+        "sha256": "e1950fff84f2add6141696cac6c6801217ddd8449291ac7a7cd09684ba389ba1"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/query_attack/trans_llms.py",
+          "sha256": "6fc31ea0cd666f37c97f5257a6964ccb8737c42ef518aec9912bb14ef715a0eb",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/query_attack/diffs/trans_llms.py.diff",
+            "reference_label": "reference/trans_llms.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "translator.py",
+      "reference": {
+        "path": "verification/query_attack/reference/translator.py",
+        "sha256": "a8e25f3d357972f9bec602dfebd1f5f3618d92e3cd221e3075bb7264ba3d90c1"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/utils/query_attack/translator.py",
+          "sha256": "f0aa2e1e532b7ed06f8a0efe45d5bfee0659d7457fedab99468c878716c11e6d",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/query_attack/diffs/translator.py.diff",
+            "reference_label": "reference/translator.py"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5ec43178519e3cc59f315be374631397680b0207",
+    "repository": "AdversariaLLM",
+    "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+    "description": "PR 06 is based on the committed PR 05; author source is fetched independently rather than copied from the previous research adapter."
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/query_attack.py",
+        "purpose": "Common AuthorAttack entry point and original CLI defaults."
+      },
+      {
+        "path": "adversariallm/attacks/utils/query_attack/binding.py",
+        "purpose": "Bind original translation and target stages to shared role clients and temporary file storage; group physical source lines by repository example."
+      },
+      {
+        "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Shared configuration validation, source loading, request traces, OpenRouter transport, and explicit dispatch."
+      },
+      {
+        "path": "adversariallm/attacks/author_adapter.py",
+        "purpose": "Common AuthorRunResult and AuthorStepResult conversion, retaining source-line records and raw versus file-formatted responses."
+      }
+    ],
+    "preserved_behavior": [
+      "All nine language templates and target context examples retain exact original bytes.",
+      "Original physical-line input loading and stripping; more-than-13-token splitting gate; original splitter/extractor parsing, format retries, optional safety checks and phrase reversal.",
+      "Translation completes for the whole batch before target generation. Original phrase CSV serialization/reloading and language file assembly are executed.",
+      "Independent translator ALL and target SQL defaults; original single-language C++ missing output and delimiter mismatch (one residual hyphen for non-final records, four for the final record).",
+      "Original helper generation settings remain omitted. Target uses stream=false, max_tokens=512, temperature=0, top_p=1, seed=0 by default; source target CLI overrides remain available.",
+      "Original four-message target context and response newline escaping. No added post-run scoring, application retry limit, or local RNG seed.",
+      "Separator text inside extracted fields can produce additional target calls. These calls are retained; target_index identifies the target row and sentence_index identifies its original physical input line."
+    ],
+    "changes": [
+      {
+        "area": "models_and_providers",
+        "author": "openai_log.py defaults to gpt-4-1106-preview for helper and target calls, with placeholder credentials and an empty configurable endpoint.",
+        "repository": "Explicit, independently configured OpenRouter target and translator model IDs/providers replace the endpoints and live IDs. The source label remains gpt-4-1106-preview.",
+        "reason": "Use the previously approved hosted transport; no live model equivalence is claimed. The prior research adapter's silent GPT-4o extractor substitution is not carried forward."
+      },
+      {
+        "area": "dependencies",
+        "author": "requirements.txt declares openai~=1.54.3 and nltk~=3.9.1, plus Google/protobuf dependencies.",
+        "repository": "Shared OpenAI 1.109.1 runtime and nltk~=3.9.1. Offline reference baseline uses OpenAI 1.54.3, NLTK 3.9.1, and an added HTTPX 0.27.2 compatibility pin. No Google SDK is imported.",
+        "reason": "Reuse the shared client while checking the original supported SDK baseline. The pinned tree does not contain the README's test_gemini.py."
+      },
+      {
+        "area": "request_transport",
+        "author": "Original helpers and target construct OpenAI clients for their calls; application loops retry only according to the original code.",
+        "repository": "Bind constructors to role-specific views of one existing APITarget SDK client. Add provider.only, allow_fallbacks=false, and require_parameters=true.",
+        "reason": "Change routing only; preserve original request controls, response handling, and error propagation."
+      },
+      {
+        "area": "data_and_storage",
+        "author": "Physical-line CSV input, intermediate phrases.csv and language files, then target response text files.",
+        "repository": "Serialize repository messages to the original physical-line input shape. Keep real temporary CSV/text round trips and capture generated file contents in author_summary.files before cleanup. Group source lines under their originating repository example.",
+        "reason": "Preserve serialization and batch order while replacing standalone input selection and durable storage with repository logging. No chdir or global import patches are used in production."
+      },
+      {
+        "area": "configuration",
+        "author": "Separate translator and target argparse defaults; target API seed is 0.",
+        "repository": "Hydra exposes translation_language and target_language separately, trans_verify, and the target CLI controls. request_seed maps to the target API seed; repository seed remains null. Missing routes, generic generation settings, runtime defenses, and local RNG seeding are rejected.",
+        "reason": "Keep API randomness control distinct from local RNG seeding; require explicit hosted routes."
+      },
+      {
+        "area": "validation",
+        "author": "NLTK resources are discovered during tokenization/tagging. Delimiters inside extracted fields can create additional target rows.",
+        "repository": "Check NLTK resource availability before any hosted request, without downloading automatically. Preserve additional target rows and track their originating input line from the actual language-file write boundaries.",
+        "reason": "Avoid paid partial execution with missing resources, while preserving all author target calls and associating their fragments with the correct repository examples. Only resource preflight changes failure timing."
+      },
+      {
+        "area": "reporting_and_evaluation",
+        "author": "evaluate_responses.py is a separate post-run harmfulness evaluator; translation has its own optional verification calls.",
+        "repository": "Run translation verification when selected, but do not execute the separate post-run evaluator. Retain its source and gpt_judge.py as reference-only files. Measure helper/target execution time, excluding file-stage bookkeeping.",
+        "reason": "Match the approved PR boundary and common result hierarchy without adding an evaluator."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py query_attack --official-repo /path/to/official-clone",
+      "result": "References match the pinned official Git objects; runtime files add attribution only."
+    },
+    "behavior": {
+      "runs": [
+        {
+          "name": "initial_queryattack_comparisons",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_query_attack.py",
+          "passed": 50,
+          "skipped": 0,
+          "scope": "Initial QueryAttack checks before the final threshold, Unicode, CLI override, and row-mapping cases were added."
+        },
+        {
+          "name": "combined_regression_before_unicode_expectation_correction",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py tests/test_attacks/test_query_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "passed": 359,
+          "failed": 1,
+          "skipped": 0,
+          "scope": "All 305 prerequisite checks passed. One QueryAttack assertion expected decoded Unicode where the original regex retains JSON escapes; independent original/adapted comparisons matched. The assertion was subsequently corrected and expanded."
+        },
+        {
+          "name": "unicode_correction_and_verifier",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_query_attack.py tests/test_source_verification.py",
+          "passed": 84,
+          "skipped": 0,
+          "scope": "Before the final requested extra-fragment ownership implementation."
+        },
+        {
+          "name": "fragment_ownership_and_carriage_return_checks",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_query_attack.py -k \"delimiters_inside or carriage_returns or multiline or empty_dataset\"",
+          "passed": 4,
+          "skipped": 0,
+          "scope": "Focused original-versus-integrated checks after preserving delimiter-created target calls."
+        },
+        {
+          "name": "final_queryattack_and_verifier",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_query_attack.py tests/test_source_verification.py",
+          "passed": 85,
+          "skipped": 0,
+          "scope": "Final implementation: all 57 QueryAttack checks plus 28 generic verifier checks."
+        }
+      ],
+      "reference_execution": "Independent subprocess executes complete official helper/template modules, translator.py main, and test.py main using native SDK serialization and real temporary files. It does not import the production source loader or binding. For attribution metadata only, the oracle re-executes the original pure assembler with a capture callback and locates its assembled strings in the actual file; production instead observes original write boundaries. Printed target output is captured before universal-newline normalization of saved file text.",
+      "compared": [
+        "Prompt/context bytes and all nine language files",
+        "CSV phrase round trip, physical-line ownership, batch request order, delimiter artifacts, C++ missing file",
+        "Source request controls and omitted helper defaults; raw replies and escaped file output",
+        "Splitter/extractor retries; optional verification, phrase reversal, original NLTK assignment quirk",
+        "API errors, response-shape failures, SDK retries/delays, empty datasets, and common repository result serialization",
+        "Literal and JSON-escaped Unicode are kept distinct by the original regex parser",
+        "Delimiter-created target fragments retain source-line ownership; target carriage returns and newline escaping match original print/file behavior"
+      ],
+      "allowed_comparison_differences": [
+        "OpenRouter endpoint, model IDs, and provider routing fields",
+        "Repository example grouping, measured time, and temporary output paths"
+      ],
+      "counting_note": "The current suites comprise 305 prerequisite checks and 57 final QueryAttack checks. The 305 prerequisites passed in the combined regression run; only QueryAttack-specific code/tests changed afterward. The final 85-check run contains all 57 QueryAttack checks and repeats 28 verifier checks already included in the prerequisites. Counts overlap and are not summed. There was no single 362-check rerun after the final QueryAttack changes.",
+      "unique_tests_passed": 362
+    },
+    "not_tested": [
+      "Live OpenRouter inference or effectiveness",
+      "Paper benchmarks",
+      "Separate post-run harmfulness evaluation"
+    ],
+    "execution_requirements": {
+      "documentation": "docs/author_execution.md",
+      "required_routes": [
+        "target model ID/provider",
+        "translator model ID/provider"
+      ],
+      "nltk_data": [
+        "punkt_tab",
+        "averaged_perceptron_tagger_eng"
+      ],
+      "baseline_python": "QUERY_ATTACK_AUTHOR_PYTHON uses the environment.lock.txt baseline; QUERY_ATTACK_SHARED_PYTHON uses the shared SDK with NLTK. NLTK_DATA may select a common data directory.",
+      "test_process": "Intel macOS repository test process adds the Torch recompile_limit option as documented in docs/openrouter.md. All HTTP replies are scripted and in-memory."
+    },
+    "limitations": "Exact source identity and scripted behavior comparisons do not establish identical live model responses, exhaustive SDK equivalence, attack effectiveness, or paper benchmark reproduction. Early NLTK resource validation and excluded post-run evaluation are documented departures. The author does not pin NLTK data revisions; historical tokenizer/tagger data equivalence is not established.",
+    "environments": {
+      "repository_tests": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "nltk": "3.9.4",
+          "httpx": "0.28.1",
+          "torch": "2.2.2",
+          "transformers": "5.9.0"
+        }
+      },
+      "reference_sdk_baseline": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.54.3",
+          "nltk": "3.9.1",
+          "httpx": "0.27.2"
+        },
+        "lock": "verification/query_attack/environment.lock.txt"
+      },
+      "shared_sdk_comparison": {
+        "python": "3.13.7",
+        "packages": {
+          "openai": "1.109.1",
+          "nltk": "3.9.1",
+          "httpx": "0.27.2"
+        }
+      },
+      "nltk_data": {
+        "description": "Both comparison environments and public integration tests use the same downloaded English resources. The author does not pin their historical data revision.",
+        "archives": [
+          {
+            "resource": "punkt_tab",
+            "sha256": "e57f64187974277726a3417ca6f181ec5403676c717672eef6a748a7b20e0106"
+          },
+          {
+            "resource": "averaged_perceptron_tagger_eng",
+            "sha256": "6025f530624335c67d6547d44757b357b4e79bae030a0383e9887a92c1718f0b"
+          }
+        ]
+      }
+    },
+    "dependency_lock": {
+      "tool": "Pixi 0.63.2",
+      "result": "pixi lock --check --no-install passed. Only resolver-generated nltk/joblib entries and editable project metadata were merged; all existing package records remain unchanged.",
+      "note": "Full re-resolution is blocked by the existing litellm==1.25.2 index resolution. NLTK dependencies were resolved in a temporary minimal workspace pinned to existing shared dependency versions, then the complete lock was checked."
+    }
+  },
+  "attribution": "QueryAttack authors; MIT copyright (c) 2025 horizonsinzqs (see bundled license for exact notice).",
+  "project": "https://never-far.github.io/llmqueryattack/"
+}
