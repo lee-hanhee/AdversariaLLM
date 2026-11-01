@@ -362,3 +362,38 @@ Qwen/Qwen2.5-0.5B-Instruct:
   dtype: bfloat16
   chat_template: null
   trust_remote_code: True
+openrouter:
+  backend: openrouter
+  id: ???
+  provider: ???
+  supports_assistant_prefill: false
+flip_attack_author:
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: gpt-4-0613
+equacode_author:
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: gpt-3.5-turbo
+gta_author:
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: deepseek_r1
+mousetrap_author:
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: ???
+query_attack_author:
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: gpt-4-1106-preview
+tap_author:
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: ???

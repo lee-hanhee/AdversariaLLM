@@ -197,74 +197,47 @@ direct:
   version: 0.0.1
   generation_config: ${attacks._default.generation_config}
   seed: ${attacks._default.seed}
-
 equacode:
-  # Identify the repository entry point without adding RNG seeding.
   name: equacode
   type: discrete
   version: "0.2.0"
   seed: null
-
-  # Choose the original template: equacode, equation, code, or origin.
   variant: equacode
-
-  # Keep the literal source judge label; judge.id controls the actual hosted model.
   judge_model: GPT-4
-
-  # Require an explicit OpenRouter route for the mandatory author judge.
   judge:
     id: ???
     provider: ???
-
 flip_attack:
-  # Identify the repository entry point without adding RNG seeding.
   name: flip_attack
   type: discrete
   version: "0.2.0"
   seed: null
-
-  # Retain the original flipping mode and guidance switches.
   flip_mode: FCS
   cot: false
   lang_gpt: false
   few_shot: false
-
-  # Keep the original target request, retry, and sleep defaults.
   temperature: 0
   max_token: -1
   retry_time: 1000
   failed_sleep_time: 1
   round_sleep_time: 1
-
-  # Retain optional author evaluation and its source judge label.
   evaluate: false
   judge_model: gpt-4-0613
-
-  # Require explicit routing even while evaluation is disabled.
   judge:
     id: ???
     provider: ???
-
 gta:
-  # Identify the repository entry point without adding RNG seeding.
   name: gta
   type: discrete
   version: "0.1.0"
   seed: null
-
-  # Retain the published five-round protocol.
   rounds: 5
-
-  # Require an explicit OpenRouter route for the Police attacker.
   attacker:
     id: ???
     provider: ???
-
-  # Require an explicit OpenRouter route for the in-attack judge.
   judge:
     id: ???
     provider: ???
-
 gcg:
   name: gcg
   type: discrete
@@ -517,67 +490,46 @@ random_search:
   candidates_per_generation: 8
   optim_str_init: "x x x x x x x x x x x x x x x x x x x x" # all tested tokenizers convert this to exactly 20 tokens
   generation_config: ${attacks._default.generation_config}
-
-# Preserved notebook source paths; select an explicit target profile and routes.
 mousetrap:
-  # Identify the repository entry point without adding RNG seeding.
   name: mousetrap
   type: discrete
   version: 0.1.0
   seed: null
-
-  # Require an explicit OpenRouter route for every author judgment.
   judge:
     id: ???
     provider: ???
-
 query_attack:
-  # Use original source behavior without adding local RNG seeding.
   name: query_attack
   type: discrete
   version: 0.1.0
   seed: null
-
-  # Keep translation and target CLI selections independent, as in the author scripts.
   translation_language: ALL
   target_language: SQL
   trans_verify: false
-
-  # Preserve the target API controls; request_seed does not seed Python RNG.
   temperate: 0
   top_p: 1
   max_new_tokens: 512
   request_seed: 0
-
-  # Require explicit routing for the original helper's extraction and verification calls.
   translator:
     id: ???
     provider: ???
-
 tap:
-  # Follow the original main script, without local RNG seeding or a native model loader.
   name: tap
   type: discrete
   version: 0.1.0
   seed: null
   attack_model: ???
   evaluator_model: gpt-3.5-turbo
-
-  # Retain original request controls and malformed-proposal attempt limits.
   attack_max_n_tokens: 500
   target_max_n_tokens: 150
   evaluator_max_n_tokens: 10
   evaluator_temperature: 0
   max_n_attack_attempts: 5
-
-  # Preserve CLI tree defaults; the demo notebook uses a different branching factor.
   branching_factor: 1
   width: 10
   depth: 10
   n_streams: 1
   keep_last_n: 3
-
-  # Require explicit provider-pinned routes for both auxiliary roles.
   attacker:
     id: ???
     provider: ???

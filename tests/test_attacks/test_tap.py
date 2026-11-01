@@ -295,7 +295,7 @@ def test_registry_configuration_and_original_cli_defaults():
     # Preview the complete route configuration through the public registry and Hydra interface.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         cfg = compose(config_name='config', overrides=[
-            'hydra/launcher=basic', 'models=tap_author', 'model=tap_author', 'attack=tap',
+            'hydra/launcher=basic', 'model=tap_author', 'attack=tap',
             'models.tap_author.id=test/target', 'models.tap_author.provider=target-provider',
             'models.tap_author.author_model=gpt-4', 'attacks.tap.attack_model=gpt-4',
             'attacks.tap.attacker.id=test/attacker', 'attacks.tap.attacker.provider=attacker-provider',

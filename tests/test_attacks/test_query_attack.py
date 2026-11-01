@@ -186,7 +186,7 @@ def test_registry_yaml_and_defaults_match_original_cli_declarations():
     # Compose the public configuration and compare both script defaults against official source.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         cfg = compose(config_name='config', overrides=[
-            'hydra/launcher=basic', 'models=query_attack_author', 'model=query_attack_author',
+            'hydra/launcher=basic', 'model=query_attack_author',
             'attack=query_attack', 'models.query_attack_author.id=test/target',
             'models.query_attack_author.provider=target-provider',
             'attacks.query_attack.translator.id=test/translator',

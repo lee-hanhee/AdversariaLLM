@@ -175,7 +175,7 @@
   "repository_history": {
     "repository": "AdversariaLLM",
     "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
-    "contribution_base_revision": "860cca9404b9033fc6d3bbcd4caa09ccfcb4798d",
+    "contribution_base_revision": "75c28e8bf46a2ac128e2e2d8cd66a87ba9f19a55",
     "description": "PR 08 builds on committed PR 07 (pr/07-author-implementations). The research TAP port is not reused; execution uses freshly verified official source."
   },
   "integration": {
@@ -281,10 +281,17 @@
           "passed": 381,
           "skipped": 0,
           "scope": "All six attack integrations, shared author tests, and generic verifier tests on the PR 07 layout."
+        },
+        {
+          "name": "consolidated_model_configuration",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_api_target.py tests/test_author_execution.py::test_registry_and_yaml_retain_original_defaults tests/test_attacks/test_query_attack.py::test_registry_yaml_and_defaults_match_original_cli_declarations tests/test_attacks/test_tap.py::test_registry_configuration_and_original_cli_defaults tests/test_run_attacks_defenses.py",
+          "passed": 35,
+          "skipped": 0,
+          "scope": "Configuration composition, explicit routes, hosted target and runner checks after merging PR 07 profile consolidation. Existing model and attack values are unchanged."
         }
       ],
       "unique_tests_passed": 381,
-      "counting_note": "The combined 381-check run includes all 71 TAP cases and the 310 prerequisite checks. Earlier focused counts overlap this run and are not added to it."
+      "counting_note": "The combined 381-check run includes all 71 TAP cases and the 310 prerequisite checks. Earlier focused counts overlap this run and are not added to it. The later 35-check configuration run overlaps earlier cases and includes hosted-core checks; it is recorded separately and is not added to the historical 381-check total."
     },
     "not_tested": [
       "Live model availability or attack effectiveness",
