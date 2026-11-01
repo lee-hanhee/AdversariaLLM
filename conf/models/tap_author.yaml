@@ -1,0 +1,6 @@
+tap_author:
+  # Keep original source-profile selection separate from actual OpenRouter routing.
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: ???

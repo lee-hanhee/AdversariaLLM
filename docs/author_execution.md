@@ -1,6 +1,6 @@
 # Running author attacks through OpenRouter
 
-FlipAttack, EquaCode, GTA, Mousetrap, and QueryAttack execute pinned author
+FlipAttack, EquaCode, GTA, Mousetrap, QueryAttack, and TAP execute pinned author
 attack logic with an OpenRouter transport binding. Target, helper, and judge
 calls use `openai==1.109.1` as a client for `https://openrouter.ai/api/v1`. Only `OPENROUTER_API_KEY` is needed; no direct
 OpenAI, Anthropic, or DeepInfra credentials are used.
@@ -234,4 +234,86 @@ against the binding without importing the ML stack.
 ```bash
 python -m pytest -q tests/test_attacks/test_query_attack.py
 python verification/verify_source.py query_attack --official-repo /path/to/official-clone
+```
+
+## TAP
+
+TAP runs the original `main_TAP.py` search, GPT wrapper, parser, pruning, and
+evaluators. Only the original working GPT attacker/target source profiles are
+supported: `gpt-3.5-turbo`, `gpt-4`, and `gpt-4-1106-preview`. Both source profiles
+must be explicitly selected; native Vicuna/Llama and other provider wrappers
+are outside this hosted slice. The original `gpt-4-turbo` attacker/target loading
+bug is not repaired. Its separate evaluator path does work and is supported,
+along with the original `no-evaluator` option.
+
+Install the author's exact conversation dependency separately, from the repository root:
+
+```bash
+python -m pip install --no-deps --target .author_envs/tap_fastchat fschat==0.2.32
+```
+
+The binding loads the package's unchanged, standard-library-only conversation
+module and original GPT/default adapter definitions. It does not import FastChat's
+model server or install its incompatible Pydantic requirements. The two supported
+adapter matches are checked independently against all original adapter match
+functions in verification. FastChat 0.2.32 gives `gpt-3.5-turbo` and `gpt-4` its
+`chatgpt` template; `gpt-4-1106-preview` falls back to `one_shot`. This historical
+behavior is retained.
+
+Preview a configuration without inference:
+
+```bash
+python run_attacks.py --cfg job hydra/launcher=basic \
+  models=tap_author model=tap_author attack=tap \
+  models.tap_author.author_model=gpt-4 \
+  models.tap_author.id=TARGET_MODEL_ID models.tap_author.provider=TARGET_PROVIDER \
+  attacks.tap.attack_model=gpt-4 \
+  attacks.tap.attacker.id=ATTACKER_MODEL_ID attacks.tap.attacker.provider=ATTACKER_PROVIDER \
+  attacks.tap.judge.id=EVALUATOR_MODEL_ID attacks.tap.judge.provider=EVALUATOR_PROVIDER \
+  classifiers=null
+```
+
+Source labels select original branches and formatting; they are independent of
+actual hosted model IDs. All three routes remain explicit, including when using
+`no-evaluator`, consistent with the earlier disabled-judge configuration policy.
+Each repository user request becomes the original `goal`; its assistant reference
+answer becomes the original desired `target_str` response prefix. Unknown category
+metadata is `null`. No local RNG seeding is added.
+
+Defaults match the main CLI: branching factor 1, width/depth 10, one root stream,
+three retained history turns, five proposal attempts, and token caps 500/150/10
+for attacker/target/evaluator. The demo's branching factor 4 is not substituted.
+Original nonpositive integer behavior is retained rather than adding positivity
+limits. Python-generated conversation IDs and NumPy pruning RNG run continuously
+across examples.
+
+The legacy OpenAI 0.28 call interface is bound to the existing shared SDK client:
+`request_timeout=20` becomes `timeout=20`, and responses are returned to the author
+as mappings. A view of the same SDK transport disables modern SDK HTTP retries;
+the author's 20-attempt loop, ten-second error sleeps, half-second post-error
+sleeps, and `$ERROR$` marker remain. Low-level connection handling and native
+vendor serialization are not claimed identical across SDKs.
+
+The original tuple sort resolves ties by index despite shuffling first. All-off-topic
+fallback can retain or duplicate rejected candidates. Exhausted malformed proposals
+can raise `IndexError` in empty-frontier cleanup. Parser fallbacks, accepted
+out-of-range ratings, exact-10 stopping, and GPT history overwrites all remain.
+No corrective pruning, stricter parser, or extra evaluation is introduced.
+
+W&B/parquet storage is replaced by repository results. Run records retain original
+logger inputs per iteration; steps retain every target query and its original
+rating, including candidates later pruned. Request traces retain all auxiliary
+calls and retries. Logging statistics computed by the standalone logger are not
+recreated. Search ratings are author search feedback, not separate effectiveness
+verification.
+
+For offline comparisons, set `TAP_AUTHOR_PYTHON` to an isolated environment using
+`verification/tap/environment.lock.txt`, and `TAP_SHARED_PYTHON` to an interpreter
+with `openai==1.109.1 httpx==0.27.2 numpy==1.26.4`. Both comparison paths use the
+isolated pinned FastChat package. The baseline retains OpenAI 0.28.0 and NumPy
+1.26.3, without claiming a full reconstruction of the author's GPU environment.
+
+```bash
+python -m pytest -q tests/test_attacks/test_tap.py
+python verification/verify_source.py tap --official-repo /path/to/official-clone
 ```

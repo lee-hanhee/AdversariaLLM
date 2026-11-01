@@ -553,3 +553,34 @@ query_attack:
   translator:
     id: ???
     provider: ???
+
+tap:
+  # Follow the original main script, without local RNG seeding or a native model loader.
+  name: tap
+  type: discrete
+  version: 0.1.0
+  seed: null
+  attack_model: ???
+  evaluator_model: gpt-3.5-turbo
+
+  # Retain original request controls and malformed-proposal attempt limits.
+  attack_max_n_tokens: 500
+  target_max_n_tokens: 150
+  evaluator_max_n_tokens: 10
+  evaluator_temperature: 0
+  max_n_attack_attempts: 5
+
+  # Preserve CLI tree defaults; the demo notebook uses a different branching factor.
+  branching_factor: 1
+  width: 10
+  depth: 10
+  n_streams: 1
+  keep_last_n: 3
+
+  # Require explicit provider-pinned routes for both auxiliary roles.
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???

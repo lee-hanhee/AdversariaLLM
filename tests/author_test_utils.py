@@ -12,6 +12,7 @@ from adversariallm.attacks.equacode import EquaCodeConfig
 from adversariallm.attacks.gta import GTAConfig
 from adversariallm.attacks.mousetrap import MousetrapConfig
 from adversariallm.attacks.query_attack import QueryAttackConfig
+from adversariallm.attacks.tap import TAPConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,18 +25,18 @@ def author_payload(method, **overrides):
 
     # Build attack defaults with fake, explicit routes for each required role.
     configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig,
-               'gta': GTAConfig, 'mousetrap': MousetrapConfig, 'query_attack': QueryAttackConfig}
+               'gta': GTAConfig, 'mousetrap': MousetrapConfig, 'query_attack': QueryAttackConfig, 'tap': TAPConfig}
     config = asdict(configs[method]())
     config.update(overrides)
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider',
              'author_model': {'flip_attack': 'gpt-4-0613', 'equacode': 'gpt-3.5-turbo',
                               'gta': 'deepseek_r1', 'mousetrap': 'o1-2024-12-17',
-                              'query_attack': 'gpt-4-1106-preview'}[method]}
+                              'query_attack': 'gpt-4-1106-preview', 'tap': 'gpt-4'}[method]}
     if method == 'query_attack':
         config['translator'] = {'id': 'test/translator', 'provider': 'translator-provider'}
     else:
         config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
-    if method == 'gta':
+    if method in ('gta', 'tap'):
         config['attacker'] = {'id': 'test/attacker', 'provider': 'attacker-provider'}
 
     # Use the declared shared comparison environment for releases without exact SDK pins.
@@ -47,6 +48,10 @@ def author_payload(method, **overrides):
     else:
         shared_python = os.environ.get('AUTHOR_SHARED_PYTHON', sys.executable)
 
+    if method == 'tap':
+        config['attack_model'] = 'gpt-4'
+        shared_python = os.environ.get('TAP_SHARED_PYTHON', sys.executable)
+
     # Keep successful Mousetrap fixtures ASCII; dedicated cases check original Unicode quirks.
     question = 'Explain rainbows through café windows.\nKeep {braces}.'
     if method == 'mousetrap':
@@ -57,7 +62,8 @@ def author_payload(method, **overrides):
             'reference_python': python, 'shared_python': shared_python,
             'dataset': [[{'role': 'user', 'content': question},
                          {'role': 'assistant', 'content': 'Reference answer.'}]],
-            'replies': [{'text': '  A benign answer.\n'}]}
+            'replies': [{'text': '  A benign answer.\n'}],
+            'fastchat_package': str(ROOT / '.author_envs/tap_fastchat')}
 
 
 def compare_author(payload):
@@ -86,6 +92,9 @@ def compare_author(payload):
             role = request['role']
             route = {'Police': payload['config']['attacker'], 'Judge': payload['config']['judge'],
                      'Thomas': payload['model'], 'Marcos': payload['model']}[role]
+        elif payload['method'] == 'tap':
+            route = {'attacker': payload['config']['attacker'], 'judge': payload['config']['judge'],
+                     'target': payload['model']}[request['role']]
         elif payload['method'] == 'query_attack':
             route = payload['model'] if len(messages) == 4 else payload['config']['translator']
         elif payload['method'] == 'mousetrap':
@@ -99,8 +108,11 @@ def compare_author(payload):
             body['messages'] = [{'role': 'system', 'content': body.pop('system')}, *body['messages']]
         body['provider'] = {'only': [route['provider']], 'allow_fallbacks': False, 'require_parameters': True}
         expected.append({'url': 'https://openrouter.ai/api/v1/chat/completions', 'body': body})
-        if payload['method'] == 'gta':
+        if payload['method'] in ('gta', 'tap'):
             expected[-1]['role'] = request['role']
+
+        if payload['method'] == 'tap':
+            expected[-1]['timeout'] = request['timeout']
 
     # Compare request controls, retries, failures, and original result records.
     assert adapted['wire'] == expected
@@ -109,8 +121,10 @@ def compare_author(payload):
     assert adapted.get('error', {}).get('type') == original.get('error', {}).get('type')
     if original.get('error', {}).get('type') in {'UnboundLocalError', 'IndexError', 'ValueError'}:
         assert adapted['error'] == original['error']
-    if payload['method'] == 'mousetrap':
+    if payload['method'] in ('mousetrap', 'tap'):
         assert adapted['rng_state'] == original['rng_state']
+    if payload['method'] == 'tap':
+        assert adapted['numpy_rng_state'] == original['numpy_rng_state']
     if 'error' not in original:
         assert adapted['records'] == original['records']
         if payload['method'] == 'query_attack':
