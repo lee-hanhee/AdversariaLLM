@@ -7,6 +7,13 @@ OpenAI, Anthropic, or DeepInfra credentials are used.
 
 ## Configuration
 
+The added hosted profiles are named entries in `conf/models/models.yaml`, loaded
+by default. Select an entry with `model=equacode_author`, for example; separate
+`models=...` group switches are no longer needed. Every hosted entry retains
+required `id` and `provider` fields. Supply them explicitly for the selected
+profile. `model=null` selects the entire catalog, including unconfigured hosted
+entries; use an explicit model selection for these runs.
+
 Use the normal repository dependency setup and MongoDB configuration. The
 repository lock already selects OpenAI 1.109.1; no extra runtime environment or
 requirements file is needed. Each required target, helper, or judge route
@@ -17,7 +24,7 @@ Preview a configuration without making requests:
 
 ```bash
 python run_attacks.py --cfg job hydra/launcher=basic \
-  models=equacode_author model=equacode_author attack=equacode \
+  model=equacode_author attack=equacode \
   models.equacode_author.id=TARGET_MODEL_ID \
   models.equacode_author.provider=TARGET_PROVIDER \
   attacks.equacode.judge.id=JUDGE_MODEL_ID \
@@ -31,7 +38,7 @@ to run after selecting the dataset and indices normally. `classifiers=null`
 disables the runner's separate post-run classifiers; it does not disable
 EquaCode's mandatory author judge or FlipAttack's enabled author judge.
 
-For GTA, select `models=gta_author model=gta_author attack=gta` and supply
+For GTA, select `model=gta_author attack=gta` and supply
 `models.gta_author.id`, `models.gta_author.provider`, `attacks.gta.attacker.id`,
 `attacks.gta.attacker.provider`, `attacks.gta.judge.id`, and
 `attacks.gta.judge.provider`. Every route is required. `attacks.gta.rounds`
@@ -39,14 +46,14 @@ defaults to the author's five rounds. Thomas and Marcos share the target route
 but keep separate histories. In-attack judging always runs; keep
 `classifiers=null` to disable separate repository post-run classifiers.
 
-For Mousetrap, select `models=mousetrap_author model=mousetrap_author attack=mousetrap`.
+For Mousetrap, select `model=mousetrap_author attack=mousetrap`.
 Supply `models.mousetrap_author.author_model` as `o1-2024-12-17` or
 `claude-3-7-sonnet-20250219`, plus explicit target and judge model IDs/providers.
 For example, preview the configuration without inference:
 
 ```bash
 python run_attacks.py --cfg job hydra/launcher=basic \
-  models=mousetrap_author model=mousetrap_author attack=mousetrap \
+  model=mousetrap_author attack=mousetrap \
   models.mousetrap_author.author_model=o1-2024-12-17 \
   models.mousetrap_author.id=TARGET_MODEL_ID \
   models.mousetrap_author.provider=TARGET_PROVIDER \
@@ -61,7 +68,7 @@ judge label is recorded in `verification/mousetrap/SOURCE.json` and the preserve
 author class; configure the actual route using `attacks.mousetrap.judge.id` and
 `attacks.mousetrap.judge.provider`.
 
-For QueryAttack, select `models=query_attack_author model=query_attack_author attack=query_attack`.
+For QueryAttack, select `model=query_attack_author attack=query_attack`.
 Supply `models.query_attack_author.id/provider` and
 `attacks.query_attack.translator.id/provider`. The helper route handles sentence
 splitting, extraction, and optional translation verification; no post-run judge
@@ -69,7 +76,7 @@ route is used. Preview without inference:
 
 ```bash
 python run_attacks.py --cfg job hydra/launcher=basic \
-  models=query_attack_author model=query_attack_author attack=query_attack \
+  model=query_attack_author attack=query_attack \
   models.query_attack_author.id=TARGET_MODEL_ID \
   models.query_attack_author.provider=TARGET_PROVIDER \
   attacks.query_attack.translator.id=HELPER_MODEL_ID \

@@ -233,12 +233,12 @@ def test_openrouter_configuration_requires_explicit_selection():
     conf_dir = str(Path(__file__).resolve().parents[1] / "conf")
     with initialize_config_dir(config_dir=conf_dir, version_base="1.3"):
         cfg = compose(config_name="config", overrides=[
-            "models=openrouter", "model=openrouter", "attack=direct", "hydra/launcher=basic",
+            "model=openrouter", "attack=direct", "hydra/launcher=basic",
         ])
         with pytest.raises(MissingMandatoryValue):
-            OmegaConf.to_container(cfg.models, resolve=True, throw_on_missing=True)
+            OmegaConf.to_container(cfg.models.openrouter, resolve=True, throw_on_missing=True)
         cfg = compose(config_name="config", overrides=[
-            "models=openrouter", "model=openrouter", "attack=direct",
+            "model=openrouter", "attack=direct",
             "models.openrouter.id=test/model", "models.openrouter.provider=test",
             "hydra/launcher=basic",
         ])
@@ -246,6 +246,8 @@ def test_openrouter_configuration_requires_explicit_selection():
     # Require explicit hosted model/provider selection in composed configuration.
     assert cfg.models.openrouter.id == "test/model"
     assert cfg.models.openrouter.provider == "test"
+    assert OmegaConf.to_container(cfg.models.openrouter, resolve=True, throw_on_missing=True)["id"] == "test/model"
+    assert OmegaConf.is_missing(cfg.models.flip_attack_author, "id")
     assert cfg.defense == "none"
 
 

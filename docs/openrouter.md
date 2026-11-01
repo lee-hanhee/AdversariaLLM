@@ -21,7 +21,7 @@ without executing requests:
 
 ```bash
 python run_attacks.py --cfg job \
-  hydra/launcher=basic models=openrouter model=openrouter attack=direct \
+  hydra/launcher=basic model=openrouter attack=direct \
   models.openrouter.id=MODEL_ID models.openrouter.provider=PROVIDER_SLUG \
   classifiers=null
 ```
