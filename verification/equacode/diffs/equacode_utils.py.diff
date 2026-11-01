@@ -1,5 +1,5 @@
 --- reference/utils.py
-+++ adversariallm/attacks/utils/equacode/equacode_utils.py
++++ adversariallm/attacks/author_implementations/equacode/equacode_utils.py
 @@ -1,2 +1,11 @@
 +"""EquaCode author execution source, preserved unchanged.
 +

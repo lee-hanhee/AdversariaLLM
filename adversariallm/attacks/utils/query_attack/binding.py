@@ -13,7 +13,7 @@ from tempfile import TemporaryDirectory
 import time
 from types import SimpleNamespace
 
-from ...author_execution import AUTHOR_UTILS, load_symbols
+from ...author_execution import AUTHOR_IMPLEMENTATIONS, load_symbols
 
 
 def execute(transport, model, config, questions, sleep):
@@ -43,11 +43,11 @@ def execute(transport, model, config, questions, sleep):
     ], {'ask_response': helper, 're': re, 'word_tokenize': nltk.word_tokenize, 'pos_tag': nltk.pos_tag})
 
     # Load unchanged template constants and the complete original translation stage.
-    template_tree = ast.parse((AUTHOR_UTILS / 'query_attack/all_template.py').read_bytes())
+    template_tree = ast.parse((AUTHOR_IMPLEMENTATIONS / 'query_attack/all_template.py').read_bytes())
     names = [target.id for node in template_tree.body if isinstance(node, ast.Assign)
              for target in node.targets if isinstance(target, ast.Name)]
     templates = load_symbols('query_attack/all_template.py', names, {})
-    translator_tree = ast.parse((AUTHOR_UTILS / 'query_attack/translator.py').read_bytes())
+    translator_tree = ast.parse((AUTHOR_IMPLEMENTATIONS / 'query_attack/translator.py').read_bytes())
     names = [node.name for node in translator_tree.body if isinstance(node, ast.FunctionDef)]
 
     # Mirror the original physical-line input file and retain each line's repository owner.
@@ -154,7 +154,7 @@ def execute(transport, model, config, questions, sleep):
             return response
 
         # Execute the original target main body after its argparse block, with explicit CLI values.
-        tree = ast.parse((AUTHOR_UTILS / 'query_attack/queryattack_driver.py').read_bytes())
+        tree = ast.parse((AUTHOR_IMPLEMENTATIONS / 'query_attack/queryattack_driver.py').read_bytes())
         main = next(node for node in tree.body if isinstance(node, ast.If))
         start = next(index for index, node in enumerate(main.body) if isinstance(node, ast.Assign)
                      and any(isinstance(target, ast.Name) and target.id == 'start_str_map' for target in node.targets))

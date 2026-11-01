@@ -20,7 +20,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/gta/gta_prompts.py",
+          "path": "adversariallm/attacks/author_implementations/gta/gta_prompts.py",
           "sha256": "e55c2f42d368ae3f510786ce205331534a7067efbb08433a31e4e9705325f586",
           "extraction": "Prepend attribution docstring only; retain every original source byte.",
           "adaptation": {
@@ -39,7 +39,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/gta/gta_models.py",
+          "path": "adversariallm/attacks/author_implementations/gta/gta_models.py",
           "sha256": "9309a4ce47a0e0119e680e3f5e4f00358af18bdc6947fcc8763a9900d45178ff",
           "extraction": "Prepend attribution docstring only; retain every original source byte.",
           "adaptation": {
@@ -58,7 +58,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/gta/gta_driver.py",
+          "path": "adversariallm/attacks/author_implementations/gta/gta_driver.py",
           "sha256": "4f62f891d5114aeec35509ff3efcd146c6f0da89230ed998bc05d9497992efa2",
           "extraction": "Prepend attribution docstring only; retain every original source byte.",
           "adaptation": {
@@ -77,7 +77,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/gta/base_agent.py",
+          "path": "adversariallm/attacks/author_implementations/gta/base_agent.py",
           "sha256": "284b01d9e1fbc82ab41e559fa700d91189fce6482ce52b91f76f9b87e139bed5",
           "extraction": "Prepend attribution docstring only; retain every original source byte.",
           "adaptation": {
@@ -96,7 +96,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/gta/attack_agent.py",
+          "path": "adversariallm/attacks/author_implementations/gta/attack_agent.py",
           "sha256": "72e896bf1d26ebb8698befe3d60ca31d8e2a9bcf503599a0ffe6772e83851bde",
           "extraction": "Prepend attribution docstring only; retain every original source byte.",
           "adaptation": {
@@ -115,7 +115,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/gta/target_agent.py",
+          "path": "adversariallm/attacks/author_implementations/gta/target_agent.py",
           "sha256": "42cd7aff365d7e28ffeb767e16d65458fc4a62621b4b36e22e3a45db1f2a17c0",
           "extraction": "Prepend attribution docstring only; retain every original source byte.",
           "adaptation": {
@@ -134,7 +134,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/gta/judge_agent.py",
+          "path": "adversariallm/attacks/author_implementations/gta/judge_agent.py",
           "sha256": "27138409deeb7cc91456357a20ff98f39adcb7ab29f0715a3bd0536d31962b45",
           "extraction": "Prepend attribution docstring only; retain every original source byte.",
           "adaptation": {

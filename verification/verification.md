@@ -57,6 +57,8 @@ automatically verified by a matching hash. Recorded diffs must match the files.
 
 ## 3. Review the adapter and compare behavior
 
+Preserved runtime source lives in `adversariallm/attacks/author_implementations/<attack>/`.
+Our bindings live separately in `adversariallm/attacks/utils/<attack>/binding.py`.
 Inspect author code and our wrapper separately. Preserve author algorithms,
 prompts, whitespace, and redundant operations. Explain every extraction, changed
 import, callback, or I/O replacement. Use concise comments and blank lines in

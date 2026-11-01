@@ -23,7 +23,7 @@ from tests.author_test_utils import ROOT, author_payload
 def test_registry_and_yaml_retain_original_defaults(method):
     # Keep registry selection and composed settings aligned with the source profile.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
-        overrides = ['hydra/launcher=basic', f'models={method}_author', f'model={method}_author',
+        overrides = ['hydra/launcher=basic', f'model={method}_author',
                      f'attack={method}']
         overrides += [f'models.{method}_author.id=test/target', f'models.{method}_author.provider=target-provider',
                       f'attacks.{method}.judge.id=test/judge', f'attacks.{method}.judge.provider=judge-provider']

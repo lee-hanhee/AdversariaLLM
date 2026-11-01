@@ -19,7 +19,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/mousetrap/mousetrap_clients.py",
+          "path": "adversariallm/attacks/author_implementations/mousetrap/mousetrap_clients.py",
           "sha256": "3a40fc6a440ce411ee4f3c2660a28559d98f4bdeb7396c07b37cb7b890fde6ab",
           "extraction": "Concatenate the listed code cells, unchanged, with two newline characters between cells.",
           "adaptation": {
@@ -33,7 +33,7 @@
           }
         },
         {
-          "path": "adversariallm/attacks/utils/mousetrap/mousetrap_pipeline.py",
+          "path": "adversariallm/attacks/author_implementations/mousetrap/mousetrap_pipeline.py",
           "sha256": "c56b1bd1518b51c5b88935366ee7e6fe83d7bb2ddbc09b8a1500140513efb5db",
           "extraction": "Concatenate the listed code cells, unchanged, with two newline characters between cells.",
           "adaptation": {
@@ -49,7 +49,7 @@
           }
         },
         {
-          "path": "adversariallm/attacks/utils/mousetrap/mousetrap_driver.py",
+          "path": "adversariallm/attacks/author_implementations/mousetrap/mousetrap_driver.py",
           "sha256": "f47590ced1b664808f696508351eb5da94179b1ee010c44bdb80c8e4d6e16f07",
           "extraction": "Concatenate the listed code cells, unchanged, with two newline characters between cells.",
           "adaptation": {
