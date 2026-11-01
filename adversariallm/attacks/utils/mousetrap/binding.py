@@ -7,7 +7,7 @@ import json
 import random
 from types import SimpleNamespace
 
-from ...author_execution import AUTHOR_UTILS, load_symbols
+from ...author_execution import AUTHOR_IMPLEMENTATIONS, load_symbols
 
 
 def execute(transport, model, config, questions, sleep):
@@ -30,7 +30,7 @@ def execute(transport, model, config, questions, sleep):
 
     # Load the original transformation, attack, and judge functions into one namespace.
     pipeline = 'mousetrap/mousetrap_pipeline.py'
-    names = [node.name for node in ast.parse((AUTHOR_UTILS / pipeline).read_bytes()).body
+    names = [node.name for node in ast.parse((AUTHOR_IMPLEMENTATIONS / pipeline).read_bytes()).body
              if isinstance(node, ast.FunctionDef)]
     namespace = load_symbols(pipeline, names, {'random': random, 're': re, 'judger': judger, 'target': target})
     records = []
@@ -51,7 +51,7 @@ def execute(transport, model, config, questions, sleep):
             raise ValueError(f'Unexpected author output path: {path}')
 
     # Execute original setup and per-example body, replacing only input/output file I/O.
-    source = ast.parse((AUTHOR_UTILS / 'mousetrap/mousetrap_driver.py').read_bytes())
+    source = ast.parse((AUTHOR_IMPLEMENTATIONS / 'mousetrap/mousetrap_driver.py').read_bytes())
     setup = [node for node in source.body if isinstance(node, ast.Assign) and any(
         isinstance(t, ast.Name) and t.id in {'input_file_path', 'output_file_path', 'output_log_path', 'params'}
         for t in node.targets)]

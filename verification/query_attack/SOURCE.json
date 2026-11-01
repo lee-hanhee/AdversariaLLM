@@ -31,7 +31,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/query_attack/all_template.py",
+          "path": "adversariallm/attacks/author_implementations/query_attack/all_template.py",
           "sha256": "06965dd2431b2457f6f17af28d858027f0561f93b07f3c3c1863c2e8ebfb9be7",
           "adaptation": {
             "prepend_docstring": true,
@@ -63,7 +63,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/query_attack/openai_log.py",
+          "path": "adversariallm/attacks/author_implementations/query_attack/openai_log.py",
           "sha256": "0c2960c5f55b68a969be5d81e1e1cbf9767f3b47dde654ade71f469e59544736",
           "adaptation": {
             "prepend_docstring": true,
@@ -88,7 +88,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/query_attack/split_sentence_llms.py",
+          "path": "adversariallm/attacks/author_implementations/query_attack/split_sentence_llms.py",
           "sha256": "cb2a39f718c541be422013feb4497ab8c70c41de42ecf072c7ac1b0dbc76f58c",
           "adaptation": {
             "prepend_docstring": true,
@@ -106,7 +106,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/query_attack/queryattack_driver.py",
+          "path": "adversariallm/attacks/author_implementations/query_attack/queryattack_driver.py",
           "sha256": "9a647da9cb3ce83a3deeb607340d97896d088b9ed56fcd76b0ed1e77866bc8d2",
           "adaptation": {
             "prepend_docstring": true,
@@ -124,7 +124,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/query_attack/trans_llms.py",
+          "path": "adversariallm/attacks/author_implementations/query_attack/trans_llms.py",
           "sha256": "6fc31ea0cd666f37c97f5257a6964ccb8737c42ef518aec9912bb14ef715a0eb",
           "adaptation": {
             "prepend_docstring": true,
@@ -142,7 +142,7 @@
       },
       "implementations": [
         {
-          "path": "adversariallm/attacks/utils/query_attack/translator.py",
+          "path": "adversariallm/attacks/author_implementations/query_attack/translator.py",
           "sha256": "f0aa2e1e532b7ed06f8a0efe45d5bfee0659d7457fedab99468c878716c11e6d",
           "adaptation": {
             "prepend_docstring": true,

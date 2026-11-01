@@ -129,12 +129,12 @@ def validate_author_config(method, model, config):
                 raise ValueError(f'{option} must match the author CLI float argument.')
 
 
-AUTHOR_UTILS = Path(__file__).resolve().parent / 'utils'
+AUTHOR_IMPLEMENTATIONS = Path(__file__).resolve().parent / 'author_implementations'
 
 
 def load_symbols(filename, names, bindings):
     # Execute only declared author definitions; bind imports and storage I/O explicitly.
-    path = AUTHOR_UTILS / filename
+    path = AUTHOR_IMPLEMENTATIONS / filename
     tree = ast.parse(path.read_bytes())
     nodes = [node for node in tree.body if (
         isinstance(node, (ast.ClassDef, ast.FunctionDef)) and node.name in names

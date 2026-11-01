@@ -4,7 +4,7 @@ import ast
 import time
 from types import SimpleNamespace
 
-from ...author_execution import AUTHOR_UTILS, load_symbols
+from ...author_execution import AUTHOR_IMPLEMENTATIONS, load_symbols
 
 
 def execute(transport, model, config, questions, sleep):
@@ -27,7 +27,7 @@ def execute(transport, model, config, questions, sleep):
         'temperature', 'max_token', 'retry_time', 'failed_sleep_time', 'round_sleep_time')})
 
     # Execute the unchanged per-example loop, binding only dataset/progress and result storage.
-    source = ast.parse((AUTHOR_UTILS / 'flip_attack' / 'flip_attack_driver.py').read_bytes())
+    source = ast.parse((AUTHOR_IMPLEMENTATIONS / 'flip_attack' / 'flip_attack_driver.py').read_bytes())
     main = next(node for node in source.body if isinstance(node, ast.If))
     loop = next(node for node in main.body if isinstance(node, ast.For))
 

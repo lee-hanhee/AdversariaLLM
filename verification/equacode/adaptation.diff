@@ -1,5 +1,5 @@
 --- reference/scripts/attack.py
-+++ adversariallm/attacks/utils/equacode/equacode_prompts.py
++++ adversariallm/attacks/author_implementations/equacode/equacode_prompts.py
 @@ -1,3 +1,12 @@
 +"""EquaCode author templates, preserved without code or whitespace changes.
 +

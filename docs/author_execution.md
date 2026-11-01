@@ -130,7 +130,7 @@ it has no steps. Explicit attack branches select the values, and shared step
 construction handles repository metadata and indexing.
 
 Our per-attack I/O binding lives in `adversariallm/attacks/utils/<attack>/binding.py`,
-beside that attack's preserved author files. `author_execution.py` owns the shared
+separate from preserved source in `adversariallm/attacks/author_implementations/<attack>/`. `author_execution.py` owns the shared
 client, source loader, validation, and explicit dispatch; `author_adapter.py`
 converts outputs into repository results. All bindings expose the same
 `execute(transport, model, config, questions, sleep)` interface. Manifests list
