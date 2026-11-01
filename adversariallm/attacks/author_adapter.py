@@ -158,6 +158,20 @@ def adapt_results(method, originals, result):
                              completions=[line['response']], raw_completions=[request['raw_text']],
                              author_result=line, author_requests=[request])
 
+        elif method == 'tap':
+            # Retain every logical target query, including candidates later removed by author pruning.
+            for query in record['queries']:
+                calls = trace[query['request_start']:query['request_end']]
+                successful = [request for request in calls if 'metadata' in request]
+                request = successful[-1] if successful else calls[-1]
+                raw = request.get('raw_text')
+                response = query['response']
+                run.add_step(request, messages=query['messages'],
+                             completions=[] if response is None else [response],
+                             raw_completions=[] if raw is None else [raw],
+                             scores={'tap_author': {'rating': [float(query['score'])]}},
+                             author_result=query, author_requests=calls)
+
         else:
             raise ValueError(f'Unknown author method: {method}')
 

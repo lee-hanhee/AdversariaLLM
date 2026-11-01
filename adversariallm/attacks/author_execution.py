@@ -8,7 +8,7 @@ import time
 from types import SimpleNamespace
 
 # List the original-driver integrations available to the experiment runner.
-AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta', 'mousetrap', 'query_attack'})
+AUTHOR_METHODS = frozenset({'flip_attack', 'equacode', 'gta', 'mousetrap', 'query_attack', 'tap'})
 
 # Retain the source model names that select FlipAttack's original client branches.
 FLIP_MODELS = {
@@ -39,6 +39,11 @@ def validate_author_config(method, model, config):
         options = {'translation_language', 'target_language', 'trans_verify', 'temperate',
                    'top_p', 'max_new_tokens', 'request_seed', 'translator'}
 
+    elif method == 'tap':
+        options = {'attack_model', 'evaluator_model', 'attack_max_n_tokens', 'target_max_n_tokens',
+                   'evaluator_max_n_tokens', 'evaluator_temperature', 'max_n_attack_attempts',
+                   'branching_factor', 'width', 'depth', 'n_streams', 'keep_last_n', 'attacker', 'judge'}
+
     else:
         raise ValueError(f'Unknown author method: {method}')
 
@@ -53,7 +58,7 @@ def validate_author_config(method, model, config):
         routes.append(('translator', config.get('translator') or {}))
     else:
         routes.append(('judge', config.get('judge') or {}))
-    if method == 'gta':
+    if method in ('gta', 'tap'):
         routes.append(('attacker', config.get('attacker') or {}))
     for role, route in routes:
         for field in ('id', 'provider'):
@@ -127,6 +132,23 @@ def validate_author_config(method, model, config):
         for option in ('temperate', 'top_p'):
             if isinstance(config[option], bool) or not isinstance(config[option], (int, float)):
                 raise ValueError(f'{option} must match the author CLI float argument.')
+
+    elif method == 'tap':
+        # Native inference and the author's broken gpt-4-turbo model-loading path remain unsupported.
+        profiles = {'gpt-3.5-turbo', 'gpt-4', 'gpt-4-1106-preview'}
+        if model.get('author_model') not in profiles or config.get('attack_model') not in profiles:
+            raise ValueError('TAP requires explicit supported GPT source profiles for target and attacker.')
+        if config['evaluator_model'] not in profiles | {'gpt-4-turbo', 'no-evaluator'}:
+            raise ValueError('Unsupported TAP evaluator source profile.')
+
+        # Match source CLI types without adding positivity limits absent from the original parser.
+        for option in ('attack_max_n_tokens', 'target_max_n_tokens', 'evaluator_max_n_tokens',
+                       'max_n_attack_attempts', 'branching_factor', 'width', 'depth', 'n_streams', 'keep_last_n'):
+            if isinstance(config[option], bool) or not isinstance(config[option], int):
+                raise ValueError(f'{option} must match the TAP CLI integer argument.')
+        value = config['evaluator_temperature']
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            raise ValueError('evaluator_temperature must match the TAP CLI float argument.')
 
 
 AUTHOR_IMPLEMENTATIONS = Path(__file__).resolve().parent / 'author_implementations'
@@ -231,7 +253,11 @@ def execute(method, model, config, dataset, *, client, sleep=None):
     # Validate before preparing a shared transport and dataset question sequence.
     validate_author_config(method, model, config)
     transport = OpenRouterAuthorClient(client, model, config.get('judge', {}))
-    questions = [conv[0]['content'] for conv in dataset]
+    # TAP uses the dataset's reference answer as the original desired response prefix.
+    if method == 'tap':
+        questions = [(conv[0]['content'], conv[1]['content']) for conv in dataset]
+    else:
+        questions = [conv[0]['content'] for conv in dataset]
     try:
         # Dispatch to each attack's I/O binding through the same execution interface.
         if method == 'flip_attack':
@@ -258,6 +284,10 @@ def execute(method, model, config, dataset, *, client, sleep=None):
             from .utils.query_attack import binding as query_attack
 
             records, summary = query_attack.execute(transport, model, config, questions, sleep)
+        elif method == 'tap':
+            from .utils.tap import binding as tap
+
+            records, summary = tap.execute(transport, model, config, questions, sleep)
     except Exception as error:
         # Expose the attempted calls when the original driver aborts.
         error.author_requests = [request for trace in transport.requests for request in trace]

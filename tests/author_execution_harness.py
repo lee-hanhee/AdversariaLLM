@@ -60,6 +60,10 @@ def run_reference(payload, factory, sleep):
         from query_attack_reference import run_reference_query_attack
         return run_reference_query_attack(payload, factory, base)
 
+    if method == 'tap':
+        from tap_reference import run_reference_tap
+        return run_reference_tap(payload, factory, sleep, base)
+
     # Construct native SDK clients for the independent original-source path.
     openai = lambda **kw: factory('openai', kw)
     anthropic = lambda **kw: factory('anthropic', kw)
@@ -120,6 +124,9 @@ def main():
     random.seed(payload.get('rng_seed', 2026))
     time.sleep = sdk_sleeps.append
     scripted = iter(payload['replies'])
+    if payload['method'] == 'tap':
+        import numpy as np
+        np.random.seed(payload.get('rng_seed', 2026))
 
     # Use fake native credentials and remove external endpoint overrides from the test process.
     for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
@@ -136,6 +143,10 @@ def main():
         if payload['method'] == 'gta':
             from gta_reference import gta_role
             wire[-1]['role'] = gta_role(body['messages'])
+        if payload['method'] == 'tap':
+            from tap_reference import tap_role
+            wire[-1]['role'] = tap_role(body['messages'])
+            wire[-1]['timeout'] = request.extensions.get('timeout', {}).get('read')
         if request.url.host == 'openrouter.ai':
             assert request.headers['authorization'] == 'Bearer test-openrouter-key'
 
@@ -163,6 +174,32 @@ def main():
         return httpx.Response(200, json=data, request=request)
 
     def factory(provider, options):
+        # Legacy TAP uses the real 0.28 serializer with a Requests adapter backed by the same HTTP script.
+        if provider == 'request_count':
+            return len(wire)
+        if provider == 'legacy':
+            import openai
+            import requests
+
+            class Adapter(requests.adapters.BaseAdapter):
+                def send(self, request, **kwargs):
+                    incoming = httpx.Request(request.method, request.url, headers=request.headers,
+                        content=request.body, extensions={'timeout': {'read': kwargs.get('timeout')}})
+                    reply = http(incoming)
+                    result = requests.Response()
+                    result.status_code, result._content = reply.status_code, reply.content
+                    result.headers, result.url, result.request = dict(reply.headers), request.url, request
+                    return result
+
+                def close(self):
+                    pass
+
+            session = requests.Session()
+            session.trust_env = False
+            session.mount('https://', Adapter())
+            openai.requestssession = lambda: session
+            return openai
+
         # Attach the scripted HTTP transport to each native SDK constructor.
         transport = httpx.Client(transport=httpx.MockTransport(http))
         if provider == 'anthropic':
@@ -186,6 +223,11 @@ def main():
                 if payload['method'] == 'query_attack':
                     assert version('openai') == '1.54.3'
                     assert version('nltk') == '3.9.1'
+
+                if payload['method'] == 'tap':
+                    assert version('openai') == '0.28.0'
+                    assert version('numpy') == '1.26.3'
+                    pins.pop('anthropic', None)
 
                 # Enforce source SDK pins when the original release declares them.
                 for name in ('openai', 'anthropic'):
@@ -211,8 +253,12 @@ def main():
         result = {'error': {'type': type(error).__name__, 'message': str(error)}, 'wire': wire, 'sleeps': sleeps, 'sdk_sleeps': sdk_sleeps}
 
     # Include the final random state when checking the notebook's shared RNG stream.
-    if payload['method'] == 'mousetrap':
+    if payload['method'] in ('mousetrap', 'tap'):
         result['rng_state'] = random.getstate()
+
+    if payload['method'] == 'tap':
+        state = np.random.get_state()
+        result['numpy_rng_state'] = [state[0], state[1].tolist(), *state[2:]]
 
     # Emit a machine-readable result for the parent test process.
     json.dump(result, sys.stdout, ensure_ascii=False)

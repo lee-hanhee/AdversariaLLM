@@ -513,3 +513,26 @@ query_attack:
   translator:
     id: ???
     provider: ???
+tap:
+  name: tap
+  type: discrete
+  version: 0.1.0
+  seed: null
+  attack_model: ???
+  evaluator_model: gpt-3.5-turbo
+  attack_max_n_tokens: 500
+  target_max_n_tokens: 150
+  evaluator_max_n_tokens: 10
+  evaluator_temperature: 0
+  max_n_attack_attempts: 5
+  branching_factor: 1
+  width: 10
+  depth: 10
+  n_streams: 1
+  keep_last_n: 3
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???

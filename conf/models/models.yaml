@@ -392,3 +392,8 @@ query_attack_author:
   id: ???
   provider: ???
   author_model: gpt-4-1106-preview
+tap_author:
+  backend: openrouter
+  id: ???
+  provider: ???
+  author_model: ???

@@ -164,6 +164,11 @@ class Attack(Generic[AttRes]):
 
                 return QueryAttack
 
+            case "tap":
+                from .tap import TAPAttack
+
+                return TAPAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 
