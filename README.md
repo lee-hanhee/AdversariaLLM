@@ -67,6 +67,8 @@ If you prefer a fixed setup, you can also hard-code `root_dir` in `conf/paths.ya
 
 ### Running Basic Attacks
 
+For a provider-pinned hosted Direct baseline, see [OpenRouter targets](docs/openrouter.md).
+
 To evaluate a model with a single attack method:
 
 ```bash

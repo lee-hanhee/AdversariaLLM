@@ -1,0 +1,360 @@
+{
+  "method": "TAP",
+  "repository": "https://github.com/RICommunity/TAP",
+  "paper": "https://arxiv.org/abs/2312.02119",
+  "revision": "7bcdad30537c679d00699fac16052dc916c89a6d",
+  "verified_on": "2026-11-01",
+  "verification": "Pinned GitHub files independently compared byte-for-byte with Git objects from an official clone.",
+  "license": {
+    "status": "MIT, independently fetched at the pinned revision",
+    "path": "verification/tap/LICENSE"
+  },
+  "files": [
+    {
+      "original_path": "Demo.ipynb",
+      "reference": {
+        "path": "verification/tap/reference/Demo.ipynb",
+        "sha256": "17e7ddab416f2db916c1476648b8e03166341fdd9dc3a1d240bd6bfb0af1aa48"
+      }
+    },
+    {
+      "original_path": "LICENSE",
+      "reference": {
+        "path": "verification/tap/reference/LICENSE",
+        "sha256": "ec7bcccc7383e912e22569d4bed157753bf437d6568c6c663a5155b4c5838e25"
+      }
+    },
+    {
+      "original_path": "common.py",
+      "reference": {
+        "path": "verification/tap/reference/common.py",
+        "sha256": "09bcf209e6ee1bb02b3a38e984abb99c96f0655c542e0abb0ea1b7ba22e663b1"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tap/common.py",
+          "sha256": "2c3d1ee81b2499133099f740934969fb4a36c5df857611471611c1dad5ed4e5e",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tap/diffs/common.py.diff",
+            "reference_label": "reference/common.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "config.py",
+      "reference": {
+        "path": "verification/tap/reference/config.py",
+        "sha256": "e6685ac135f579f5fbedec3b15a5d3e2d3a1c2df166354fa2b725c126c619f88"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tap/config.py",
+          "sha256": "e5c0bbeb4ce7b30c37d63cdb5ee9f2a81e9d896996142946faf919f55d2e9f45",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tap/diffs/config.py.diff",
+            "reference_label": "reference/config.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "conversers.py",
+      "reference": {
+        "path": "verification/tap/reference/conversers.py",
+        "sha256": "d785675c9f7084ff2b55cb9c93f10816f398b87351bd6b232d0317a28b92ff61"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tap/conversers.py",
+          "sha256": "2f0ab26c7e545e7866547623d1dc387546c37c34758a2a041e5b83004b78f17a",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tap/diffs/conversers.py.diff",
+            "reference_label": "reference/conversers.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "evaluators.py",
+      "reference": {
+        "path": "verification/tap/reference/evaluators.py",
+        "sha256": "b598edf4ae1337e1f085df679b6628a78fa7867f2174d4c9463376f8b11a900d"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tap/evaluators.py",
+          "sha256": "64ab8a21acfe88a18a186e6aa61029b92ec2480ce63c67d71e2a0a9eaab2d516",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tap/diffs/evaluators.py.diff",
+            "reference_label": "reference/evaluators.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "language_models.py",
+      "reference": {
+        "path": "verification/tap/reference/language_models.py",
+        "sha256": "5257ddcd406697f8de833cdda8485556059446f1294275594ac51ec1e4ebf29b"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tap/language_models.py",
+          "sha256": "3e599791f43c3e23678c0c4583f300640ff8fc00fe2537d3230ca30db302eabe",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tap/diffs/language_models.py.diff",
+            "reference_label": "reference/language_models.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "loggers.py",
+      "reference": {
+        "path": "verification/tap/reference/loggers.py",
+        "sha256": "bd4020a518e9e6faed922da45c94440eac42a10071524a9c1e166d0651956ad8"
+      }
+    },
+    {
+      "original_path": "main_TAP.py",
+      "reference": {
+        "path": "verification/tap/reference/main_TAP.py",
+        "sha256": "4d82568a3881c2e1c8a818594b64a4fb58156c8a2140269e1974220a0474a125"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tap/main_TAP.py",
+          "sha256": "ab94c906bb6ae79f586d5d0b9b3bae38ad3963c3927a1db03ffab4f1a4c69cb7",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tap/diffs/main_TAP.py.diff",
+            "reference_label": "reference/main_TAP.py"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "readme.md",
+      "reference": {
+        "path": "verification/tap/reference/readme.md",
+        "sha256": "8ab1d28451a4ce14d6146405fba499c2de6577989109fc53ad04b92421b15675"
+      }
+    },
+    {
+      "original_path": "requirements.txt",
+      "reference": {
+        "path": "verification/tap/reference/requirements.txt",
+        "sha256": "d914df40219e208073fa7fc428256b176498822a769a173880892bf7744be928"
+      }
+    },
+    {
+      "original_path": "system_prompts.py",
+      "reference": {
+        "path": "verification/tap/reference/system_prompts.py",
+        "sha256": "63a51e9c5dde3dfa441197dc0af8eaeb027c4c2f04b3d9fad537eceb414861c9"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tap/system_prompts.py",
+          "sha256": "6b60c62605e09f9a6dc90783b5aae1f24a32790faf791595e9fa990d3c8693f8",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tap/diffs/system_prompts.py.diff",
+            "reference_label": "reference/system_prompts.py"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "repository": "AdversariaLLM",
+    "preserved_implementation_revision": "08484c461824be87a6b63bed24ff1d546ed49732",
+    "contribution_base_revision": "75c28e8bf46a2ac128e2e2d8cd66a87ba9f19a55",
+    "description": "PR 08 builds on committed PR 07 (pr/07-author-implementations). The research TAP port is not reused; execution uses freshly verified official source."
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/tap.py",
+        "purpose": "Common AuthorAttack entry point and original numeric CLI defaults, with required supported source-profile selections."
+      },
+      {
+        "path": "adversariallm/attacks/utils/tap/binding.py",
+        "purpose": "Source/legacy SDK bindings, isolated FastChat loading, role routing, and observation of original logger inputs and target queries."
+      },
+      {
+        "path": "adversariallm/attacks/author_execution.py",
+        "purpose": "Shared validation, source loading, OpenRouter transport, and explicit dispatch. TAP receives dataset goal and desired response prefix."
+      },
+      {
+        "path": "adversariallm/attacks/author_adapter.py",
+        "purpose": "Common result conversion retaining every target query, original rating, and request trace."
+      }
+    ],
+    "preserved_behavior": [
+      "Execute unchanged main_TAP.main, clean_attacks_and_convs, prune, AttackLLM, TargetLLM, GPT, and evaluator definitions.",
+      "Main CLI numeric defaults, including branching_factor=1 rather than demo value 4. Original nonpositive integer behavior is retained.",
+      "Original branching, both pruning stages, batch ordering, logger input order, history truncation, feedback, and exact-score-10 stopping.",
+      "Tuple/index tie ordering despite NumPy shuffle; all-off-topic fallback can retain or duplicate rejected candidates; exhausted malformed proposals can raise IndexError during cleanup.",
+      "First-closing-brace literal parser, key-presence checks, malformed-topic/rating fallbacks, accepted out-of-range ratings, and GPT history overwrites.",
+      "Pinned FastChat conversations and original adapter selection: chatgpt for gpt-3.5-turbo/gpt-4 and one_shot for gpt-4-1106-preview.",
+      "Attacker temperature/top_p 1/0.9, target 0/1, default evaluator temperature 0; token caps 500/150/10 and 20-second timeouts.",
+      "Original 20-attempt application retry loop, ten-second failure sleeps, half-second post-failure sleeps, and $ERROR$ marker.",
+      "Continuous unseeded Python/NumPy RNG across examples, conversation IDs/ancestry, and original model sharing."
+    ],
+    "changes": [
+      {
+        "area": "models_and_providers",
+        "author": "CLI defaults use Vicuna attacker/target and gpt-3.5-turbo evaluator; native and other API-wrapper paths also exist.",
+        "repository": "Explicit hosted source profiles for attacker/target: gpt-3.5-turbo, gpt-4, or gpt-4-1106-preview. Evaluator supports original GPT choices and no-evaluator. Actual model IDs/providers are independent OpenRouter routes.",
+        "reason": "Approved hosted scope. Other paths remain unsupported, including the unrepaired gpt-4-turbo attacker/target loading bug. No live model equivalence is claimed."
+      },
+      {
+        "area": "dependencies",
+        "author": "OpenAI 0.28.0, NumPy 1.26.3, FastChat 0.2.32, and a full native-model/logging dependency set.",
+        "repository": "Shared OpenAI 1.109.1 and repository NumPy. Exact FastChat conversation code is loaded from an isolated official package installed with --no-deps. Baselines retain original OpenAI/NumPy pins.",
+        "reason": "Preserve formatting without downgrading repository Pydantic or importing native inference/model-server dependencies; no full historical environment claim."
+      },
+      {
+        "area": "request_transport",
+        "author": "Legacy ChatCompletion.create returns mappings and uses request_timeout=20. Its Requests layer can retry connection establishment.",
+        "repository": "Map request_timeout to modern SDK timeout and return model_dump mappings. A view of the supplied client shares its HTTP transport with modern SDK retries disabled. Route at original role-call boundaries, including shared source model objects.",
+        "reason": "Preserve source HTTP-status retry counts and role semantics. Low-level connection establishment and provider behavior are not exhaustively equivalent across SDKs."
+      },
+      {
+        "area": "data_and_storage",
+        "author": "One CLI goal and desired response prefix, plus W&B/parquet output and derived logger statistics.",
+        "repository": "Dataset user/assistant messages supply goal/target_str. Retain original iteration logger inputs and all logical target queries through repository results. Category is null; indices follow dataset order; standalone derived logger statistics are not recreated.",
+        "reason": "Replace data/storage I/O without changing search decisions or adding model calls."
+      },
+      {
+        "area": "configuration",
+        "author": "Original CLI search controls and fixed generation constants.",
+        "repository": "Hydra exposes original controls and source profiles; all three routing IDs/providers are required, including no-evaluator mode. Local RNG seeding, generic generation overrides, and runtime defenses are rejected.",
+        "reason": "Keep transport explicit without silently substituting native model paths or new search settings."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py tap --official-repo /path/to/official-clone",
+      "result": "All 12 references match independent pinned official Git objects. Seven runtime copies prepend attribution and otherwise preserve exact source bytes."
+    },
+    "behavior": {
+      "reference_execution": "Independent official definitions and complete main search execute under native OpenAI 0.28 serialization. A Requests adapter supplies the same scripted in-memory HTTP replies as the modern SDK. The oracle imports the pinned FastChat conversation module and evaluates every original adapter match independently, without production source/dependency loaders.",
+      "compared": [
+        "Role prompts, exact serialized body fields apart from routing, omitted defaults, request controls and timeout",
+        "Logger inputs, outputs/ratings, request boundaries, IDs/ancestry, pruning, ties, fallback duplication and stopping",
+        "Malformed proposals, brace/literal parsing, invalid topic/rating output, out-of-range scores and empty-frontier errors",
+        "History, source model sharing, six-stream chunks, multiple examples, Unicode, nonpositive CLI integers and empty input",
+        "HTTP failures/exhaustion, response-shape errors, error markers, sleeps, and final Python/NumPy RNG states",
+        "Public registry/configuration, common result serialization, explicit routes, supplied client retry settings and missing dependency setup"
+      ],
+      "allowed_comparison_differences": [
+        "OpenRouter URL/model IDs and provider routing fields",
+        "Legacy request_timeout mapped to timeout; native response objects mapped to dictionaries",
+        "W&B/parquet storage, category/index metadata, measured timing and excluded derived logger statistics"
+      ],
+      "runs": [
+        {
+          "name": "tap_author_behavior",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_tap.py",
+          "passed": 54,
+          "skipped": 0,
+          "scope": "Search/SDK parity cases before the repository/configuration cases were added."
+        },
+        {
+          "name": "tap_repository_and_configuration",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_tap.py -k \"routing or unsupported or registry or public or missing\"",
+          "passed": 17,
+          "skipped": 0
+        },
+        {
+          "name": "all_author_integrations_and_verifier",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py tests/test_attacks/test_query_attack.py tests/test_attacks/test_tap.py tests/test_source_verification.py",
+          "passed": 381,
+          "skipped": 0,
+          "scope": "All six attack integrations, shared author tests, and generic verifier tests on the PR 07 layout."
+        },
+        {
+          "name": "consolidated_model_configuration",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_api_target.py tests/test_author_execution.py::test_registry_and_yaml_retain_original_defaults tests/test_attacks/test_query_attack.py::test_registry_yaml_and_defaults_match_original_cli_declarations tests/test_attacks/test_tap.py::test_registry_configuration_and_original_cli_defaults tests/test_run_attacks_defenses.py",
+          "passed": 35,
+          "skipped": 0,
+          "scope": "Configuration composition, explicit routes, hosted target and runner checks after merging PR 07 profile consolidation. Existing model and attack values are unchanged."
+        }
+      ],
+      "unique_tests_passed": 381,
+      "counting_note": "The combined 381-check run includes all 71 TAP cases and the 310 prerequisite checks. Earlier focused counts overlap this run and are not added to it. The later 35-check configuration run overlaps earlier cases and includes hosted-core checks; it is recorded separately and is not added to the historical 381-check total."
+    },
+    "not_tested": [
+      "Live model availability or attack effectiveness",
+      "Paper benchmarks",
+      "Native local-model inference"
+    ],
+    "environments": {
+      "repository_tests": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "numpy": "1.26.4",
+          "torch": "2.2.2",
+          "transformers": "5.9.0",
+          "httpx": "0.28.1"
+        }
+      },
+      "reference_sdk_baseline": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "0.28.0",
+          "numpy": "1.26.3",
+          "httpx": "0.27.2"
+        }
+      },
+      "shared_sdk_comparison": {
+        "python": "3.11.13",
+        "packages": {
+          "openai": "1.109.1",
+          "numpy": "1.26.4",
+          "httpx": "0.27.2"
+        }
+      },
+      "fastchat": {
+        "version": "0.2.32",
+        "package_source": "https://pypi.org/project/fschat/0.2.32/",
+        "wheel_sha256": "f168654c61826bbc54b67424307d5a0940887cdb4b4b20e0db5bb6b992c370aa",
+        "install_command": "python -m pip install --no-deps --target .author_envs/tap_fastchat fschat==0.2.32",
+        "files": [
+          {
+            "path": "fastchat/conversation.py",
+            "sha256": "c53d6e5dbe68d603a6517b76d6b9dc289032dfbf734dbc1069cbf2f6e0e57098"
+          },
+          {
+            "path": "fastchat/model/model_adapter.py",
+            "sha256": "a11bc44ef01f8b94b89404f8fc8b107dff606ed7394c62adafe0eb50738281c3"
+          }
+        ],
+        "scope": "Production retains the GPT and default adapter definitions; independent tests evaluate all original match methods for supported names."
+      }
+    },
+    "execution_requirements": {
+      "documentation": "docs/author_execution.md#tap",
+      "required_routes": [
+        "target ID/provider and supported source label",
+        "attacker ID/provider and supported source label",
+        "evaluator ID/provider"
+      ],
+      "isolated_dependency": "FastChat 0.2.32 in .author_envs/tap_fastchat, installed with --no-deps. No automatic downloads.",
+      "baseline_python": "TAP_AUTHOR_PYTHON uses environment.lock.txt; TAP_SHARED_PYTHON uses the shared SDK/NumPy comparison environment.",
+      "test_process": "Intel macOS adds the Torch recompile_limit test-process option described in docs/openrouter.md. All HTTP is scripted and offline."
+    },
+    "limitations": "Source identity and offline comparisons cover supported source paths and tested scenarios. They do not establish identical live outputs, exhaustive low-level SDK/connection behavior, native inference fidelity, attack effectiveness, or paper benchmark reproduction."
+  },
+  "attribution": "TAP authors; exact copyright notice is retained in the bundled MIT license and preserved source headers."
+}

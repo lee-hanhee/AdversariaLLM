@@ -64,6 +64,9 @@ class AttackStepResult:
     # Optional defense metadata (kept optional for backward compatibility).
     defense_metadata: Optional[list[dict[str, Any]]] = None
 
+    # Keep hosted request metadata optional for existing local attack results.
+    api_metadata: Optional[list[dict[str, Any]]] = None
+
 
 @beartype
 @dataclass
@@ -95,6 +98,9 @@ class AttackResult:
 AttRes = TypeVar("AttRes", bound=AttackResult)
 
 class Attack(Generic[AttRes]):
+    # Require each ordinary attack to opt into generation-only hosted targets.
+    SUPPORTS_HOSTED_TARGET = False
+
     def __init__(self, config):
         self.config = config
         transformers.set_seed(config.seed)
@@ -134,6 +140,35 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+            case "equacode":
+                from .equacode import EquaCodeAttack
+
+                return EquaCodeAttack
+
+            # Load the hosted author entry points lazily through the existing attack registry.
+            case "flip_attack":
+                from .flip_attack import FlipAttack
+
+                return FlipAttack
+            case "gta":
+                from .gta import GTAAttack
+
+                return GTAAttack
+            case "mousetrap":
+                from .mousetrap import MousetrapAttack
+
+                return MousetrapAttack
+
+            case "query_attack":
+                from .query_attack import QueryAttack
+
+                return QueryAttack
+
+            case "tap":
+                from .tap import TAPAttack
+
+                return TAPAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 

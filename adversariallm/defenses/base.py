@@ -23,7 +23,7 @@ class TargetSystem(ABC):
 
     NAME: str
 
-    def __init__(self, model: PreTrainedModel, tokenizer: PreTrainedTokenizerBase):
+    def __init__(self, model: PreTrainedModel | None, tokenizer: PreTrainedTokenizerBase | None):
         self.model = model
         self.tokenizer = tokenizer
 
@@ -62,6 +62,9 @@ class TargetSystem(ABC):
         initial_batch_size: int,
         verbose: bool = False,
     ) -> list[float | None]:
+        # Reject local-loss requests for targets that expose only hosted generation.
+        if self.model is None:
+            raise ValueError("This target does not expose local model losses.")
         if len(full_token_tensors) != len(prompt_token_tensors):
             raise ValueError(
                 "full_token_tensors and prompt_token_tensors must have the same length: "

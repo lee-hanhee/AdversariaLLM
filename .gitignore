@@ -12,3 +12,4 @@ cache
 viz
 wandb
 embeddings/
+.author_envs/
