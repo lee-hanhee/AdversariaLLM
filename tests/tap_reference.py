@@ -159,7 +159,7 @@ def run_reference_tap(payload, factory, sleep, base):
             'attack_model', 'evaluator_model', 'attack_max_n_tokens', 'target_max_n_tokens',
             'evaluator_max_n_tokens', 'evaluator_temperature', 'max_n_attack_attempts',
             'branching_factor', 'width', 'depth', 'n_streams', 'keep_last_n')},
-            target_model=payload['model']['author_model'], goal=conversation[0]['content'],
+            target_model=payload['config']['source_profile'], goal=conversation[0]['content'],
             target_str=conversation[1]['content'], index=index, category=None, iter_index=index, store_folder='')
         driver['main'](args)
     return rows

@@ -182,19 +182,11 @@
     "files": [
       {
         "path": "adversariallm/attacks/tap.py",
-        "purpose": "Common AuthorAttack entry point and original numeric CLI defaults, with required supported source-profile selections."
+        "purpose": "Attack configuration, hosted run entry point, original-driver integration, and result conversion."
       },
       {
-        "path": "adversariallm/attacks/utils/tap/binding.py",
-        "purpose": "Source/legacy SDK bindings, isolated FastChat loading, role routing, and observation of original logger inputs and target queries."
-      },
-      {
-        "path": "adversariallm/attacks/author_execution.py",
-        "purpose": "Shared validation, source loading, OpenRouter transport, and explicit dispatch. TAP receives dataset goal and desired response prefix."
-      },
-      {
-        "path": "adversariallm/attacks/author_adapter.py",
-        "purpose": "Common result conversion retaining every target query, original rating, and request trace."
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Shared SDK transport, source loading, route validation, request tracing, and result containers."
       }
     ],
     "preserved_behavior": [
@@ -284,10 +276,10 @@
         },
         {
           "name": "consolidated_model_configuration",
-          "command": "python -m pytest -p no:cacheprovider -q tests/test_api_target.py tests/test_author_execution.py::test_registry_and_yaml_retain_original_defaults tests/test_attacks/test_query_attack.py::test_registry_yaml_and_defaults_match_original_cli_declarations tests/test_attacks/test_tap.py::test_registry_configuration_and_original_cli_defaults tests/test_run_attacks_defenses.py",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py::test_registry_and_yaml_retain_original_defaults tests/test_attacks/test_query_attack.py::test_registry_yaml_and_defaults_match_original_cli_declarations tests/test_attacks/test_tap.py::test_registry_configuration_and_original_cli_defaults tests/test_run_attacks_defenses.py",
           "passed": 35,
           "skipped": 0,
-          "scope": "Configuration composition, explicit routes, hosted target and runner checks after merging PR 07 profile consolidation. Existing model and attack values are unchanged."
+          "scope": "Configuration composition, explicit routes, hosted attack and runner checks after merging PR 07 profile consolidation. Existing model and attack values are unchanged."
         }
       ],
       "unique_tests_passed": 381,
@@ -352,7 +344,7 @@
       ],
       "isolated_dependency": "FastChat 0.2.32 in .author_envs/tap_fastchat, installed with --no-deps. No automatic downloads.",
       "baseline_python": "TAP_AUTHOR_PYTHON uses environment.lock.txt; TAP_SHARED_PYTHON uses the shared SDK/NumPy comparison environment.",
-      "test_process": "Intel macOS adds the Torch recompile_limit test-process option described in docs/openrouter.md. All HTTP is scripted and offline."
+      "test_process": "Intel macOS adds the Torch recompile_limit test-process option described in docs/author_execution.md. All HTTP is scripted and offline."
     },
     "limitations": "Source identity and offline comparisons cover supported source paths and tested scenarios. They do not establish identical live outputs, exhaustive low-level SDK/connection behavior, native inference fidelity, attack effectiveness, or paper benchmark reproduction."
   },

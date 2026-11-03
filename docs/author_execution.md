@@ -7,12 +7,14 @@ OpenAI, Anthropic, or DeepInfra credentials are used.
 
 ## Configuration
 
-The added hosted profiles are named entries in `conf/models/models.yaml`, loaded
-by default. Select an entry with `model=equacode_author`, for example; separate
-`models=...` group switches are no longer needed. Every hosted entry retains
-required `id` and `provider` fields. Supply them explicitly for the selected
-profile. `model=null` selects the entire catalog, including unconfigured hosted
-entries; use an explicit model selection for these runs.
+All hosted attacks share the `openrouter` entry in `conf/models/models.yaml`.
+Select `model=openrouter` and supply `models.openrouter.id` and
+`models.openrouter.provider`. Select the algorithm separately with `attack=...`.
+Legacy source profiles belong to `attacks.<attack>.source_profile`; they select
+original model handling independently of the hosted model ID. Mousetrap and TAP
+require an explicit source profile; the other four attacks retain their source defaults.
+`model=null` selects the entire catalog, including the unconfigured hosted entry;
+use an explicit model selection for these runs.
 
 Use the normal repository dependency setup and MongoDB configuration. The
 repository lock already selects OpenAI 1.109.1; no extra runtime environment or
@@ -24,39 +26,40 @@ Preview a configuration without making requests:
 
 ```bash
 python run_attacks.py --cfg job hydra/launcher=basic \
-  model=equacode_author attack=equacode \
-  models.equacode_author.id=TARGET_MODEL_ID \
-  models.equacode_author.provider=TARGET_PROVIDER \
+  model=openrouter attack=equacode \
+  models.openrouter.id=TARGET_MODEL_ID \
+  models.openrouter.provider=TARGET_PROVIDER \
   attacks.equacode.judge.id=JUDGE_MODEL_ID \
   attacks.equacode.judge.provider=JUDGE_PROVIDER \
   classifiers=null
 ```
 
-For FlipAttack, replace `equacode` with `flip_attack` throughout. Set
+For FlipAttack, select `attack=flip_attack` and replace the `attacks.equacode`
+overrides with `attacks.flip_attack`. Keep `model=openrouter`. Set
 `attacks.flip_attack.evaluate=true` to enable its author judge. Remove `--cfg job`
 to run after selecting the dataset and indices normally. `classifiers=null`
 disables the runner's separate post-run classifiers; it does not disable
 EquaCode's mandatory author judge or FlipAttack's enabled author judge.
 
-For GTA, select `model=gta_author attack=gta` and supply
-`models.gta_author.id`, `models.gta_author.provider`, `attacks.gta.attacker.id`,
+For GTA, select `model=openrouter attack=gta` and supply
+`models.openrouter.id`, `models.openrouter.provider`, `attacks.gta.attacker.id`,
 `attacks.gta.attacker.provider`, `attacks.gta.judge.id`, and
 `attacks.gta.judge.provider`. Every route is required. `attacks.gta.rounds`
 defaults to the author's five rounds. Thomas and Marcos share the target route
 but keep separate histories. In-attack judging always runs; keep
 `classifiers=null` to disable separate repository post-run classifiers.
 
-For Mousetrap, select `model=mousetrap_author attack=mousetrap`.
-Supply `models.mousetrap_author.author_model` as `o1-2024-12-17` or
+For Mousetrap, select `model=openrouter attack=mousetrap`.
+Supply `attacks.mousetrap.source_profile` as `o1-2024-12-17` or
 `claude-3-7-sonnet-20250219`, plus explicit target and judge model IDs/providers.
 For example, preview the configuration without inference:
 
 ```bash
 python run_attacks.py --cfg job hydra/launcher=basic \
-  model=mousetrap_author attack=mousetrap \
-  models.mousetrap_author.author_model=o1-2024-12-17 \
-  models.mousetrap_author.id=TARGET_MODEL_ID \
-  models.mousetrap_author.provider=TARGET_PROVIDER \
+  model=openrouter attack=mousetrap \
+  attacks.mousetrap.source_profile=o1-2024-12-17 \
+  models.openrouter.id=TARGET_MODEL_ID \
+  models.openrouter.provider=TARGET_PROVIDER \
   attacks.mousetrap.judge.id=JUDGE_MODEL_ID \
   attacks.mousetrap.judge.provider=JUDGE_PROVIDER classifiers=null
 ```
@@ -68,17 +71,17 @@ judge label is recorded in `verification/mousetrap/SOURCE.json` and the preserve
 author class; configure the actual route using `attacks.mousetrap.judge.id` and
 `attacks.mousetrap.judge.provider`.
 
-For QueryAttack, select `model=query_attack_author attack=query_attack`.
-Supply `models.query_attack_author.id/provider` and
+For QueryAttack, select `model=openrouter attack=query_attack`.
+Supply `models.openrouter.id/provider` and
 `attacks.query_attack.translator.id/provider`. The helper route handles sentence
 splitting, extraction, and optional translation verification; no post-run judge
 route is used. Preview without inference:
 
 ```bash
 python run_attacks.py --cfg job hydra/launcher=basic \
-  model=query_attack_author attack=query_attack \
-  models.query_attack_author.id=TARGET_MODEL_ID \
-  models.query_attack_author.provider=TARGET_PROVIDER \
+  model=openrouter attack=query_attack \
+  models.openrouter.id=TARGET_MODEL_ID \
+  models.openrouter.provider=TARGET_PROVIDER \
   attacks.query_attack.translator.id=HELPER_MODEL_ID \
   attacks.query_attack.translator.provider=HELPER_PROVIDER classifiers=null
 ```
@@ -97,7 +100,7 @@ A single translation language must produce the file required by the selected
 target language. The original single-language C++ path does not write a file,
 so it fails; the default `ALL` translation does produce its C++ file.
 
-The model configuration's `author_model` is the source-level name used by the
+Each attack configuration's `source_profile` is the source-level name used by the
 unchanged author code. It is **not** sent to OpenRouter. FlipAttack uses it to
 choose GPT/Claude/Llama/Mixtral handling; EquaCode uses its case-sensitive name
 check when constructing the system message. GTA initially supports only the
@@ -127,25 +130,30 @@ retry behavior. No additional application retry layer is added.
 | SDK | Shared OpenAI 1.109.1 replaces the original SDK clients; SDK retries may differ for failures outside the tested cases. |
 | Integration | Repository datasets and results replace standalone input selection and durable output storage. QueryAttack retains temporary CSV/text file stages. No RNG seed or generic generation overrides are introduced. |
 
-The adapter runs directly in the runner and reuses the existing `APITarget` SDK
-client. All author entry points inherit `AuthorAttack`, which handles configuration
-and hosted-target checks without adding RNG seeding. Results share one hierarchy:
+The attacks run directly in the runner and share one `OpenRouterTarget` SDK
+client. Each attack validates its own configuration without adding RNG seeding.
+Results share one hierarchy:
 `AuthorAttackResult` contains an `AuthorRunResult` per dataset example, with
 `AuthorStepResult` entries for individual target turns. Both runs and steps retain
 `author_result` and `author_requests`; a run keeps the complete record even when
 it has no steps. Explicit attack branches select the values, and shared step
 construction handles repository metadata and indexing.
 
-Our per-attack I/O binding lives in `adversariallm/attacks/utils/<attack>/binding.py`,
-separate from preserved source in `adversariallm/attacks/author_implementations/<attack>/`. `author_execution.py` owns the shared
-client, source loader, validation, and explicit dispatch; `author_adapter.py`
-converts outputs into repository results. All bindings expose the same
-`execute(transport, model, config, questions, sleep)` interface. Manifests list
-our binding under `integration.files`; preserved author correspondence remains
-under `files`.
+Each attack in `adversariallm/attacks/<attack>.py` defines its own `run`,
+configuration validation, `_execute` driver, and `_add_steps` result conversion.
+Preserved source remains in `adversariallm/attacks/author_implementations/<attack>/`.
+Shared SDK routing, source loading, and result bookkeeping live in
+`adversariallm/attacks/utils/author_runtime.py`; there is no central attack dispatcher.
+The drivers accept `(transport, model, config, questions, sleep)`, where questions
+are `(goal, reference_answer)` pairs. Manifests list the attack module under
+`integration.files`; preserved author correspondence remains under `files`.
+
+Each attack checks its supported source profiles and required options. The
+previous exhaustive unknown-setting allowlist has been removed. Use the declared
+attack defaults when constructing configurations.
 
 `OpenRouterAuthorClient` keeps routing and request traces together; the
-adapter converts original author records into repository results once. No extra
+attack converts original author records into repository results once. No extra
 client is constructed during author execution. Original
 post-loop reporting is outside the binding: FlipAttack's standalone reporting
 uses `if eval` rather than `args.eval`; EquaCode's separate Excel keyword-score
@@ -271,9 +279,9 @@ Preview a configuration without inference:
 
 ```bash
 python run_attacks.py --cfg job hydra/launcher=basic \
-  model=tap_author attack=tap \
-  models.tap_author.author_model=gpt-4 \
-  models.tap_author.id=TARGET_MODEL_ID models.tap_author.provider=TARGET_PROVIDER \
+  model=openrouter attack=tap \
+  attacks.tap.source_profile=gpt-4 \
+  models.openrouter.id=TARGET_MODEL_ID models.openrouter.provider=TARGET_PROVIDER \
   attacks.tap.attack_model=gpt-4 \
   attacks.tap.attacker.id=ATTACKER_MODEL_ID attacks.tap.attacker.provider=ATTACKER_PROVIDER \
   attacks.tap.judge.id=EVALUATOR_MODEL_ID attacks.tap.judge.provider=EVALUATOR_PROVIDER \

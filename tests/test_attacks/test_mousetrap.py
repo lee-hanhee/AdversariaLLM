@@ -17,7 +17,7 @@ def attempt_replies(scores, response='  Rainbows are colorful.\n'):
 def test_original_stopping_records_and_request_controls(model, scores, length):
     # Prepare the original notebook settings, input examples, and scripted replies.
     payload = author_payload('mousetrap')
-    payload['model']['author_model'] = model
+    payload['config']['source_profile'] = model
     payload['replies'] = attempt_replies(scores)
 
     # Run the independent original and integrated paths with identical scripted replies.
@@ -111,7 +111,7 @@ def test_target_output_is_not_stripped_or_replaced(response):
 def test_original_request_failures_propagate(model, role, failure):
     # Prepare the original notebook settings, input examples, and scripted replies.
     payload = author_payload('mousetrap')
-    payload['model']['author_model'] = model
+    payload['config']['source_profile'] = model
     bad = {'text': '', 'empty_choices': True} if failure == 'empty_choices' else {'status': 404}
     payload['replies'] = ([{'text': 'Answer.'}] if role == 'judge' else []) + [bad]
 
@@ -127,7 +127,7 @@ def test_original_request_failures_propagate(model, role, failure):
 def test_sdk_retry_preserves_wire_controls_and_rng_stream(model):
     # Prepare the original notebook settings, input examples, and scripted replies.
     payload = author_payload('mousetrap')
-    payload['model']['author_model'] = model
+    payload['config']['source_profile'] = model
     payload['replies'] = [{'status': 500}, *attempt_replies([4] * 3)]
 
     # Run the independent original and integrated paths with identical scripted replies.

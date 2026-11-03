@@ -99,19 +99,11 @@
     "files": [
       {
         "path": "adversariallm/attacks/equacode.py",
-        "purpose": "Repository attack entry point and author configuration defaults."
+        "purpose": "Attack configuration, hosted run entry point, original-driver integration, and result conversion."
       },
       {
-        "path": "adversariallm/attacks/author_execution.py",
-        "purpose": "Shared transport, source loading, configuration validation, and explicit dispatch to the attack binding."
-      },
-      {
-        "path": "adversariallm/attacks/utils/equacode/binding.py",
-        "purpose": "Execute the original driver with the shared OpenRouterAuthorClient and capture original records."
-      },
-      {
-        "path": "adversariallm/attacks/author_adapter.py",
-        "purpose": "Shared AuthorAttack entry point and AuthorRunResult per example, with AuthorStepResult entries for target turns. Explicit attack branches map original outputs; shared step construction retains metadata, records, and request traces."
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Shared SDK transport, source loading, route validation, request tracing, and result containers."
       }
     ],
     "preserved_behavior": [
@@ -189,7 +181,7 @@
         },
         {
           "name": "full_regression",
-          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
           "passed": 184,
           "skipped": 0
         },
@@ -201,7 +193,7 @@
         },
         {
           "name": "shared_orchestration_refactor",
-          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_source_verification.py tests/test_api_clients.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
           "passed": 186,
           "skipped": 0
         },
@@ -244,7 +236,7 @@
     },
     "execution_requirements": {
       "guide": "docs/author_execution.md",
-      "note": "Set the baseline/shared test interpreter paths as described in the guide. Intel macOS tests also use the test-process-only Torch recompile_limit setup in docs/openrouter.md; API/model/database I/O is mocked."
+      "note": "Set the baseline/shared test interpreter paths as described in the guide. Intel macOS tests also use the test-process-only Torch recompile_limit setup in docs/author_execution.md; API/model/database I/O is mocked."
     },
     "not_tested": [
       "live OpenRouter/model availability",

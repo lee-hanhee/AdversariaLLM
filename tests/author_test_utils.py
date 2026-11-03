@@ -27,11 +27,10 @@ def author_payload(method, **overrides):
     configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig,
                'gta': GTAConfig, 'mousetrap': MousetrapConfig, 'query_attack': QueryAttackConfig, 'tap': TAPConfig}
     config = asdict(configs[method]())
+    if method in ('mousetrap', 'tap'):
+        config['source_profile'] = {'mousetrap': 'o1-2024-12-17', 'tap': 'gpt-4'}[method]
     config.update(overrides)
-    model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider',
-             'author_model': {'flip_attack': 'gpt-4-0613', 'equacode': 'gpt-3.5-turbo',
-                              'gta': 'deepseek_r1', 'mousetrap': 'o1-2024-12-17',
-                              'query_attack': 'gpt-4-1106-preview', 'tap': 'gpt-4'}[method]}
+    model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider'}
     if method == 'query_attack':
         config['translator'] = {'id': 'test/translator', 'provider': 'translator-provider'}
     else:
@@ -130,3 +129,9 @@ def compare_author(payload):
         if payload['method'] == 'query_attack':
             assert adapted['author_summary'] == original['author_summary']
     return original, adapted
+
+
+def validate_author_config(method, model, config):
+    from adversariallm.attacks import Attack
+
+    Attack.from_name(method).validate_config(model, config)

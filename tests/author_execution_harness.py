@@ -21,7 +21,7 @@ sys.path.insert(0, str(ROOT))
 package = ModuleType('adversariallm.attacks')
 package.__path__ = [str(ROOT / 'adversariallm/attacks')]
 sys.modules[package.__name__] = package
-from adversariallm.attacks import author_execution
+
 
 
 def reference_symbols(path, names, bindings):
@@ -40,10 +40,35 @@ def reference_symbols(path, names, bindings):
     return {name: namespace[name] for name in names}
 
 
+def integrated_execute(method, model, config, dataset, *, client, sleep):
+    """Load the production driver without requiring the ML stack in SDK baselines."""
+    import copy
+
+    runtime_path = ROOT / 'adversariallm/attacks/utils/author_runtime.py'
+    runtime = reference_symbols(runtime_path, [
+        'load_symbols', 'OpenRouterAuthorClient', 'execute',
+    ], {'ast': ast, 'copy': copy, 'time': time, 'SimpleNamespace': SimpleNamespace,
+        'AUTHOR_IMPLEMENTATIONS': ROOT / 'adversariallm/attacks/author_implementations',
+        'version': version})
+    path = ROOT / 'adversariallm/attacks' / f'{method}.py'
+    tree = ast.parse(path.read_bytes())
+    namespace = {**runtime, '__file__': str(path)}
+    # Keep standard-library imports and module helpers, excluding repository imports.
+    nodes = [node for node in tree.body if isinstance(node, ast.Import)
+             or isinstance(node, ast.ImportFrom) and node.level == 0
+             or isinstance(node, ast.FunctionDef)]
+    cls = next(node for node in tree.body if isinstance(node, ast.ClassDef)
+               and any(isinstance(base, ast.Name) and base.id == 'Attack' for base in node.bases))
+    driver = next(node for node in cls.body if isinstance(node, ast.FunctionDef) and node.name == '_execute')
+    driver.decorator_list = []
+    exec(compile(ast.Module(body=[*nodes, driver], type_ignores=[]), str(path), 'exec'), namespace)
+    return runtime['execute'](namespace['_execute'], model, config, dataset, client=client, sleep=sleep)
+
+
 def run_reference(payload, factory, sleep):
     # Resolve source-level model labels, questions, and the pinned reference package.
     method, config, model = payload['method'], payload['config'], payload['model']
-    model = {**model, 'id': model['author_model']}
+    model = {**model, 'id': config['source_profile']}
     questions = [conv[0]['content'] for conv in payload['dataset']]
     base = ROOT / 'verification' / method / 'reference'
 
@@ -244,7 +269,7 @@ def main():
 
                 # Run the integrated path using only the shared OpenRouter client.
                 client = factory('openai', {'api_key': 'test-openrouter-key', 'base_url': 'https://openrouter.ai/api/v1'})
-                result = author_execution.execute(payload['method'], payload['model'], payload['config'],
+                result = integrated_execute(payload['method'], payload['model'], payload['config'],
                                                   payload['dataset'], client=client, sleep=sleeps.append)
 
         # Expose wire requests and both retry layers for comparison.

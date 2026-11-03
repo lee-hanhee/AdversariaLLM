@@ -4,7 +4,7 @@ from itertools import product
 
 import pytest
 
-from adversariallm.attacks.author_execution import FLIP_MODELS
+from adversariallm.attacks.flip_attack import FLIP_MODELS
 from tests.author_test_utils import author_payload, compare_author
 
 
@@ -27,7 +27,7 @@ def test_all_guidance_combinations(mode, cot, lang_gpt, few_shot):
 def test_original_models_endpoints_and_serialization(model, provider):
     # Prepare the source options and scripted target/judge replies for this case.
     payload = author_payload('flip_attack')
-    payload['model']['author_model'] = model
+    payload['config']['source_profile'] = model
 
     # Run the independent original and integrated paths with identical scripted replies.
     _, result = compare_author(payload)
@@ -191,7 +191,7 @@ def test_retries_and_judges_stay_grouped_with_their_original_example():
 def test_empty_api_choices_reach_original_response_processing_without_added_retries(model):
     # Prepare the source options and scripted target/judge replies for this case.
     payload = author_payload('flip_attack', retry_time=1)
-    payload['model']['author_model'] = model
+    payload['config']['source_profile'] = model
     payload['replies'] = [{'text': '', 'empty_choices': True}]
 
     # Run the independent original and integrated paths with identical scripted replies.

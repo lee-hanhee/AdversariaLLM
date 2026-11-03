@@ -88,23 +88,11 @@
     "files": [
       {
         "path": "adversariallm/attacks/mousetrap.py",
-        "purpose": "Configuration and attack registration through the shared AuthorAttack entry point."
+        "purpose": "Attack configuration, hosted run entry point, original-driver integration, and result conversion."
       },
       {
-        "path": "adversariallm/attacks/author_execution.py",
-        "purpose": "Shared transport, source loading, configuration validation, and explicit dispatch to the attack binding."
-      },
-      {
-        "path": "adversariallm/attacks/utils/mousetrap/binding.py",
-        "purpose": "Execute unchanged notebook definitions, setup, and per-example driver body with existing role-bound SDK clients and JSONL capture."
-      },
-      {
-        "path": "adversariallm/attacks/author_adapter.py",
-        "purpose": "Map original attempts into shared AuthorRunResult/AuthorStepResult and preserve author RNG state across result bookkeeping."
-      },
-      {
-        "path": "verification/verify_source.py",
-        "purpose": "Verify exact, ordered notebook-cell extracts using the same manifest and diff checks as other author attacks."
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Shared SDK transport, source loading, route validation, request tracing, and result containers."
       }
     ],
     "preserved_behavior": [
@@ -184,7 +172,7 @@
         },
         {
           "name": "full_regression",
-          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py tests/test_source_verification.py tests/test_api_clients.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
           "passed": 305,
           "skipped": 0
         },
@@ -249,7 +237,7 @@
         "target model ID/provider",
         "judge model ID/provider"
       ],
-      "test_process": "Intel macOS test process adds the Torch recompile_limit option as documented in docs/openrouter.md."
+      "test_process": "Intel macOS test process adds the Torch recompile_limit option as documented in docs/author_execution.md."
     },
     "not_tested": [
       "Live model availability or effectiveness",

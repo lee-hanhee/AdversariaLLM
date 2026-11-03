@@ -6,8 +6,7 @@ extractions, such as notebook cells or removing a standalone demo, are recorded
 there. Preserve the remaining source bytes, including whitespace and quirks.
 
 Our executable integration code lives separately in
-`adversariallm/attacks/utils/<attack>/binding.py`. Shared loading, routing, and
-result conversion live in `author_execution.py` and `author_adapter.py`.
+`adversariallm/attacks/<attack>.py`. Shared loading, routing, and result bookkeeping live in `adversariallm/attacks/utils/author_runtime.py`.
 
 `verification/<attack>/reference/` contains the original files used for independent
 comparisons. Run `python verification/verify_source.py` to check all manifests;

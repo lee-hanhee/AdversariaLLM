@@ -15,8 +15,7 @@ are not present on this branch yet.
 | TAP | Searches a tree of candidate attack prompts. | An attacker model proposes branches; an evaluator prunes off-topic or weaker candidates and scores target responses. | PR 08, this branch | [Adapter](../adversariallm/attacks/tap.py), [author search](../adversariallm/attacks/author_implementations/tap/main_TAP.py), [verification](../verification/tap/SOURCE.json) |
 | CoT Forgery | Adds fabricated reasoning or policy text to a request. | A helper generates the forgery, which is appended to the target prompt to encourage answering. | Held for fidelity audit | [Author source](https://github.com/role-confusion/prompt-injection-as-role-confusion/tree/ec333c40fd43fe991e1ebf66765051b6d7e35784) |
 
-Use [author attack execution through OpenRouter](author_execution.md) for FlipAttack, EquaCode, GTA, Mousetrap, QueryAttack, and TAP,
-[OpenRouter targets](openrouter.md) for the Direct baseline, and
+Use [author attack execution through OpenRouter](author_execution.md) for FlipAttack, EquaCode, GTA, Mousetrap, QueryAttack, and TAP, and
 [Reviewing author-code fidelity](../verification/verification.md)
 for verification. Source identity and offline comparisons do not establish
 paper-result reproduction. The linked verification manifests record source

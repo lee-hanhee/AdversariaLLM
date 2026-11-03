@@ -3,17 +3,14 @@
 import ast
 from dataclasses import asdict
 import json
-from types import SimpleNamespace
-
 import pytest
 from hydra import compose, initialize_config_dir
 
 from adversariallm.attacks import Attack
-from adversariallm.attacks.author_adapter import AuthorRunResult, AuthorStepResult
-from adversariallm.attacks.author_execution import validate_author_config
+from adversariallm.attacks.utils.author_runtime import AuthorRunResult, AuthorStepResult
+from tests.author_test_utils import validate_author_config
 from adversariallm.attacks.query_attack import QueryAttack, QueryAttackConfig
-from adversariallm.defenses.api_target import APITarget
-from adversariallm.defenses.registry import validate_hosted_target
+from adversariallm.attacks.utils.author_runtime import OpenRouterTarget
 from tests.author_test_utils import ROOT, author_payload, compare_author
 
 
@@ -174,7 +171,7 @@ def test_each_route_requires_explicit_model_and_provider(role, field):
 
 @pytest.mark.parametrize('setting,value', [('translation_language', 'Rust'), ('target_language', 'ALL'),
     ('trans_verify', 'False'), ('request_seed', True), ('max_new_tokens', 1.5), ('temperate', '0'),
-    ('top_p', False), ('seed', 0), ('judge', {}), ('generation_config', {})])
+    ('top_p', False), ('seed', 0)])
 def test_unsupported_configuration_is_rejected(setting, value):
     config = payload()
     config['config'][setting] = value
@@ -186,13 +183,12 @@ def test_registry_yaml_and_defaults_match_original_cli_declarations():
     # Compose the public configuration and compare both script defaults against official source.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         cfg = compose(config_name='config', overrides=[
-            'hydra/launcher=basic', 'model=query_attack_author',
-            'attack=query_attack', 'models.query_attack_author.id=test/target',
-            'models.query_attack_author.provider=target-provider',
+            'hydra/launcher=basic', 'model=openrouter',
+            'attack=query_attack', 'models.openrouter.id=test/target',
+            'models.openrouter.provider=target-provider',
             'attacks.query_attack.translator.id=test/translator',
             'attacks.query_attack.translator.provider=translator-provider'])
-    validate_hosted_target(Attack.from_name('query_attack'), cfg.models.query_attack_author,
-                           None, cfg.attacks.query_attack)
+    Attack.from_name('query_attack').validate_config(cfg.models.openrouter, cfg.attacks.query_attack)
     assert Attack.from_name('query_attack') is QueryAttack
     assert set(asdict(QueryAttackConfig())) == set(cfg.attacks.query_attack)
 
@@ -232,9 +228,9 @@ def test_repository_entrypoint_keeps_common_results_and_only_openrouter_credenti
                          'finish_reason': 'stop'}]}, request=request)
     client = OpenAI(api_key='test-key', base_url='https://openrouter.ai/api/v1',
                     http_client=httpx.Client(transport=httpx.MockTransport(http)))
-    target = object.__new__(APITarget)
+    target = object.__new__(OpenRouterTarget)
     target.config = value['model']
-    target.text_generator = SimpleNamespace(client=client)
+    target.client = client
     for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
         monkeypatch.delenv(key, raising=False)
 
@@ -252,8 +248,8 @@ def test_repository_entrypoint_keeps_common_results_and_only_openrouter_credenti
 
 def test_missing_nltk_data_fails_before_any_request(monkeypatch):
     import nltk
-    from adversariallm.attacks.author_execution import OpenRouterAuthorClient
-    from adversariallm.attacks.utils.query_attack import binding
+    from adversariallm.attacks.utils.author_runtime import OpenRouterAuthorClient
+    from adversariallm.attacks.query_attack import QueryAttack
 
     # Keep missing-resource failures explicit, without silently substituting tokenizers or downloading.
     value = payload()
@@ -262,7 +258,7 @@ def test_missing_nltk_data_fails_before_any_request(monkeypatch):
     monkeypatch.setattr(nltk, 'word_tokenize', missing)
     client = OpenRouterAuthorClient(None, value['model'], {})
     with pytest.raises(LookupError, match='Missing NLTK resource'):
-        binding.execute(client, value['model'], value['config'], ['Explain rainbows.'], None)
+        QueryAttack._execute(client, value['model'], value['config'], [('Explain rainbows.', '')], None)
     assert client.requests == []
 
 

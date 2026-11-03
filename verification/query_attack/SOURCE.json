@@ -163,19 +163,11 @@
     "files": [
       {
         "path": "adversariallm/attacks/query_attack.py",
-        "purpose": "Common AuthorAttack entry point and original CLI defaults."
+        "purpose": "Attack configuration, hosted run entry point, original-driver integration, and result conversion."
       },
       {
-        "path": "adversariallm/attacks/utils/query_attack/binding.py",
-        "purpose": "Bind original translation and target stages to shared role clients and temporary file storage; group physical source lines by repository example."
-      },
-      {
-        "path": "adversariallm/attacks/author_execution.py",
-        "purpose": "Shared configuration validation, source loading, request traces, OpenRouter transport, and explicit dispatch."
-      },
-      {
-        "path": "adversariallm/attacks/author_adapter.py",
-        "purpose": "Common AuthorRunResult and AuthorStepResult conversion, retaining source-line records and raw versus file-formatted responses."
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Shared SDK transport, source loading, route validation, request tracing, and result containers."
       }
     ],
     "preserved_behavior": [
@@ -203,7 +195,7 @@
       {
         "area": "request_transport",
         "author": "Original helpers and target construct OpenAI clients for their calls; application loops retry only according to the original code.",
-        "repository": "Bind constructors to role-specific views of one existing APITarget SDK client. Add provider.only, allow_fallbacks=false, and require_parameters=true.",
+        "repository": "Bind constructors to role-specific views of one OpenRouter SDK client. Add provider.only, allow_fallbacks=false, and require_parameters=true.",
         "reason": "Change routing only; preserve original request controls, response handling, and error propagation."
       },
       {
@@ -248,7 +240,7 @@
         },
         {
           "name": "combined_regression_before_unicode_expectation_correction",
-          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py tests/test_attacks/test_query_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_api_target.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_author_execution.py tests/test_attacks/test_flip_attack.py tests/test_attacks/test_equacode.py tests/test_attacks/test_gta.py tests/test_attacks/test_mousetrap.py tests/test_attacks/test_query_attack.py tests/test_source_verification.py tests/test_api_clients.py tests/test_run_attacks_defenses.py tests/test_defense_compat.py tests/test_defenses.py tests/test_compatibility_contract.py tests/test_attacks/test_direct_transfer_runtime.py tests/test_attacks/test_bon_runtime.py",
           "passed": 359,
           "failed": 1,
           "skipped": 0,
@@ -309,7 +301,7 @@
         "averaged_perceptron_tagger_eng"
       ],
       "baseline_python": "QUERY_ATTACK_AUTHOR_PYTHON uses the environment.lock.txt baseline; QUERY_ATTACK_SHARED_PYTHON uses the shared SDK with NLTK. NLTK_DATA may select a common data directory.",
-      "test_process": "Intel macOS repository test process adds the Torch recompile_limit option as documented in docs/openrouter.md. All HTTP replies are scripted and in-memory."
+      "test_process": "Intel macOS repository test process adds the Torch recompile_limit option as documented in docs/author_execution.md. All HTTP replies are scripted and in-memory."
     },
     "limitations": "Exact source identity and scripted behavior comparisons do not establish identical live model responses, exhaustive SDK equivalence, attack effectiveness, or paper benchmark reproduction. Early NLTK resource validation and excluded post-run evaluation are documented departures. The author does not pin NLTK data revisions; historical tokenizer/tagger data equivalence is not established.",
     "environments": {

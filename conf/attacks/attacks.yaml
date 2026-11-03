@@ -202,6 +202,7 @@ equacode:
   type: discrete
   version: "0.2.0"
   seed: null
+  source_profile: gpt-3.5-turbo
   variant: equacode
   judge_model: GPT-4
   judge:
@@ -212,6 +213,7 @@ flip_attack:
   type: discrete
   version: "0.2.0"
   seed: null
+  source_profile: gpt-4-0613
   flip_mode: FCS
   cot: false
   lang_gpt: false
@@ -231,6 +233,7 @@ gta:
   type: discrete
   version: "0.1.0"
   seed: null
+  source_profile: deepseek_r1
   rounds: 5
   attacker:
     id: ???
@@ -495,6 +498,7 @@ mousetrap:
   type: discrete
   version: 0.1.0
   seed: null
+  source_profile: ???
   judge:
     id: ???
     provider: ???
@@ -503,6 +507,7 @@ query_attack:
   type: discrete
   version: 0.1.0
   seed: null
+  source_profile: gpt-4-1106-preview
   translation_language: ALL
   target_language: SQL
   trans_verify: false
@@ -518,6 +523,7 @@ tap:
   type: discrete
   version: 0.1.0
   seed: null
+  source_profile: ???
   attack_model: ???
   evaluator_model: gpt-3.5-turbo
   attack_max_n_tokens: 500

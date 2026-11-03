@@ -9,13 +9,12 @@ import torch
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from adversariallm.attacks import Attack, AttackResult
-from adversariallm.attacks.author_execution import AUTHOR_METHODS
+from adversariallm.attacks.utils.author_runtime import OpenRouterTarget
 from adversariallm.dataset import PromptDataset
 from adversariallm.defenses import build_target_system, validate_defense_compatibility
-from adversariallm.defenses.api_target import APITarget
-from adversariallm.defenses.registry import validate_hosted_target
 from adversariallm.errors import print_exceptions
 from adversariallm.io_utils import RunConfig, filter_config, free_vram, load_model_and_tokenizer, log_attack
+from run_judges import run_judges
 
 torch.use_deterministic_algorithms(True, warn_only=True)
 torch.backends.cuda.matmul.allow_tf32 = True
@@ -37,13 +36,19 @@ def collect_configs(cfg: DictConfig) -> list[RunConfig]:
     defenses_to_run = select_configs(cfg.defenses, cfg.defense)
 
     for attack, _attack_params in attacks_to_run:
+        attack_cls = Attack.from_name(attack)
         for _defense, defense_params in defenses_to_run:
             validate_defense_compatibility(attack, defense_params)
 
-            # Reject unsupported hosted combinations before dataset loading or storage checks.
+            # Author attacks own their hosted-route validation.
             for _model, model_params in models_to_run:
-                if model_params.get("backend", "local") != "local" or attack in AUTHOR_METHODS:
-                    validate_hosted_target(Attack.from_name(attack), model_params, defense_params, _attack_params)
+                requires_hosted = getattr(attack_cls, "REQUIRES_HOSTED_TARGET", False)
+                if requires_hosted:
+                    attack_cls.validate_config(model_params, _attack_params)
+                    if defense_params.get("name", "none") not in (None, "none"):
+                        raise ValueError("Original author execution does not support runtime defenses.")
+                elif model_params.get("backend", "local") != "local":
+                    raise ValueError("OpenRouter targets are supported only by the integrated author attacks.")
 
     all_run_configs = []
     for model, model_params in models_to_run:
@@ -83,7 +88,7 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
 
             # Choose the hosted interface or load local weights when the selected model changes.
             if run_config.model_params.get("backend", "local") == "openrouter":
-                hosted_target = APITarget(run_config.model_params)
+                hosted_target = OpenRouterTarget(run_config.model_params)
                 model, tokenizer = None, None
             else:
                 hosted_target = None
@@ -134,9 +139,6 @@ def main(cfg: DictConfig) -> None:
     # 3. Run the judges
     if judges_to_run is None:
         return
-
-    # Import post-run classifiers only when they are requested.
-    from run_judges import run_judges
 
     for judge in judges_to_run:
         # Create judge config

@@ -27,7 +27,7 @@ def run_reference_mousetrap(payload, factory, base):
     scope['judger'] = scope['Judger']()
     classes = {'o1-2024-12-17': 'CheckerTarget_OpenaAI',
                'claude-3-7-sonnet-20250219': 'CheckerTarget_Anthropic'}
-    scope['target'] = scope[classes[payload['model']['author_model']]]()
+    scope['target'] = scope[classes[payload['config']['source_profile']]]()
 
     # Execute complete original function cells without using the production extraction loader.
     for index in (5, 7, 9, 10):

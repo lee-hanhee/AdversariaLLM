@@ -38,7 +38,7 @@ def test_original_source_profiles_and_fastchat_template_selection(attacker, targ
     # Source-name equality may share a GPT object; actual role routing must remain independent.
     value = payload()
     value['config']['attack_model'] = attacker
-    value['model']['author_model'] = target
+    value['config']['source_profile'] = target
     _, result = compare_author(value)
     target_request = next(request for request in result['wire'] if request['role'] == 'target')
     system = target_request['body']['messages'][0]['content']
@@ -248,7 +248,7 @@ def test_empty_dataset_issues_no_requests():
 @pytest.mark.parametrize('role,field', [(role, field) for role in ('target', 'attacker', 'judge')
                                         for field in ('id', 'provider')])
 def test_explicit_routing_is_required_before_execution(role, field):
-    from adversariallm.attacks.author_execution import validate_author_config
+    from tests.author_test_utils import validate_author_config
 
     value = payload()
     route = value['model'] if role == 'target' else value['config'][role]
@@ -258,23 +258,21 @@ def test_explicit_routing_is_required_before_execution(role, field):
 
 
 @pytest.mark.parametrize('change', ['backend', 'target_source', 'attacker_source', 'evaluator_source',
-                                     'seed', 'generation', 'boolean_depth', 'float_tokens'])
+                                     'seed', 'boolean_depth', 'float_tokens'])
 def test_unsupported_profiles_and_overrides_are_rejected(change):
-    from adversariallm.attacks.author_execution import validate_author_config
+    from tests.author_test_utils import validate_author_config
 
     value = payload()
     if change == 'backend':
         value['model']['backend'] = 'local'
     elif change == 'target_source':
-        value['model']['author_model'] = 'gpt-4-turbo'
+        value['config']['source_profile'] = 'gpt-4-turbo'
     elif change == 'attacker_source':
         value['config']['attack_model'] = 'vicuna'
     elif change == 'evaluator_source':
         value['config']['evaluator_model'] = 'replacement'
     elif change == 'seed':
         value['config']['seed'] = 0
-    elif change == 'generation':
-        value['config']['generation_config'] = {}
     elif change == 'boolean_depth':
         value['config']['depth'] = True
     elif change == 'float_tokens':
@@ -289,19 +287,18 @@ def test_registry_configuration_and_original_cli_defaults():
     from hydra import compose, initialize_config_dir
     from adversariallm.attacks import Attack
     from adversariallm.attacks.tap import TAPAttack, TAPConfig
-    from adversariallm.defenses.registry import validate_hosted_target
     from tests.author_test_utils import ROOT
 
     # Preview the complete route configuration through the public registry and Hydra interface.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         cfg = compose(config_name='config', overrides=[
-            'hydra/launcher=basic', 'model=tap_author', 'attack=tap',
-            'models.tap_author.id=test/target', 'models.tap_author.provider=target-provider',
-            'models.tap_author.author_model=gpt-4', 'attacks.tap.attack_model=gpt-4',
+            'hydra/launcher=basic', 'model=openrouter', 'attack=tap',
+            'models.openrouter.id=test/target', 'models.openrouter.provider=target-provider',
+            'attacks.tap.source_profile=gpt-4', 'attacks.tap.attack_model=gpt-4',
             'attacks.tap.attacker.id=test/attacker', 'attacks.tap.attacker.provider=attacker-provider',
             'attacks.tap.judge.id=test/judge', 'attacks.tap.judge.provider=judge-provider'])
     assert Attack.from_name('tap') is TAPAttack
-    validate_hosted_target(TAPAttack, cfg.models.tap_author, None, cfg.attacks.tap)
+    TAPAttack.validate_config(cfg.models.openrouter, cfg.attacks.tap)
     assert set(asdict(TAPConfig())) == set(cfg.attacks.tap)
 
     # Compare defaults against literal declarations in the independent official main script.
@@ -321,12 +318,11 @@ def test_registry_configuration_and_original_cli_defaults():
 
 def test_public_entrypoint_uses_common_results_and_preserves_all_target_calls(monkeypatch):
     from dataclasses import asdict
-    from types import SimpleNamespace
     import httpx
     from openai import OpenAI
     from adversariallm.attacks.tap import TAPAttack
-    from adversariallm.attacks.author_adapter import AuthorRunResult, AuthorStepResult
-    from adversariallm.defenses.api_target import APITarget
+    from adversariallm.attacks.utils.author_runtime import AuthorRunResult, AuthorStepResult
+    from adversariallm.attacks.utils.author_runtime import OpenRouterTarget
 
     # Script an all-off-topic fallback with two targets but only one retained candidate.
     value = payload(width=1)
@@ -341,8 +337,8 @@ def test_public_entrypoint_uses_common_results_and_preserves_all_target_calls(mo
                 'role': 'assistant', 'content': next(replies)}, 'finish_reason': 'stop'}]}, request=request)
     client = OpenAI(api_key='test-key', base_url='https://openrouter.ai/api/v1',
                     http_client=httpx.Client(transport=httpx.MockTransport(http)))
-    target = object.__new__(APITarget)
-    target.config, target.text_generator = value['model'], SimpleNamespace(client=client)
+    target = object.__new__(OpenRouterTarget)
+    target.config, target.client = value['model'], client
     for key in ('OPENAI_API_KEY', 'ANTHROPIC_API_KEY', 'DEEPINFRA_API_KEY'):
         monkeypatch.delenv(key, raising=False)
 
@@ -359,11 +355,11 @@ def test_public_entrypoint_uses_common_results_and_preserves_all_target_calls(mo
 
 
 def test_missing_isolated_fastchat_has_an_explicit_setup_error(monkeypatch, tmp_path):
-    from adversariallm.attacks.utils.tap import binding
+    from adversariallm.attacks import tap as binding
 
     # Report the pinned dependency setup instead of substituting an installed newer template.
     binding.conversation_factory.cache_clear()
-    monkeypatch.setattr(binding, '__file__', str(tmp_path / 'adversariallm/attacks/utils/tap/binding.py'))
+    monkeypatch.setattr(binding, '__file__', str(tmp_path / 'adversariallm/attacks/tap.py'))
     with pytest.raises(ImportError, match='fschat==0.2.32'):
         binding.conversation_factory()
     binding.conversation_factory.cache_clear()
