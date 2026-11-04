@@ -13,3 +13,5 @@ viz
 wandb
 embeddings/
 .author_envs/
+.pilot-env/
+.env
