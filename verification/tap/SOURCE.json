@@ -13,21 +13,18 @@
     {
       "original_path": "Demo.ipynb",
       "reference": {
-        "path": "verification/tap/reference/Demo.ipynb",
         "sha256": "17e7ddab416f2db916c1476648b8e03166341fdd9dc3a1d240bd6bfb0af1aa48"
       }
     },
     {
       "original_path": "LICENSE",
       "reference": {
-        "path": "verification/tap/reference/LICENSE",
         "sha256": "ec7bcccc7383e912e22569d4bed157753bf437d6568c6c663a5155b4c5838e25"
       }
     },
     {
       "original_path": "common.py",
       "reference": {
-        "path": "verification/tap/reference/common.py",
         "sha256": "09bcf209e6ee1bb02b3a38e984abb99c96f0655c542e0abb0ea1b7ba22e663b1"
       },
       "implementations": [
@@ -45,7 +42,6 @@
     {
       "original_path": "config.py",
       "reference": {
-        "path": "verification/tap/reference/config.py",
         "sha256": "e6685ac135f579f5fbedec3b15a5d3e2d3a1c2df166354fa2b725c126c619f88"
       },
       "implementations": [
@@ -63,7 +59,6 @@
     {
       "original_path": "conversers.py",
       "reference": {
-        "path": "verification/tap/reference/conversers.py",
         "sha256": "d785675c9f7084ff2b55cb9c93f10816f398b87351bd6b232d0317a28b92ff61"
       },
       "implementations": [
@@ -81,7 +76,6 @@
     {
       "original_path": "evaluators.py",
       "reference": {
-        "path": "verification/tap/reference/evaluators.py",
         "sha256": "b598edf4ae1337e1f085df679b6628a78fa7867f2174d4c9463376f8b11a900d"
       },
       "implementations": [
@@ -99,7 +93,6 @@
     {
       "original_path": "language_models.py",
       "reference": {
-        "path": "verification/tap/reference/language_models.py",
         "sha256": "5257ddcd406697f8de833cdda8485556059446f1294275594ac51ec1e4ebf29b"
       },
       "implementations": [
@@ -117,14 +110,12 @@
     {
       "original_path": "loggers.py",
       "reference": {
-        "path": "verification/tap/reference/loggers.py",
         "sha256": "bd4020a518e9e6faed922da45c94440eac42a10071524a9c1e166d0651956ad8"
       }
     },
     {
       "original_path": "main_TAP.py",
       "reference": {
-        "path": "verification/tap/reference/main_TAP.py",
         "sha256": "4d82568a3881c2e1c8a818594b64a4fb58156c8a2140269e1974220a0474a125"
       },
       "implementations": [
@@ -142,21 +133,18 @@
     {
       "original_path": "readme.md",
       "reference": {
-        "path": "verification/tap/reference/readme.md",
         "sha256": "8ab1d28451a4ce14d6146405fba499c2de6577989109fc53ad04b92421b15675"
       }
     },
     {
       "original_path": "requirements.txt",
       "reference": {
-        "path": "verification/tap/reference/requirements.txt",
         "sha256": "d914df40219e208073fa7fc428256b176498822a769a173880892bf7744be928"
       }
     },
     {
       "original_path": "system_prompts.py",
       "reference": {
-        "path": "verification/tap/reference/system_prompts.py",
         "sha256": "63a51e9c5dde3dfa441197dc0af8eaeb027c4c2f04b3d9fad537eceb414861c9"
       },
       "implementations": [

@@ -12,21 +12,18 @@
     {
       "original_path": "LICENSE",
       "reference": {
-        "path": "verification/query_attack/reference/LICENSE",
         "sha256": "0bcbdd2875cef13c3d7d58720d4ac53961140d12b70b709f309d63bc03446da6"
       }
     },
     {
       "original_path": "README.md",
       "reference": {
-        "path": "verification/query_attack/reference/README.md",
         "sha256": "464bc0490bfbe1056be1138ea416c69aae444989be2626f12d3305072aeb7c8b"
       }
     },
     {
       "original_path": "all_template.py",
       "reference": {
-        "path": "verification/query_attack/reference/all_template.py",
         "sha256": "651c495851d70f3f964510ede12e7dac56e5776bd466d794c955fecd9ea802b8"
       },
       "implementations": [
@@ -44,21 +41,18 @@
     {
       "original_path": "evaluate_responses.py",
       "reference": {
-        "path": "verification/query_attack/reference/evaluate_responses.py",
         "sha256": "87e7491b204ccc2f771c86394944e5416b03344f35d677a017da09eaae5948ed"
       }
     },
     {
       "original_path": "gpt_judge.py",
       "reference": {
-        "path": "verification/query_attack/reference/gpt_judge.py",
         "sha256": "188f9b9b82c3d0de5f9fc7e5a3e530d404628bacacfd54a524c069ff4684b0aa"
       }
     },
     {
       "original_path": "openai_log.py",
       "reference": {
-        "path": "verification/query_attack/reference/openai_log.py",
         "sha256": "33c3206c87783ffc5cc63760ef797810d83fb73722829af520e42f528c92492c"
       },
       "implementations": [
@@ -76,14 +70,12 @@
     {
       "original_path": "requirements.txt",
       "reference": {
-        "path": "verification/query_attack/reference/requirements.txt",
         "sha256": "e0a03e75bf2375fb7b9a91608bb213ec116ca2e5826d425f4e3c0f802e473b92"
       }
     },
     {
       "original_path": "split_sentence_llms.py",
       "reference": {
-        "path": "verification/query_attack/reference/split_sentence_llms.py",
         "sha256": "ef0f359af1980c2ffb0876c2971af4da9470d1bf053cbf6053e72578e370e451"
       },
       "implementations": [
@@ -101,7 +93,6 @@
     {
       "original_path": "test.py",
       "reference": {
-        "path": "verification/query_attack/reference/test.py",
         "sha256": "8e0375a97f8b04d0e3e634e87f4a6a65e0981e2ed43033b989d31c757c49aad0"
       },
       "implementations": [
@@ -119,7 +110,6 @@
     {
       "original_path": "trans_llms.py",
       "reference": {
-        "path": "verification/query_attack/reference/trans_llms.py",
         "sha256": "e1950fff84f2add6141696cac6c6801217ddd8449291ac7a7cd09684ba389ba1"
       },
       "implementations": [
@@ -137,7 +127,6 @@
     {
       "original_path": "translator.py",
       "reference": {
-        "path": "verification/query_attack/reference/translator.py",
         "sha256": "a8e25f3d357972f9bec602dfebd1f5f3618d92e3cd221e3075bb7264ba3d90c1"
       },
       "implementations": [

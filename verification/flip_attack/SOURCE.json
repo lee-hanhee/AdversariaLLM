@@ -14,7 +14,6 @@
     {
       "original_path": "src/flip_attack.py",
       "reference": {
-        "path": "verification/flip_attack/reference/src/flip_attack.py",
         "sha256": "07ffa54f0bc7675f91231832ffc71c74dc81bfb158412d785034de7aeb249694"
       },
       "implementations": [
@@ -34,7 +33,6 @@
     {
       "original_path": "src/main.py",
       "reference": {
-        "path": "verification/flip_attack/reference/src/main.py",
         "sha256": "90acafc5c0e10c6afcb17de1f3ac7a04058c661e75b2279337200bee610191fc"
       },
       "implementations": [
@@ -53,7 +51,6 @@
     {
       "original_path": "src/llm.py",
       "reference": {
-        "path": "verification/flip_attack/reference/src/llm.py",
         "sha256": "5d26b3972058de930d194a6fb911de47004c692293f3a908101c8879be895e57"
       },
       "implementations": [
@@ -79,7 +76,6 @@
     {
       "original_path": "src/eval_util.py",
       "reference": {
-        "path": "verification/flip_attack/reference/src/eval_util.py",
         "sha256": "3910ea4482221d41b61b21c81cc00239181d294610e501bc6f56bab44731b4e0"
       },
       "implementations": [
@@ -98,7 +94,6 @@
     {
       "original_path": "requirements.txt",
       "reference": {
-        "path": "verification/flip_attack/reference/requirements.txt",
         "sha256": "6219a29ef713e398705ef21908220889f4bb4ade60ea8eabcd74ce087b7596bb"
       }
     }
@@ -169,7 +164,7 @@
     "source_identity": {
       "command": "python verification/verify_source.py flip_attack --official-repo /path/to/official-clone",
       "status": "passed",
-      "result": "Bundled references match the pinned official revision. Runtime author files match after only their declared attribution headers or standalone-demo extraction."
+      "result": "Pinned official source hashes match. Runtime author files match after only their declared attribution headers or standalone-demo extraction."
     },
     "behavior": {
       "reference_execution": "Execute independent original reference definitions and driver with scripted benign replies. Native SDK serializers use in-memory HTTP transports; dataset, API, and storage I/O are controlled.",

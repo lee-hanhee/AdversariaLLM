@@ -5,6 +5,9 @@ import hashlib
 import json
 from pathlib import Path
 import subprocess
+import tempfile
+from urllib.parse import quote, urlparse
+from urllib.request import urlretrieve
 
 
 # All manifest paths are relative to the repository, regardless of the caller's cwd.
@@ -18,7 +21,20 @@ def require(condition, message):
         raise ValueError(message)
 
 
-def verify(manifest_path, official_repo=None):
+def download_source(manifest, original_path, destination):
+    """Download one file from the manifest's pinned GitHub revision."""
+    parsed = urlparse(manifest['repository'])
+    parts = parsed.path.strip('/').removesuffix('.git').split('/')
+    require(parsed.netloc == 'github.com' and len(parts) == 2,
+            f'Unsupported repository URL: {manifest["repository"]}')
+    url = (f'https://raw.githubusercontent.com/{parts[0]}/{parts[1]}/'
+           f'{manifest["revision"]}/{quote(original_path, safe="/")}')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    urlretrieve(url, destination)
+    return destination.read_bytes()
+
+
+def _verify(manifest_path, official_repo, temporary):
     # Track artifact identities across the complete source correspondence manifest.
     manifest = json.loads(Path(manifest_path).read_text())
     paths, originals = set(), set()
@@ -33,21 +49,21 @@ def verify(manifest_path, official_repo=None):
         return data
 
     for entry in manifest['files']:
-        # Each original owns its bundled reference and all derived implementations.
+        # Each original is fetched from its pinned revision or read from a supplied clone.
         original_path = entry['original_path']
         require(original_path not in originals, f'Duplicate original path: {original_path}')
         originals.add(original_path)
         reference = entry.get('reference')
         require(isinstance(reference, dict), f'Missing reference: {original_path}')
-        original = read_artifact(reference)
-
-        # Compare bundled reference bytes with the independently fetched pinned Git object.
         if official_repo:
-            official = subprocess.check_output([
+            original = subprocess.check_output([
                 'git', '-C', str(official_repo), 'show',
                 f'{manifest["revision"]}:{original_path}',
             ])
-            require(original == official, f'Official source mismatch: {original_path}')
+        else:
+            original = download_source(manifest, original_path, temporary / original_path)
+        require(hashlib.sha256(original).hexdigest() == reference['sha256'],
+                f'Official source hash mismatch: {original_path}')
 
         for implementation in entry.get('implementations', []):
             local_path = implementation['path']
@@ -84,7 +100,7 @@ def verify(manifest_path, official_repo=None):
             if 'stop_before' in rule:
                 marker = rule['stop_before'].encode()
                 require(bool(marker) and expected.count(marker) == 1,
-                        f'Extraction marker must occur exactly once: {reference["path"]}')
+                        f'Extraction marker must occur exactly once: {original_path}')
                 expected = expected.split(marker, 1)[0]
 
             # An optional Python attribution docstring may precede otherwise unchanged author bytes.
@@ -103,24 +119,29 @@ def verify(manifest_path, official_repo=None):
             # Regenerate each recorded diff so it stays consistent with the files under review.
             difference = ''.join(difflib.unified_diff(
                 comparison.decode().splitlines(keepends=True), runtime.decode().splitlines(keepends=True),
-                fromfile=rule.get('reference_label', reference['path']),
+                fromfile=rule.get('reference_label', original_path),
                 tofile=local_path,
             ))
             require((ROOT / rule['diff_path']).read_bytes().decode() == difference,
                     f'Outdated adaptation diff: {rule["diff_path"]}')
 
-    # Report bundled consistency separately from comparison against an independent official clone.
-    print(f'{manifest["method"]}: hashes and declared extraction/diff checks passed.')
+    print(f'{manifest["method"]}: pinned source, hashes, and extraction/diff checks passed.')
     if official_repo:
-        print('Reference bytes also match the pinned revision in the supplied official clone.')
-    else:
-        print('Bundled evidence only; official source origin was not independently checked.')
+        print('Source read from the supplied official clone.')
+
+
+def verify(manifest_path, official_repo=None):
+    # Downloads exist only for this verification call and are removed on exit.
+    with tempfile.TemporaryDirectory(prefix='adversariallm-source-') as directory:
+        _verify(manifest_path, official_repo, Path(directory))
+    if not official_repo:
+        print('Temporary source download removed.')
 
 
 if __name__ == '__main__':
     # Select one method, or check every source package currently present under verification/.
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('attack', nargs='?', help='Method directory; omit to check all bundled manifests')
+    parser.add_argument('attack', nargs='?', help='Method directory; omit to check every manifest')
     parser.add_argument('--official-repo', type=Path, help='Independent official clone for one selected method')
     args = parser.parse_args()
 

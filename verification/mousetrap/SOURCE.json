@@ -14,7 +14,6 @@
     {
       "original_path": "Evaluation.ipynb",
       "reference": {
-        "path": "verification/mousetrap/reference/Evaluation.ipynb",
         "sha256": "fb32a8b4cbc75381e99af596509fc80b6c4e9d886099ecd95bcc16e59f3bdc6b"
       },
       "implementations": [
@@ -66,7 +65,6 @@
     {
       "original_path": "README.md",
       "reference": {
-        "path": "verification/mousetrap/reference/README.md",
         "sha256": "3758b6ed708dac9095e323b6a469369af3e2006d69c293453352483b421c2421"
       }
     },
@@ -146,7 +144,7 @@
     "source_identity": {
       "command": "python verification/verify_source.py mousetrap --official-repo /path/to/official-clone",
       "status": "passed",
-      "result": "All three bundled references match the pinned official Git objects. Runtime files are exact declared code-cell concatenations with attribution docstrings only."
+      "result": "All three pinned official source hashes match. Runtime files are exact declared code-cell concatenations with attribution docstrings only."
     },
     "behavior": {
       "reference_execution": "Independently read complete original notebook cells, compile original client classes, execute original function cells and the full original driver cell. Replace API/file I/O only, using native SDK serializers and in-memory HTTP/files. The production driver instead binds the original per-example AST body; comparisons include original records and final RNG state.",

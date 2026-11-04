@@ -301,8 +301,8 @@ def test_registry_configuration_and_original_cli_defaults():
     TAPAttack.validate_config(cfg.models.openrouter, cfg.attacks.tap)
     assert set(asdict(TAPConfig())) == set(cfg.attacks.tap)
 
-    # Compare defaults against literal declarations in the independent official main script.
-    tree = ast.parse((ROOT / 'verification/tap/reference/main_TAP.py').read_bytes())
+    # Compare defaults against literal declarations in the preserved author script.
+    tree = ast.parse((ROOT / 'adversariallm/attacks/author_implementations/tap/main_TAP.py').read_bytes())
     defaults = {node.args[0].value: ast.literal_eval(keyword.value)
                 for node in ast.walk(tree) if isinstance(node, ast.Call)
                 and isinstance(node.func, ast.Attribute) and node.func.attr == 'add_argument'

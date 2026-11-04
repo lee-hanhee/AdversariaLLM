@@ -20,6 +20,13 @@ def packages(tmp_path, monkeypatch):
     # Keep all source-verifier fixture reads and writes inside the temporary package.
     monkeypatch.setattr(verifier, 'ROOT', tmp_path)
 
+    # Stand in for the network while retaining the temporary-download code path.
+    def download(manifest, original_path, _destination):
+        entry = next(item for item in manifest['files'] if item['original_path'] == original_path)
+        return (tmp_path / entry['reference']['path']).read_bytes()
+
+    monkeypatch.setattr(verifier, 'download_source', download)
+
     def make(name, prefix=False):
         # Create original and runtime artifacts for exact-copy or prefix-extraction cases.
         base = tmp_path / 'verification' / name
@@ -49,7 +56,7 @@ def packages(tmp_path, monkeypatch):
                 'reference': {'path': reference_path, 'sha256': hashlib.sha256(original).hexdigest()},
                 'implementations': [{
                     'path': local_path, 'sha256': hashlib.sha256(runtime).hexdigest(),
-                    'adaptation': {'diff_path': diff_path},
+                    'adaptation': {'diff_path': diff_path, 'reference_label': reference_path},
                 }],
             }],
         }
@@ -95,7 +102,7 @@ def test_changed_reference_is_rejected(packages):
     (root / manifest['files'][0]['reference']['path']).write_text('Changed reference')
 
     # Reject a reference whose bytes no longer match its declared hash.
-    with pytest.raises(ValueError, match='Hash mismatch'):
+    with pytest.raises(ValueError, match='Official source hash mismatch'):
         verifier.verify(path)
 
 
@@ -169,7 +176,7 @@ def test_official_comparison_uses_the_pin_and_original_path(packages, monkeypatc
     # Read the declared pinned Git object and reject mismatched official bytes.
     assert calls == [['git', '-C', '/independent/clone', 'show', 'pinned-revision:src/original.py']]
     monkeypatch.setattr(verifier.subprocess, 'check_output', lambda command: b'Different official bytes')
-    with pytest.raises(ValueError, match='Official source mismatch'):
+    with pytest.raises(ValueError, match='Official source hash mismatch'):
         verifier.verify(path, official_repo='/independent/clone')
 
 
@@ -184,12 +191,15 @@ def test_checks_remain_active_under_python_optimization(packages):
         'module = importlib.util.module_from_spec(spec)\n'
         'spec.loader.exec_module(module)\n'
         f'module.ROOT = module.Path({str(root)!r})\n'
+        'module.download_source = lambda manifest, original_path, destination: '
+        '(module.ROOT / next(item for item in manifest["files"] '
+        'if item["original_path"] == original_path)["reference"]["path"]).read_bytes()\n'
         f'module.verify({str(path)!r})\n'
     )
     result = subprocess.run([sys.executable, '-O', '-c', code], capture_output=True, text=True)
 
     # Keep source checks active when Python assertions are optimized away.
-    assert result.returncode != 0 and 'Hash mismatch' in result.stderr
+    assert result.returncode != 0 and 'Official source hash mismatch' in result.stderr
 
 
 def test_recorded_diff_preserves_crlf_source_lines(packages):
@@ -234,7 +244,7 @@ def test_reference_only_entry_and_multiple_implementations(packages):
     verifier.verify(path)
 
 
-@pytest.mark.parametrize('duplicate', ['original', 'reference', 'implementation'])
+@pytest.mark.parametrize('duplicate', ['original', 'implementation'])
 def test_duplicate_correspondence_is_rejected(packages, duplicate):
     # Build a temporary source package with explicit hashes and extraction evidence.
     _, make = packages
@@ -242,8 +252,6 @@ def test_duplicate_correspondence_is_rejected(packages, duplicate):
     entry = manifest['files'][0]
     if duplicate == 'original':
         manifest['files'].append(entry.copy())
-    elif duplicate == 'reference':
-        entry['implementations'][0]['path'] = entry['reference']['path']
     else:
         entry['implementations'].append(entry['implementations'][0].copy())
     save(path, manifest)

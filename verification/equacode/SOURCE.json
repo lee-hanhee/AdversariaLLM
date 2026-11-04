@@ -20,7 +20,6 @@
     {
       "original_path": "scripts/attack.py",
       "reference": {
-        "path": "verification/equacode/reference/scripts/attack.py",
         "sha256": "c804755f5f0ab508b48bd0e783a9335b8466ec68e1b89ed81d40cce02f1a4003"
       },
       "implementations": [
@@ -39,7 +38,6 @@
     {
       "original_path": "main.py",
       "reference": {
-        "path": "verification/equacode/reference/main.py",
         "sha256": "830c2c5d718651c9175bd5716824bf2892c7fafcb03e3450b5668bc991b35666"
       },
       "implementations": [
@@ -58,7 +56,6 @@
     {
       "original_path": "utils.py",
       "reference": {
-        "path": "verification/equacode/reference/utils.py",
         "sha256": "0f64ebdf401ede8794bdab8d7c49c99470bad30cf9c7a652c759f14508d5c620"
       },
       "implementations": [
@@ -77,14 +74,12 @@
     {
       "original_path": "config.py",
       "reference": {
-        "path": "verification/equacode/reference/config.py",
         "sha256": "3fbb6c668200744352b10ab6a4a3c96d55023c572ca7f63744e37ffc4c724df6"
       }
     },
     {
       "original_path": "requirement.txt",
       "reference": {
-        "path": "verification/equacode/reference/requirement.txt",
         "sha256": "60289359b9a14b82ca2d6bef0a228904162b2d808fca49ad21f71d48cd1b2478"
       }
     }
@@ -155,7 +150,7 @@
     "source_identity": {
       "command": "python verification/verify_source.py equacode --official-repo /path/to/official-clone",
       "status": "passed",
-      "result": "All bundled references match the pinned official revision. Runtime author files match after only the declared attribution docstrings."
+      "result": "Pinned official source hashes match. Runtime author files match after only the declared attribution docstrings."
     },
     "behavior": {
       "reference_execution": "Execute the original targetLLM class with independent official templates and helpers. Replace API and spreadsheet I/O with benign scripted replies and in-memory HTTP transports; keep the original mandatory judge loop.",
