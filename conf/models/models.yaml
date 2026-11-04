@@ -362,3 +362,7 @@ Qwen/Qwen2.5-0.5B-Instruct:
   dtype: bfloat16
   chat_template: null
   trust_remote_code: True
+openrouter:
+  backend: openrouter
+  id: ???
+  provider: ???

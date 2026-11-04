@@ -1,0 +1,160 @@
+import argparse
+import ast
+import difflib
+import hashlib
+import json
+from pathlib import Path
+import subprocess
+import tempfile
+from urllib.parse import quote, urlparse
+from urllib.request import urlretrieve
+
+
+# All manifest paths are relative to the repository, regardless of the caller's cwd.
+BASE = Path(__file__).resolve().parent
+ROOT = BASE.parent
+
+
+def require(condition, message):
+    """Keep verification active even when Python runs with optimization enabled."""
+    if not condition:
+        raise ValueError(message)
+
+
+def download_source(manifest, original_path, destination):
+    """Download one file from the manifest's pinned GitHub revision."""
+    parsed = urlparse(manifest['repository'])
+    parts = parsed.path.strip('/').removesuffix('.git').split('/')
+    require(parsed.netloc == 'github.com' and len(parts) == 2,
+            f'Unsupported repository URL: {manifest["repository"]}')
+    url = (f'https://raw.githubusercontent.com/{parts[0]}/{parts[1]}/'
+           f'{manifest["revision"]}/{quote(original_path, safe="/")}')
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    urlretrieve(url, destination)
+    return destination.read_bytes()
+
+
+def _verify(manifest_path, official_repo, temporary):
+    # Track artifact identities across the complete source correspondence manifest.
+    manifest = json.loads(Path(manifest_path).read_text())
+    paths, originals = set(), set()
+
+    def read_artifact(artifact):
+        # Check hashes and unique local paths before trusting comparison evidence.
+        path = artifact['path']
+        require(path not in paths, f'Duplicate artifact path: {path}')
+        paths.add(path)
+        data = (ROOT / path).read_bytes()
+        require(hashlib.sha256(data).hexdigest() == artifact['sha256'], f'Hash mismatch: {path}')
+        return data
+
+    for entry in manifest['files']:
+        # Each original is fetched from its pinned revision or read from a supplied clone.
+        original_path = entry['original_path']
+        require(original_path not in originals, f'Duplicate original path: {original_path}')
+        originals.add(original_path)
+        reference = entry.get('reference')
+        require(isinstance(reference, dict), f'Missing reference: {original_path}')
+        if official_repo:
+            original = subprocess.check_output([
+                'git', '-C', str(official_repo), 'show',
+                f'{manifest["revision"]}:{original_path}',
+            ])
+        else:
+            original = download_source(manifest, original_path, temporary / original_path)
+        require(hashlib.sha256(original).hexdigest() == reference['sha256'],
+                f'Official source hash mismatch: {original_path}')
+
+        for implementation in entry.get('implementations', []):
+            local_path = implementation['path']
+            runtime = read_artifact(implementation)
+
+            # Require an explicit extraction rule and reject unsupported transformations.
+            rule = implementation.get('adaptation')
+            require(isinstance(rule, dict) and 'diff_path' in rule,
+                    f'Missing adaptation/diff: {local_path}')
+            allowed = {'diff_path', 'stop_before', 'prepend_docstring', 'reference_label', 'notebook_cells'}
+            require(not set(rule) - allowed, f'Unsupported adaptation fields: {set(rule) - allowed}')
+
+            # Support unchanged copies or exact prefixes ending at one unique marker.
+            comparison = original
+            if 'notebook_cells' in rule:
+                # Keep notebook extraction explicit and compare exact code-cell text.
+                cells = json.loads(original)['cells']
+
+                # Require unique, ordered code-cell indices before trusting a notebook extraction.
+                indices = rule['notebook_cells']
+                require(isinstance(indices, list) and bool(indices), 'Expected notebook cell indices')
+                require(all(type(i) is int and 0 <= i < len(cells) for i in indices),
+                        'Invalid notebook cell index')
+                require(indices == sorted(set(indices)), 'Notebook cells must be unique and ordered')
+                require(all(cells[i]['cell_type'] == 'code' for i in indices), 'Expected code cells')
+
+                # Join exact cell source text using the manifest's documented separator.
+                sources = [cells[i]['source'] for i in indices]
+                require(all(isinstance(source, str) or isinstance(source, list)
+                            and all(isinstance(line, str) for line in source) for source in sources),
+                        'Invalid notebook source')
+                comparison = '\n\n'.join(''.join(source) for source in sources).encode()
+            expected = comparison
+            if 'stop_before' in rule:
+                marker = rule['stop_before'].encode()
+                require(bool(marker) and expected.count(marker) == 1,
+                        f'Extraction marker must occur exactly once: {original_path}')
+                expected = expected.split(marker, 1)[0]
+
+            # An optional Python attribution docstring may precede otherwise unchanged author bytes.
+            if rule.get('prepend_docstring', False):
+                require(runtime.endswith(expected), f'Original bytes changed: {local_path}')
+                tree = ast.parse(runtime)
+                require(bool(tree.body) and isinstance(tree.body[0], ast.Expr)
+                        and isinstance(tree.body[0].value, ast.Constant)
+                        and isinstance(tree.body[0].value.value, str),
+                        f'Expected an attribution docstring: {local_path}')
+                tree.body.pop(0)
+                require(ast.dump(tree) == ast.dump(ast.parse(expected)), f'Extra syntax: {local_path}')
+            else:
+                require(runtime == expected, f'Original bytes changed: {local_path}')
+
+            # Regenerate each recorded diff so it stays consistent with the files under review.
+            difference = ''.join(difflib.unified_diff(
+                comparison.decode().splitlines(keepends=True), runtime.decode().splitlines(keepends=True),
+                fromfile=rule.get('reference_label', original_path),
+                tofile=local_path,
+            ))
+            require((ROOT / rule['diff_path']).read_bytes().decode() == difference,
+                    f'Outdated adaptation diff: {rule["diff_path"]}')
+
+    print(f'{manifest["method"]}: pinned source, hashes, and extraction/diff checks passed.')
+    if official_repo:
+        print('Source read from the supplied official clone.')
+
+
+def verify(manifest_path, official_repo=None):
+    # Downloads exist only for this verification call and are removed on exit.
+    with tempfile.TemporaryDirectory(prefix='adversariallm-source-') as directory:
+        _verify(manifest_path, official_repo, Path(directory))
+    if not official_repo:
+        print('Temporary source download removed.')
+
+
+if __name__ == '__main__':
+    # Select one method, or check every source package currently present under verification/.
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('attack', nargs='?', help='Method directory; omit to check every manifest')
+    parser.add_argument('--official-repo', type=Path, help='Independent official clone for one selected method')
+    args = parser.parse_args()
+
+    # An independent clone applies to one selected attack rather than every bundled package.
+    if args.official_repo and not args.attack:
+        parser.error('--official-repo requires a selected attack')
+    manifests = [BASE / args.attack / 'SOURCE.json'] if args.attack else sorted(BASE.glob('*/SOURCE.json'))
+
+    # Fail explicitly when the requested verification scope has no source packages.
+    if not manifests:
+        parser.error('No source manifests found')
+    try:
+        for manifest_path in manifests:
+            verify(manifest_path, args.official_repo)
+    except (ValueError, KeyError, OSError, SyntaxError, subprocess.CalledProcessError) as error:
+        parser.exit(1, f'Verification failed: {error}\n')

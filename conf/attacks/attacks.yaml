@@ -197,6 +197,50 @@ direct:
   version: 0.0.1
   generation_config: ${attacks._default.generation_config}
   seed: ${attacks._default.seed}
+equacode:
+  name: equacode
+  type: discrete
+  version: "0.2.0"
+  seed: null
+  source_profile: gpt-3.5-turbo
+  variant: equacode
+  judge_model: GPT-4
+  judge:
+    id: ???
+    provider: ???
+flip_attack:
+  name: flip_attack
+  type: discrete
+  version: "0.2.0"
+  seed: null
+  source_profile: gpt-4-0613
+  flip_mode: FCS
+  cot: false
+  lang_gpt: false
+  few_shot: false
+  temperature: 0
+  max_token: -1
+  retry_time: 1000
+  failed_sleep_time: 1
+  round_sleep_time: 1
+  evaluate: false
+  judge_model: gpt-4-0613
+  judge:
+    id: ???
+    provider: ???
+gta:
+  name: gta
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: deepseek_r1
+  rounds: 5
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
 gcg:
   name: gcg
   type: discrete
@@ -449,3 +493,52 @@ random_search:
   candidates_per_generation: 8
   optim_str_init: "x x x x x x x x x x x x x x x x x x x x" # all tested tokenizers convert this to exactly 20 tokens
   generation_config: ${attacks._default.generation_config}
+mousetrap:
+  name: mousetrap
+  type: discrete
+  version: 0.1.0
+  seed: null
+  source_profile: ???
+  judge:
+    id: ???
+    provider: ???
+query_attack:
+  name: query_attack
+  type: discrete
+  version: 0.1.0
+  seed: null
+  source_profile: gpt-4-1106-preview
+  translation_language: ALL
+  target_language: SQL
+  trans_verify: false
+  temperate: 0
+  top_p: 1
+  max_new_tokens: 512
+  request_seed: 0
+  translator:
+    id: ???
+    provider: ???
+tap:
+  name: tap
+  type: discrete
+  version: 0.1.0
+  seed: null
+  source_profile: ???
+  attack_model: ???
+  evaluator_model: gpt-3.5-turbo
+  attack_max_n_tokens: 500
+  target_max_n_tokens: 150
+  evaluator_max_n_tokens: 10
+  evaluator_temperature: 0
+  max_n_attack_attempts: 5
+  branching_factor: 1
+  width: 10
+  depth: 10
+  n_streams: 1
+  keep_last_n: 3
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???

@@ -9,6 +9,7 @@ import torch
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
 from adversariallm.attacks import Attack, AttackResult
+from adversariallm.attacks.utils.author_runtime import OpenRouterTarget
 from adversariallm.dataset import PromptDataset
 from adversariallm.defenses import build_target_system, validate_defense_compatibility
 from adversariallm.errors import print_exceptions
@@ -35,8 +36,19 @@ def collect_configs(cfg: DictConfig) -> list[RunConfig]:
     defenses_to_run = select_configs(cfg.defenses, cfg.defense)
 
     for attack, _attack_params in attacks_to_run:
+        attack_cls = Attack.from_name(attack)
         for _defense, defense_params in defenses_to_run:
             validate_defense_compatibility(attack, defense_params)
+
+            # Author attacks own their hosted-route validation.
+            for _model, model_params in models_to_run:
+                requires_hosted = getattr(attack_cls, "REQUIRES_HOSTED_TARGET", False)
+                if requires_hosted:
+                    attack_cls.validate_config(model_params, _attack_params)
+                    if defense_params.get("name", "none") not in (None, "none"):
+                        raise ValueError("Original author execution does not support runtime defenses.")
+                elif model_params.get("backend", "local") != "local":
+                    raise ValueError("OpenRouter targets are supported only by the integrated author attacks.")
 
     all_run_configs = []
     for model, model_params in models_to_run:
@@ -73,7 +85,14 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
         if last_model != run_config.model:
             logging.info(f"Target: {run_config.model}\n{OmegaConf.to_yaml(run_config.model_params, resolve=True)}")
             last_model = run_config.model
-            model, tokenizer = load_model_and_tokenizer(run_config.model_params)
+
+            # Choose the hosted interface or load local weights when the selected model changes.
+            if run_config.model_params.get("backend", "local") == "openrouter":
+                hosted_target = OpenRouterTarget(run_config.model_params)
+                model, tokenizer = None, None
+            else:
+                hosted_target = None
+                model, tokenizer = load_model_and_tokenizer(run_config.model_params)
         if last_dataset != run_config.dataset:
             logging.info(f"Dataset: {run_config.dataset}\n{OmegaConf.to_yaml(run_config.dataset_params, resolve=True)}")
             last_dataset = run_config.dataset
@@ -86,7 +105,9 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
             last_defense = run_config.defense
 
         attack: Attack[AttackResult] = Attack.from_name(run_config.attack)(run_config.attack_params)
-        target = build_target_system(
+
+        # Pass the selected hosted/local target through the same attack interface.
+        target = hosted_target if hosted_target is not None else build_target_system(
             run_config.defense_params,
             model=model,
             tokenizer=tokenizer,
@@ -118,6 +139,7 @@ def main(cfg: DictConfig) -> None:
     # 3. Run the judges
     if judges_to_run is None:
         return
+
     for judge in judges_to_run:
         # Create judge config
         judge_cfg = OmegaConf.create({

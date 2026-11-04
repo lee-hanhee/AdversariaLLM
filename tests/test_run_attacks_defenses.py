@@ -154,3 +154,5 @@ def test_collect_configs_resolves_interpolations_with_defense(monkeypatch):
     run_configs = run_attacks.collect_configs(cfg)
     assert len(run_configs) == 1
     assert run_configs[0].attack_params["generation_config"]["max_new_tokens"] == 42
+
+
