@@ -1,0 +1,30 @@
+# Tested SDK baseline resolution; not a historical full author environment.
+# HTTPX 0.27.2 is a compatibility pin; it was not specified by the authors.
+annotated-types==0.8.0
+anthropic==0.36.0
+anyio==4.15.1
+certifi==2026.10.23
+click==8.5.0
+distro==1.9.0
+filelock==4.2.4
+fsspec==2026.9.0
+h11==0.16.0
+hf-xet==1.7.0
+httpcore==1.0.9
+httpcore2==2.16.0
+httpx==0.27.2
+httpx2==2.16.0
+huggingface_hub==2.3.0
+idna==3.20
+jiter==0.18.0
+openai==1.51.2
+packaging==26.3
+pydantic==2.14.1
+pydantic_core==2.50.1
+PyYAML==6.0.3
+sniffio==1.3.1
+tokenizers==0.23.3
+tqdm==4.70.1
+truststore==0.10.5
+typing-inspection==0.4.4
+typing_extensions==4.16.0

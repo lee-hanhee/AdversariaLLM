@@ -134,6 +134,35 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+            case "equacode":
+                from .equacode import EquaCodeAttack
+
+                return EquaCodeAttack
+
+            # Load the hosted author entry points lazily through the existing attack registry.
+            case "flip_attack":
+                from .flip_attack import FlipAttack
+
+                return FlipAttack
+            case "gta":
+                from .gta import GTAAttack
+
+                return GTAAttack
+            case "mousetrap":
+                from .mousetrap import MousetrapAttack
+
+                return MousetrapAttack
+
+            case "query_attack":
+                from .query_attack import QueryAttack
+
+                return QueryAttack
+
+            case "tap":
+                from .tap import TAPAttack
+
+                return TAPAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 
