@@ -134,6 +134,136 @@ class Attack(Generic[AttRes]):
                 from .direct import DirectAttack
 
                 return DirectAttack
+            case "equacode":
+                from .equacode import EquaCodeAttack
+
+                return EquaCodeAttack
+
+            # Load the hosted author entry points lazily through the existing attack registry.
+            case "flip_attack":
+                from .flip_attack import FlipAttack
+
+                return FlipAttack
+            case "gta":
+                from .gta import GTAAttack
+
+                return GTAAttack
+            case "mousetrap":
+                from .mousetrap import MousetrapAttack
+
+                return MousetrapAttack
+
+            case "query_attack":
+                from .query_attack import QueryAttack
+
+                return QueryAttack
+
+            case "wordgame":
+                from .wordgame import WordGameAttack
+
+                return WordGameAttack
+            case "aim":
+                from .aim import AIMAttack
+
+                return AIMAttack
+            case "deep_inception":
+                from .deep_inception import DeepInceptionAttack
+
+                return DeepInceptionAttack
+            case "hill":
+                from .hill import HILLAttack
+
+                return HILLAttack
+            case "isa":
+                from .isa import ISAAttack
+
+                return ISAAttack
+            case "past_tense":
+                from .past_tense import PastTenseAttack
+
+                return PastTenseAttack
+            case "scp":
+                from .scp import SCPAttack
+
+                return SCPAttack
+            case "abj":
+                from .abj import ABJAttack
+
+                return ABJAttack
+            case "pair_hosted":
+                from .pair_hosted import PAIRHostedAttack
+
+                return PAIRHostedAttack
+            case "puzzled":
+                from .puzzled import PUZZLEDAttack
+
+                return PUZZLEDAttack
+            case "majic":
+                from .majic import MAJICAttack
+
+                return MAJICAttack
+            case "trial":
+                from .trial import TRIALAttack
+
+                return TRIALAttack
+            case "air":
+                from .air import AIRAttack
+
+                return AIRAttack
+            case "sata":
+                from .sata import SATAAttack
+
+                return SATAAttack
+            case "response_attack":
+                from .response_attack import ResponseAttack
+
+                return ResponseAttack
+            case "rts":
+                from .rts import RTSAttack
+
+                return RTSAttack
+            case "renellm":
+                from .renellm import ReNeLLMAttack
+
+                return ReNeLLMAttack
+            case "jailcon":
+                from .jailcon import JAILCONAttack
+
+                return JAILCONAttack
+            case "trojfill":
+                from .trojfill import TrojFillAttack
+
+                return TrojFillAttack
+            case "jailexpert":
+                from .jailexpert import JailExpertAttack
+
+                return JailExpertAttack
+            case "bpj":
+                from .bpj import BPJAttack
+
+                return BPJAttack
+            case "cc_bos":
+                from .cc_bos import CCBOSAttack
+
+                return CCBOSAttack
+            case "intent_laundering":
+                from .intent_laundering import IntentLaunderingAttack
+
+                return IntentLaunderingAttack
+            case "s2c":
+                from .s2c import S2CAttack
+
+                return S2CAttack
+            case "tombraider":
+                from .tombraider import TombraiderAttack
+
+                return TombraiderAttack
+
+            case "tap":
+                from .tap import TAPAttack
+
+                return TAPAttack
+
             case "gcg":
                 from .gcg import GCGAttack
 

@@ -1,0 +1,56 @@
+{
+  "method": "RTS-Attack (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2510.00000",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/rts_gen.py",
+      "reference": {
+        "sha256": "589bb6195090d9c2f8e900cdfab1ef69fc439aad83693b0d73616482323991d9"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/rts/rts_pipeline.py",
+          "sha256": "25239a986b3a861b86823a94e862deb82d8778f07ccffe162b1ddd7e85c8d96e",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/rts/diffs/rts_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/rts.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      }
+    ],
+    "preserved_behavior": [
+      "Original RTSGen Type 1/Type 2 intent classification, scenario_genre wrapping, and optional JSON format constraint."
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py rts --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

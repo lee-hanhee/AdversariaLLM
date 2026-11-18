@@ -1,0 +1,81 @@
+{
+  "method": "ISA (Intent Shift Attack — Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2511.00556",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2511.00556.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/isa_gen.py",
+      "reference": {
+        "sha256": "f58d1b27ddfef8ad94eef6743a87ef5948d0d1ae08b7bcc5928eb6d746c3f012"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/isa/isa_pipeline.py",
+          "sha256": "5980e4ddd7e3344b8d30d69cf938e787f439ec414c5f3320df5ab80c683a9cb6",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/isa/diffs/isa_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/isa.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original ISAGen normalization prompt and five SHIFT_PROMPTS (person, tense, voice, mood, question) with helper temperature=0.0.",
+      "JBF message role parsing, default system prompt, target temperature 1, omitted token limit, and five completion attempts with exponential sleeps."
+    ],
+    "changes": [
+      {
+        "area": "provenance",
+        "author": "Paper describes ISA; this pinned implementation is third-party JBF code.",
+        "repository": "Preserve JBF code without claiming official author-code equivalence.",
+        "reason": "The requested plan identifies JBF as the integration source."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials and provider selection.",
+        "repository": "Shared OpenRouter client, explicit target/attacker provider pins, no fallback; disable OpenAI SDK retries and retain JBF five-attempt loop.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      },
+      {
+        "area": "framework_and_reporting",
+        "author": "ModernBaseAttack initialization, logs, RichResponse cost tracking.",
+        "repository": "Hydra parameter lookup and repository result metadata.",
+        "reason": "Use repository orchestration and classifiers."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py isa --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

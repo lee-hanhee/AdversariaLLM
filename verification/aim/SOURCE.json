@@ -1,0 +1,82 @@
+{
+  "method": "AIM (Alphabet Index Mapping — Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2506.12685",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2506.12685.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/aim_gen.py",
+      "reference": {
+        "sha256": "a7e4ef25f82ee229293b689ae772e41aaba1b33acf510f0d42ff5be61979e920"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/aim/aim_pipeline.py",
+          "sha256": "657f5667e6ce01225efeb9755c6fbc40e35c955516eefa3d507bdd23a8d51101",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/aim/diffs/aim_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/aim.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original AIMAttack methods, prompts (AIM, AIM+FWO, AIM+FCW), character-to-index encoding, and SYSTEM:/USER: formatting.",
+      "JBF message role parsing (splitting SYSTEM: and USER:), temperature 1, omitted token limit, and five completion attempts with exponential sleeps.",
+      "Default single generation and target query per example."
+    ],
+    "changes": [
+      {
+        "area": "provenance",
+        "author": "Paper describes AIM; this pinned implementation is third-party JBF code.",
+        "repository": "Preserve JBF code without claiming official author-code equivalence.",
+        "reason": "The requested plan identifies JBF as the integration source."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials and provider selection.",
+        "repository": "Shared OpenRouter client, explicit target provider pin, no fallback; disable OpenAI SDK retries and retain JBF five-attempt loop.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      },
+      {
+        "area": "framework_and_reporting",
+        "author": "ModernBaseAttack initialization, logs, RichResponse cost tracking and runner evaluation.",
+        "repository": "Hydra parameter lookup, repository result metadata, approximate reasoning-token counting; no JBF logs/cost tracking/evaluator.",
+        "reason": "Use repository orchestration and classifiers."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py aim --official-repo Jailbreak-Foundry",
+      "status": "pending_recheck"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

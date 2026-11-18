@@ -1,0 +1,75 @@
+{
+  "method": "ABJ (Analyzing-based Jailbreak — Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2407.11969",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: Analyzing-based Jailbreak (Shi et al., 2024).",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/abj_gen.py",
+      "reference": {
+        "sha256": "ab8c6cc43abc8ad2bb18afb79a5a9509b5bcc02cbb015caf2d928835f779e3da"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/abj/abj_pipeline.py",
+          "sha256": "bf32450ed38c13571ce4689df4c0ffa497c2a12a67207d9092a4bad91cb0b2fe",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/abj/diffs/abj_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/abj.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and per-round result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original ABJAttack neutral-data transformation, CoT prompt generation, max_attack_rounds sampling, refusal-detection judge_llm, max_adjustment_rounds loop, and paper_judge early stopping.",
+      "JBF message role parsing, temperature forwarding, and five completion attempts with exponential sleeps."
+    ],
+    "changes": [
+      {
+        "area": "provenance",
+        "author": "Paper describes ABJ; this pinned implementation is third-party JBF code.",
+        "repository": "Preserve JBF code without claiming official author-code equivalence.",
+        "reason": "The requested plan identifies JBF as the integration source."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion and direct openai.OpenAI judge client.",
+        "repository": "Shared OpenRouter client with explicit target, attacker, and judge provider pins; no fallback.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py abj --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

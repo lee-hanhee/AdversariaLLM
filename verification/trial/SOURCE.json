@@ -1,0 +1,64 @@
+{
+  "method": "TRIAL (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2509.05367",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2509.05367.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/trial_gen.py",
+      "reference": {
+        "sha256": "3a6de13d4a68f9babda49181c304fbf5c6fc13b99f5f2bd8be7d6c605ebb938d"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/trial/trial_pipeline.py",
+          "sha256": "ae39e5b8e7f4def0c0e9182703f80436ce3c92cca659b5cd027f1b8c6591bce9",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/trial/diffs/trial_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/trial.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and multi-turn result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      }
+    ],
+    "preserved_behavior": [
+      "Original TRIALAttack clue extraction, trolley-dilemma scenario generation, multi-turn conversation loop, and judge evaluation."
+    ],
+    "changes": [
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials.",
+        "repository": "Shared OpenRouter client with explicit target, attacker (shared by attack_llm & helper_llm), and judge provider pins; no fallback.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py trial --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

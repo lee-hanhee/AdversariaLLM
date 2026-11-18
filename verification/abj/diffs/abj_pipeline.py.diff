@@ -1,0 +1,14 @@
+--- src/jbfoundry/attacks/generated/abj_gen.py
++++ adversariallm/attacks/author_implementations/abj/abj_pipeline.py
+@@ -1,3 +1,11 @@
++"""Preserved third-party Jailbreak Foundry source, OpenSQZ/Jailbreak-Foundry.
++
++Pinned revision: 793922dac1c03e4db487e9c438dff1879e26ab0b.
++ABJ paper: https://arxiv.org/abs/2407.11969.
++This is JBF code derived from the ABJ paper.
++No LICENSE/COPYING file exists in the pinned JBF tree.
++"""
++
+ """
+ Analyzing-based Jailbreak (ABJ) Attack Implementation
+ 

@@ -197,6 +197,382 @@ direct:
   version: 0.0.1
   generation_config: ${attacks._default.generation_config}
   seed: ${attacks._default.seed}
+abj:
+  name: abj
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o-mini
+  max_attack_rounds: 1
+  max_adjustment_rounds: 5
+  temperature: 1.0
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+aim:
+  name: aim
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  mode: AIM
+air:
+  name: air
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o-mini
+  attack_method: k4
+  use_target_for_rewrite: false
+  target_max_tokens: 300
+  clean_conversation: false
+  attacker:
+    id: ???
+    provider: ???
+deep_inception:
+  name: deep_inception
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4
+  scene_type: science fiction
+  character_number: 5
+  layer_number: 5
+hill:
+  name: hill
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  max_attempts: 3
+  intention_check: true
+  attacker:
+    id: ???
+    provider: ???
+isa:
+  name: isa
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  shift_type: question
+  attacker:
+    id: ???
+    provider: ???
+jailcon:
+  name: jailcon
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  mode: cvt
+  separator: "{}"
+  aux_dataset: jbb-benign
+  attempt_index: 1
+jailexpert:
+  name: jailexpert
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-3.5-turbo
+  experience_path: attacks_paper_info/2508.19292/JailExpert/experience/experiences_examples.json
+  n_clusters: 10
+  top_k: 1
+  scalar_weight: 0.1
+  semantic_weight: 0.9
+  attacker:
+    id: ???
+    provider: ???
+  embedding:
+    id: ???
+    provider: ???
+past_tense:
+  name: past_tense
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-3.5-turbo
+  reformulation_temperature: 1.0
+  reformulation_max_tokens: 150
+  n_restarts: 20
+  target_max_tokens: null
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+pair_hosted:
+  name: pair_hosted
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o-mini
+  n_streams: 10
+  n_iterations: 3
+  keep_last_n: 4
+  success_threshold: 10
+  max_attack_attempts: 5
+  attack_temperature: 1.0
+  attack_top_p: 0.9
+  attack_max_tokens: 500
+  target_temperature: 0.0
+  target_max_tokens: 150
+  judge_temperature: 0.0
+  judge_max_tokens: 10
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+renellm:
+  name: renellm
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-3.5-turbo
+  rewrite_temperature: 0.5
+  max_iterations: 5
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+response_attack:
+  name: response_attack
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  attack_type: dri
+  max_retries: 3
+  attacker:
+    id: ???
+    provider: ???
+rts:
+  name: rts
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: qwen3-14b
+  num_rewrites: 1
+  scenario_genre: Crime News Report
+  use_json_format: true
+  attacker:
+    id: ???
+    provider: ???
+sata:
+  name: sata
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-3.5-turbo-1106
+  method: elp
+  granularity: sw
+  num_selections: 10
+  temperature: 0.3
+  attacker:
+    id: ???
+    provider: ???
+scp:
+  name: scp
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-3.5-turbo
+  max_benign_retries: 3
+  strategies:
+    - base
+    - code
+    - json
+    - code_json
+  attempt_index: 1
+  attacker:
+    id: ???
+    provider: ???
+majic:
+  name: majic
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o-mini
+  max_queries: 20
+  learning_rate: 0.1
+  discount_factor: 0.9
+  decay_factor: 0.99
+  temperature: 1.0
+  reset_factor: 0.1
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+puzzled:
+  name: puzzled
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  puzzle_type: anagram
+  attacker:
+    id: ???
+    provider: ???
+trial:
+  name: trial
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  n_iterations: 5
+  max_retries: 5
+  attack_temperature: 1.0
+  target_temperature: 1.0
+  judge_temperature: 0.0
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+trojfill:
+  name: trojfill
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gemini-2.5-flash
+  transform_type: Caesar
+  internal_retries: 3
+  attacker:
+    id: ???
+    provider: ???
+bpj:
+  name: bpj
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  population_size: 8
+  bp_target_size: 16
+  initial_noise: 0.4
+  noise_reduction_step: 0.05
+  noise_threshold: 0.1
+  eval_sample_size: 10
+  query_budget: 100
+  prefix_length: 10
+cc_bos:
+  name: cc_bos
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o-mini
+  population_size: 5
+  max_iterations: 5
+  stagnation_threshold: 2
+  step_size_decay: 0.95
+  cauchy_mutation_scale: 0.2
+  max_resample_attempts: 5
+  early_stop_threshold: 120
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+intent_laundering:
+  name: intent_laundering
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  attempts_per_query: 1
+  attacker:
+    id: ???
+    provider: ???
+s2c:
+  name: s2c
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o-mini
+  obfuscation_method: random
+  attacker:
+    id: ???
+    provider: ???
+tombraider:
+  name: tombraider
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-4o
+  max_rounds: 5
+  keyword: null
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
+wordgame:
+  name: wordgame
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: gpt-3.5-turbo
+  use_wordgame_plus: true
+  num_hints: 5
+  attacker:
+    id: ???
+    provider: ???
+equacode:
+  name: equacode
+  type: discrete
+  version: "0.2.0"
+  seed: null
+  source_profile: gpt-3.5-turbo
+  variant: equacode
+  judge_model: GPT-4
+  judge:
+    id: ???
+    provider: ???
+flip_attack:
+  name: flip_attack
+  type: discrete
+  version: "0.2.0"
+  seed: null
+  source_profile: gpt-4-0613
+  flip_mode: FCS
+  cot: false
+  lang_gpt: false
+  few_shot: false
+  temperature: 0
+  max_token: -1
+  retry_time: 1000
+  failed_sleep_time: 1
+  round_sleep_time: 1
+  evaluate: false
+  judge_model: gpt-4-0613
+  judge:
+    id: ???
+    provider: ???
+gta:
+  name: gta
+  type: discrete
+  version: "0.1.0"
+  seed: null
+  source_profile: deepseek_r1
+  rounds: 5
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???
 gcg:
   name: gcg
   type: discrete
@@ -449,3 +825,52 @@ random_search:
   candidates_per_generation: 8
   optim_str_init: "x x x x x x x x x x x x x x x x x x x x" # all tested tokenizers convert this to exactly 20 tokens
   generation_config: ${attacks._default.generation_config}
+mousetrap:
+  name: mousetrap
+  type: discrete
+  version: 0.1.0
+  seed: null
+  source_profile: ???
+  judge:
+    id: ???
+    provider: ???
+query_attack:
+  name: query_attack
+  type: discrete
+  version: 0.1.0
+  seed: null
+  source_profile: gpt-4-1106-preview
+  translation_language: ALL
+  target_language: SQL
+  trans_verify: false
+  temperate: 0
+  top_p: 1
+  max_new_tokens: 512
+  request_seed: 0
+  translator:
+    id: ???
+    provider: ???
+tap:
+  name: tap
+  type: discrete
+  version: 0.1.0
+  seed: null
+  source_profile: ???
+  attack_model: ???
+  evaluator_model: gpt-3.5-turbo
+  attack_max_n_tokens: 500
+  target_max_n_tokens: 150
+  evaluator_max_n_tokens: 10
+  evaluator_temperature: 0
+  max_n_attack_attempts: 5
+  branching_factor: 1
+  width: 10
+  depth: 10
+  n_streams: 1
+  keep_last_n: 3
+  attacker:
+    id: ???
+    provider: ???
+  judge:
+    id: ???
+    provider: ???

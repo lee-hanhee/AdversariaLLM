@@ -1,0 +1,60 @@
+{
+  "method": "JailExpert (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2508.19292",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-18",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2508.19292.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/jailexpert_gen.py",
+      "reference": {
+        "sha256": "ce47557dbc3d5f37b499b155bb3ada21f3ed0004a1d726b39fb736a7994aabdd"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/jailexpert/jailexpert_pipeline.py",
+          "sha256": "82a38fff2e87c2a28f128945755aa49b8cce44aa0c263575f4ce2edded7cf660",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/jailexpert/diffs/jailexpert_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/jailexpert.py",
+        "purpose": "Configuration, hosted routes (target, attacker, embedding), ExperienceIndex setup, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Extended with OpenRouterAuthorClient.create_embedding_for for hosted /embeddings routing."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      }
+    ],
+    "preserved_behavior": [
+      "Original JailExpertAttack ExperienceIndex semantic/scalar retrieval, MutationEngine, and fallback minimal experience bank."
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py jailexpert --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

@@ -22,6 +22,7 @@ dependencies = [
     "omegaconf>=2.3,<3",
     "submitit>=1.5,<2",
     "openai>=1.79,<2",
+    "nltk~=3.9.1",
     "litellm==1.25.2",
     "judgezoo>=0.1,<1",
     "numpy>=1.26,<2",
@@ -81,6 +82,7 @@ hydra-submitit-launcher = ">=1.2,<2"
 omegaconf = ">=2.3,<3"
 submitit = ">=1.5,<2"
 openai = ">=1.79,<2"
+nltk = "~=3.9.1"
 litellm = "==1.25.2"
 judgezoo = ">=0.1,<1"
 numpy = ">=1.26,<2"

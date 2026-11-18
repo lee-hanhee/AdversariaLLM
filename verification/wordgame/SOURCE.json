@@ -1,0 +1,153 @@
+{
+  "method": "WordGame / WordGame+ (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2405.14023",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: Tianrong Zhang, Bochuan Cao, Yuanpu Cao, Lu Lin, Prasenjit Mitra, Jinghui Chen.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/wordgame_gen.py",
+      "reference": {
+        "sha256": "e300eace4dbf4964f9fdba050d35f0b8a185fd045239837bd45d7107f898c88f"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/wordgame/wordgame_pipeline.py",
+          "sha256": "aa78555c294d2c52057da63b5db6daac05408737c91b7b5292dcf29391002e7f",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/wordgame/diffs/wordgame_pipeline.py.diff"
+          }
+        }
+      ]
+    },
+    {
+      "original_path": "src/jbfoundry/llm/litellm.py",
+      "reference": {
+        "sha256": "7ea19f0d7887ab636a1230c8b3fa69717eb9640fd1b353ef6c6539f0fd26d252"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/wordgame/wordgame_llm.py",
+          "sha256": "585ac68ad7c9f424a787a70511200be394aae545ec8ac9f1a8c112e2e19aeb69",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/wordgame/diffs/wordgame_llm.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/wordgame.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original WordGameGen methods, prompts, casing, substring counts, rewrite retries, heuristic fallback, duplicate removal, insertion, and masking.",
+      "Both WordGame and WordGame+; default five hints and plus enabled.",
+      "JBF message role parsing, default system prompt, temperature 1, omitted token limit, and five completion attempts with exponential sleeps.",
+      "Default single generation and target query per example."
+    ],
+    "changes": [
+      {
+        "area": "provenance",
+        "author": "Paper describes WordGame; this pinned implementation is third-party JBF code.",
+        "repository": "Preserve JBF code without claiming official author-code equivalence.",
+        "reason": "The requested plan identifies JBF as the integration source."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials and provider selection.",
+        "repository": "Shared OpenRouter client, explicit target/attacker provider pins, no fallback; disable OpenAI SDK retries and retain JBF five-attempt loop.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      },
+      {
+        "area": "framework_and_reporting",
+        "author": "ModernBaseAttack initialization, logs, RichResponse cost tracking and runner evaluation.",
+        "repository": "Hydra parameter lookup, repository result metadata, approximate reasoning-token counting; no JBF logs/cost tracking/evaluator. Exceptions propagate with request evidence instead of being swallowed by the JBF runner.",
+        "reason": "Use repository orchestration and classifiers."
+      },
+      {
+        "area": "configuration",
+        "author": "JBF framework accepts helper model/provider settings and WordGame parameters.",
+        "repository": "Hydra exposes independently pinned target/attacker routes, strict boolean mode and positive integer hints, a default helper source label, and no generic generation overrides, seeds, or runtime defenses.",
+        "reason": "Keep the hosted integration explicit and preserve the supported JBF request defaults."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python verification/verify_source.py wordgame --official-repo Jailbreak-Foundry",
+      "status": "passed",
+      "result": "Both full source files match pinned JBF bytes after attribution-only prefixes; adaptation diffs and SHA-256 hashes passed."
+    },
+    "behavior": {
+      "reference_execution": "Compare pinned original class and LLMLiteLLM request methods independently with benign scripted responses.",
+      "runs": [
+        {
+          "name": "isolated_production_driver_and_real_sdk_mock_transport",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_wordgame.py -k 'not public and not registry'",
+          "passed": 37,
+          "deselected": 2,
+          "scope": "Production AST definitions without importing the unrelated local-model stack; 17 independently generated benign golden cases, configuration validation, failure/recovery, and real SDK serialization/retry checks."
+        },
+        {
+          "name": "source_verifier_regression",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_source_verification.py",
+          "passed": 27
+        },
+        {
+          "name": "combined_wordgame_and_shared_integration",
+          "command": "python -m pytest -p no:cacheprovider -q tests/test_attacks/test_wordgame.py tests/test_author_execution.py -k wordgame",
+          "passed": 54,
+          "failed": 1,
+          "deselected": 90,
+          "failure": "test_collection_rejects_provider_substitution_before_dataset_access[wordgame]: importing run_attacks reaches pre-existing RetryPolicy.api = APIRetryPolicy() mutable dataclass default in lm_utils/text_generation.py, which Python 3.11 rejects. This declaration is also present on main.",
+          "scope": "All 39 WordGame tests passed, including public results, normal registry imports, Hydra configuration, and real SDK mock-HTTP serialization; 15 shared WordGame cases passed. The runner collection test did not reach its assertion."
+        }
+      ]
+    },
+    "not_tested": [
+      "Live OpenRouter behavior",
+      "Paper benchmark reproduction",
+      "Full JBF runner/evaluator/cost accounting",
+      "Native LiteLLM SDK serializers and internal retries",
+      "Full repository regression suite",
+      "Python 3.10/Linux/CUDA environment",
+      "Actual runner --cfg job command (runner import blocked); Hydra composition was independently checked"
+    ],
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence.",
+    "environments": {
+      "isolated_driver_tests": {
+        "python": "3.11.13",
+        "openai": "1.109.1",
+        "httpx": "0.27.2",
+        "pytest": "8.4.2"
+      },
+      "public_tests": "Python 3.11.13 with the available Intel macOS Torch 2.2.2 environment. Public WordGame imports and results passed. One runner import check is blocked by an existing mutable dataclass default. A Python 3.10 environment installation was interrupted after prolonged dependency downloads; it was not used as validation evidence."
+    },
+    "execution_requirements": {
+      "guide": "docs/author_execution.md",
+      "golden_regeneration": "python verification/wordgame/generate_cases.py --official-repo /path/to/Jailbreak-Foundry",
+      "golden_reference_revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+      "hydra_composition": "Passed: attack=wordgame, model=openrouter, explicit target/attacker routes, classifiers=null."
+    }
+  }
+}

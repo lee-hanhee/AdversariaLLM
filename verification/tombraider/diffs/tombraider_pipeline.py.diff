@@ -1,0 +1,14 @@
+--- src/jbfoundry/attacks/generated/tombraider_gen.py
++++ adversariallm/attacks/author_implementations/tombraider/tombraider_pipeline.py
+@@ -1,3 +1,11 @@
++"""Preserved third-party Jailbreak Foundry source, OpenSQZ/Jailbreak-Foundry.
++
++Pinned revision: 793922dac1c03e4db487e9c438dff1879e26ab0b.
++TOMBRAIDER paper: https://arxiv.org/abs/2501.18628.
++This is JBF code derived from the TOMBRAIDER paper.
++No LICENSE/COPYING file exists in the pinned JBF tree.
++"""
++
+ """
+ TOMBRAIDER: Multi-turn agent-based jailbreak attack using historical context.
+ 
