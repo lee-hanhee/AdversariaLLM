@@ -61,6 +61,29 @@ class AuthorAttackResult(AttackResult):
 AUTHOR_IMPLEMENTATIONS = Path(__file__).resolve().parents[1] / 'author_implementations'
 
 
+class LiteLLMClient:
+    """Adapter exposing OpenAI SDK-compatible chat/embeddings methods backed by LiteLLM."""
+
+    base_url = 'litellm://router'
+
+    def __init__(self):
+        self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._chat_create))
+        self.embeddings = SimpleNamespace(create=self._embedding_create)
+
+    def with_options(self, **_options):
+        return self
+
+    @staticmethod
+    def _chat_create(**kwargs):
+        import litellm
+        return litellm.completion(**kwargs)
+
+    @staticmethod
+    def _embedding_create(**kwargs):
+        import litellm
+        return litellm.embedding(**kwargs)
+
+
 class OpenRouterTarget:
     """The configuration and SDK client required by the author attacks."""
 
@@ -68,6 +91,9 @@ class OpenRouterTarget:
         self.config = normalize_config(config)
         validate_routes(self.config, {}, ())
         load_dotenv(Path(__file__).resolve().parents[3] / '.env', override=False)
+        if self.config.get('backend') == 'litellm':
+            self.client = LiteLLMClient()
+            return
         api_key = os.getenv('OPENROUTER_API_KEY')
         if not api_key:
             raise ValueError('OPENROUTER_API_KEY is required for hosted attacks.')
@@ -94,13 +120,25 @@ class OpenRouterAuthorClient:
     def __init__(self, client, model, judge):
         # Share the existing SDK client and keep separate routes and traces for each role.
         self.client = client
+        self.backend = model.get('backend', 'openrouter')
         self.routes = {'target': model, 'judge': judge}
-        self.requests, self.durations = [], []
+        self.requests, self.durations, self.setup_requests = [], [], []
         self.index, self.phase = -1, 'target'
 
         # These are the only OpenAI/Anthropic client interfaces used by the author code.
         self.chat = SimpleNamespace(completions=self)
         self.messages = SimpleNamespace(create=lambda **kwargs: self.create_for(self.phase, _anthropic=True, **kwargs))
+        self.embeddings = SimpleNamespace(create=lambda **kwargs: self.create_embedding_for('embedding', **kwargs))
+
+    def _apply_route(self, routed, route):
+        if self.backend == 'litellm':
+            prefix = f"{route['provider']}/"
+            model_id = str(route['id'])
+            routed['model'] = model_id if model_id.startswith(prefix) else f'{prefix}{model_id}'
+        else:
+            routed['model'] = route['id']
+            routed['extra_body'] = {'provider': {'only': [route['provider']],
+                                                 'allow_fallbacks': False, 'require_parameters': True}}
 
     def __call__(self, **_options):
         # Original constructor credentials/endpoints are replaced by the existing hosted client.
@@ -114,7 +152,27 @@ class OpenRouterAuthorClient:
         # Bind either author SDK interface to a fixed role across repeated attempts.
         return SimpleNamespace(
             chat=SimpleNamespace(completions=SimpleNamespace(create=lambda **kwargs: self.create_for(role, **kwargs))),
-            messages=SimpleNamespace(create=lambda **kwargs: self.create_for(role, _anthropic=True, **kwargs)))
+            messages=SimpleNamespace(create=lambda **kwargs: self.create_for(role, _anthropic=True, **kwargs)),
+            embeddings=SimpleNamespace(create=lambda **kwargs: self.create_embedding_for(role, **kwargs)))
+
+    def create_embedding_for(self, role, **kwargs):
+        route = self.routes[role]
+        record = {'example': self.index, 'role': role, 'endpoint': str(self.client.base_url),
+                  'request': copy.deepcopy(kwargs)}
+        (self.requests[self.index] if self.index >= 0 else self.setup_requests).append(record)
+        routed = copy.deepcopy(kwargs)
+        self._apply_route(routed, route)
+        record['routed_request'] = copy.deepcopy(routed)
+        try:
+            response = self.client.embeddings.create(**routed)
+            usage = getattr(response, 'usage', None)
+            record['metadata'] = {'id': getattr(response, 'id', None), 'model': getattr(response, 'model', route['id']),
+                                  'usage': usage.model_dump() if hasattr(usage, 'model_dump') else usage,
+                                  'provider': getattr(response, 'provider', None)}
+            return response
+        except Exception as error:
+            record['error_type'] = type(error).__name__
+            raise
 
     def create_for(self, role, _anthropic=False, **kwargs):
         # Explicit roles allow multi-agent attacks to interleave target/attacker/judge calls.
@@ -129,10 +187,8 @@ class OpenRouterAuthorClient:
         if 'system' in routed:
             routed['messages'] = [{'role': 'system', 'content': routed.pop('system')}, *routed['messages']]
 
-        # Pin the configured OpenRouter model and provider while retaining source request controls.
-        routed['model'] = route['id']
-        routed['extra_body'] = {'provider': {'only': [route['provider']],
-                                             'allow_fallbacks': False, 'require_parameters': True}}
+        # Pin the configured OpenRouter or LiteLLM model and provider while retaining source request controls.
+        self._apply_route(routed, route)
         record['routed_request'] = copy.deepcopy(routed)
         try:
             # Keep SDK retries; all application retries remain in the original author methods.
@@ -140,8 +196,8 @@ class OpenRouterAuthorClient:
 
             # Capture text and API metadata for the repository result adapter.
             usage = getattr(response, 'usage', None)
-            record['metadata'] = {'id': response.id, 'model': response.model,
-                                  'usage': usage.model_dump() if usage else None,
+            record['metadata'] = {'id': getattr(response, 'id', None), 'model': getattr(response, 'model', route['id']),
+                                  'usage': usage.model_dump() if hasattr(usage, 'model_dump') else usage,
                                   'finish_reasons': [choice.finish_reason for choice in response.choices],
                                   'provider': getattr(response, 'provider', None)}
             record['raw_text'] = response.choices[0].message.content if response.choices else None
@@ -171,8 +227,8 @@ class OpenRouterAuthorClient:
 
 def validate_routes(model, config, roles):
     """Require explicit hosted routes before any requests are made."""
-    if model.get('backend') != 'openrouter':
-        raise ValueError('Author attacks require backend=openrouter.')
+    if model.get('backend') not in ('openrouter', 'litellm'):
+        raise ValueError('Author attacks require backend=openrouter or backend=litellm.')
     for role, route in [('target', model), *((role, config.get(role, {})) for role in roles)]:
         for field in ('id', 'provider'):
             value = route.get(field)

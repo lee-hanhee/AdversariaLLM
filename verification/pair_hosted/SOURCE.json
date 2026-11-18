@@ -1,0 +1,75 @@
+{
+  "method": "PAIR Hosted (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2310.08419",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: Patrick Chao, Alexander Robey, Edgar Dobriban, Hamed Hassani, George J. Pappas, Eric Wong.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/pair_gen.py",
+      "reference": {
+        "sha256": "76d9b101da00499b83c342a586769878e04e0c2749a8c8b93192b7c0b0824bb1"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/pair_hosted/pair_hosted_pipeline.py",
+          "sha256": "f2229856a237c1dd6e02ce5c5219c297e8edd5de3c61089fc6155865906fb9d6",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/pair_hosted/diffs/pair_hosted_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/pair_hosted.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and multi-stream result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original PAIRAttack multi-stream refinement loop (n_streams=10, n_iterations=3, keep_last_n=4, success_threshold=10), JSON attacker parsing, and judge scoring.",
+      "JBF message role parsing, attacker/target/judge temperature and token controls, and five completion attempts with exponential sleeps."
+    ],
+    "changes": [
+      {
+        "area": "naming_and_coexistence",
+        "author": "Named pair_gen in JBF.",
+        "repository": "Registered as pair_hosted to preserve the existing local HuggingFace pair.py attack.",
+        "reason": "Avoid breaking existing local-model benchmarks."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials and provider selection.",
+        "repository": "Shared OpenRouter client with explicit target, attacker, and judge provider pins; no fallback.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py pair_hosted --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

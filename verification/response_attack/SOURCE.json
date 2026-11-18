@@ -1,0 +1,56 @@
+{
+  "method": "Response Attack (RA-DRI / RA-SRI — Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2507.05248",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2507.05248.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/response_attack_gen.py",
+      "reference": {
+        "sha256": "50b2c6b709b4d1475cee1f0e3b71c6814b52400f1b12794b9c83759ef235c13e"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/response_attack/response_attack_pipeline.py",
+          "sha256": "0a01e68c5053b406339625576ec3110d58313cba143884d2ebad03f61fbf82c7",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/response_attack/diffs/response_attack_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/response_attack.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      }
+    ],
+    "preserved_behavior": [
+      "Original ResponseAttackGen DRI and SRI templates, auxiliary rewrite retries, and multi-turn response-injection message list."
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py response_attack --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "method": "PUZZLED (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2508.01306",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: PUZZLED: Jailbreak LLMs with Word Puzzles (Ahn & Lee, 2025).",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/puzzled_gen.py",
+      "reference": {
+        "sha256": "498db3ab74ccd9f5d1375addc5893a2ce4669af03270ce350704e4b6eaf0c5d0"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/puzzled/puzzled_pipeline.py",
+          "sha256": "b49f65939b47553ba13e24163968aaebc2ecf5586a079314c1f67f3196980d99",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/puzzled/diffs/puzzled_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/puzzled.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      }
+    ],
+    "preserved_behavior": [
+      "Original PUZZLEDAttack keyword extraction, clue generation with caching, and anagram/word_search/crossword puzzle formatting."
+    ],
+    "changes": [
+      {
+        "area": "transport",
+        "author": "LLMLiteLLM.from_config inside _generate_clue.",
+        "repository": "Shared OpenRouter client bound to attacker and target roles with explicit provider pins.",
+        "reason": "Route clue generation and target calls through OpenRouter."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py puzzled --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

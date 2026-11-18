@@ -1,0 +1,81 @@
+{
+  "method": "Past-Tense (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2407.11969",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: Maksym Andriushchenko, Nicolas Flammarion.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/past_tense_gen.py",
+      "reference": {
+        "sha256": "facdb53b91799c152fec18708c54bd82eadbe4c302528dcddbe2a16af2076941"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/past_tense/past_tense_pipeline.py",
+          "sha256": "29ba78f633fb2a8ccd58fb416d2088b4c1e512ab9a0a821672f6af2047cec840",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/past_tense/diffs/past_tense_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/past_tense.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and per-restart result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original PastTenseAttack reformulation prompt, quote stripping, n_restarts=20 sampling loop, target temperature=1.0, and Rating: [[10]] judge early stopping.",
+      "JBF message role parsing, temperature/max_tokens forwarding, and five completion attempts with exponential sleeps."
+    ],
+    "changes": [
+      {
+        "area": "provenance",
+        "author": "Paper describes Past-Tense; this pinned implementation is third-party JBF code.",
+        "repository": "Preserve JBF code without claiming official author-code equivalence.",
+        "reason": "The requested plan identifies JBF as the integration source."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion and direct openai.OpenAI judge client.",
+        "repository": "Shared OpenRouter client with explicit target, attacker, and judge provider pins; no fallback.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      },
+      {
+        "area": "framework_and_reporting",
+        "author": "ModernBaseAttack initialization, logs, RichResponse cost tracking.",
+        "repository": "Hydra parameter lookup and per-restart AuthorStepResult traces.",
+        "reason": "Use repository orchestration and classifiers."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py past_tense --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

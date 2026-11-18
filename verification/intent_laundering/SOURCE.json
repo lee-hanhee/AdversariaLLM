@@ -1,0 +1,40 @@
+{
+  "method": "Intent Laundering (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2602.16729",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-18",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2602.16729.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/intent_laundering_gen.py",
+      "reference": {
+        "sha256": "5362a7911be55e905cabe781daf0a433882179c4428b2ec40195f43fc2188959"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/intent_laundering/intent_laundering_pipeline.py",
+          "sha256": "9cba9d7d13f43989145ed0a46019428a85dba730c50e6a2eb635de18134e0d68",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/intent_laundering/diffs/intent_laundering_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py intent_laundering --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    }
+  }
+}

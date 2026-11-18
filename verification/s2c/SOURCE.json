@@ -1,0 +1,40 @@
+{
+  "method": "S2C (Structured Semantic Cloaking — Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2603.16192",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-18",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2603.16192.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/s2c_gen.py",
+      "reference": {
+        "sha256": "8b50e04f8fe5be3be859b3c8e849f27d24ef3148a1272c6e4a25b961b3600d71"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/s2c/s2c_pipeline.py",
+          "sha256": "9931beeefe68137dc1501490a1bd6cae23aaa65db39e04247926ff8653bff9c0",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/s2c/diffs/s2c_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py s2c --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    }
+  }
+}

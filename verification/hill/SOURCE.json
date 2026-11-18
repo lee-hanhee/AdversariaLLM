@@ -1,0 +1,82 @@
+{
+  "method": "HILL (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2509.14297",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2509.14297.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/hill_gen.py",
+      "reference": {
+        "sha256": "743e0c79a6b192ff28dca35ab65faf90052d8ce30d34f59a0db117fe9182915c"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/hill/hill_pipeline.py",
+          "sha256": "554c1dc6df94c69bdc73d90cd78d5b5284b964ac63be7a29db4cb035df118396",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/hill/diffs/hill_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/hill.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original HillAttack methods, few-shot examples, conditional intention_check instruction, HILL: prefix stripping, max_attempts empty-response retry loop, and fallback to original goal.",
+      "JBF message role parsing, default system prompt, temperature 1, omitted token limit, and five completion attempts with exponential sleeps.",
+      "Default single generation and target query per example."
+    ],
+    "changes": [
+      {
+        "area": "provenance",
+        "author": "Paper describes HILL; this pinned implementation is third-party JBF code.",
+        "repository": "Preserve JBF code without claiming official author-code equivalence.",
+        "reason": "The requested plan identifies JBF as the integration source."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials and provider selection.",
+        "repository": "Shared OpenRouter client, explicit target/attacker provider pins, no fallback; disable OpenAI SDK retries and retain JBF five-attempt loop.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      },
+      {
+        "area": "framework_and_reporting",
+        "author": "ModernBaseAttack initialization, logs, RichResponse cost tracking and runner evaluation.",
+        "repository": "Hydra parameter lookup, repository result metadata, approximate reasoning-token counting; no JBF logs/cost tracking/evaluator.",
+        "reason": "Use repository orchestration and classifiers."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py hill --official-repo Jailbreak-Foundry",
+      "status": "pending_recheck"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

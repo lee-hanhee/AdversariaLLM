@@ -1,0 +1,14 @@
+--- src/jbfoundry/attacks/generated/hill_gen.py
++++ adversariallm/attacks/author_implementations/hill/hill_pipeline.py
+@@ -1,3 +1,11 @@
++"""Preserved third-party Jailbreak Foundry source, OpenSQZ/Jailbreak-Foundry.
++
++Pinned revision: 793922dac1c03e4db487e9c438dff1879e26ab0b.
++HILL paper: https://arxiv.org/abs/2509.14297.
++This is JBF code, not code supplied by the paper authors.
++No LICENSE/COPYING file exists in the pinned JBF tree.
++"""
++
+ """
+ HILL (Hiding Intention by Learning from LLMs) Attack Implementation
+ 

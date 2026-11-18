@@ -5,6 +5,9 @@ Each attack directory contains author source preserved according to its
 extractions, such as notebook cells or removing a standalone demo, are recorded
 there. Preserve the remaining source bytes, including whitespace and quirks.
 
+`wordgame/` contains the third-party Jailbreak Foundry implementation, not code
+supplied by the WordGame paper authors. Its manifest records that distinction.
+
 Our executable integration code lives separately in
 `adversariallm/attacks/<attack>.py`. Shared loading, routing, and result bookkeeping live in `adversariallm/attacks/utils/author_runtime.py`.
 

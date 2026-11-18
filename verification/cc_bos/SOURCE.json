@@ -1,0 +1,40 @@
+{
+  "method": "CC-BOS (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2501.00000",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-18",
+  "attribution": "Jailbreak Foundry contributors.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/cc_bos_gen.py",
+      "reference": {
+        "sha256": "31d4cbf5b21fc39f4016eed871c49027d42b40ec7e076c6515e3b856548b27b0"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/cc_bos/cc_bos_pipeline.py",
+          "sha256": "3e231c97aefd0a9d8277ebc5230b1cdc048e09b6a25899e87298bf48166e6f1c",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/cc_bos/diffs/cc_bos_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py cc_bos --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    }
+  }
+}

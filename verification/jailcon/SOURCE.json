@@ -1,0 +1,56 @@
+{
+  "method": "JAIL-CON (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2510.00000",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-18",
+  "attribution": "Jailbreak Foundry contributors.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/jailcon_gen.py",
+      "reference": {
+        "sha256": "71e3baa45861e378e05a8a919cbe6d7781db7775f530c9885afe086d10100afa"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/jailcon/jailcon_pipeline.py",
+          "sha256": "7f98ad0ba5fa540ff7c10e53bc8015e584e32800ef6ff195bcb96099b2b7424b",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/jailcon/diffs/jailcon_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/jailcon.py",
+        "purpose": "Configuration, hosted routes, offline benign prompt loader shim, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/author_implementations/jailcon/jbb_benign.json",
+        "purpose": "Static offline list of benign auxiliary prompts replacing HuggingFace Hub JBBBehaviorsLoader."
+      }
+    ],
+    "preserved_behavior": [
+      "Original JailConAttack CIT and CVT token interleaving, separator substitution, and system/user prompt construction."
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py jailcon --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

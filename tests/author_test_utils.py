@@ -7,12 +7,37 @@ from pathlib import Path
 import subprocess
 import sys
 
-from adversariallm.attacks.flip_attack import FlipAttackConfig
+from adversariallm.attacks.abj import ABJConfig
+from adversariallm.attacks.aim import AIMConfig
+from adversariallm.attacks.air import AIRConfig
+from adversariallm.attacks.bpj import BPJConfig
+from adversariallm.attacks.cc_bos import CCBOSConfig
+from adversariallm.attacks.deep_inception import DeepInceptionConfig
 from adversariallm.attacks.equacode import EquaCodeConfig
+from adversariallm.attacks.flip_attack import FlipAttackConfig
 from adversariallm.attacks.gta import GTAConfig
+from adversariallm.attacks.hill import HILLConfig
+from adversariallm.attacks.intent_laundering import IntentLaunderingConfig
+from adversariallm.attacks.isa import ISAConfig
+from adversariallm.attacks.jailcon import JAILCONConfig
+from adversariallm.attacks.jailexpert import JailExpertConfig
+from adversariallm.attacks.majic import MAJICConfig
 from adversariallm.attacks.mousetrap import MousetrapConfig
+from adversariallm.attacks.pair_hosted import PAIRHostedConfig
+from adversariallm.attacks.past_tense import PastTenseConfig
+from adversariallm.attacks.puzzled import PUZZLEDConfig
 from adversariallm.attacks.query_attack import QueryAttackConfig
+from adversariallm.attacks.renellm import ReNeLLMConfig
+from adversariallm.attacks.response_attack import ResponseAttackConfig
+from adversariallm.attacks.rts import RTSConfig
+from adversariallm.attacks.s2c import S2CConfig
+from adversariallm.attacks.sata import SATAConfig
+from adversariallm.attacks.scp import SCPConfig
 from adversariallm.attacks.tap import TAPConfig
+from adversariallm.attacks.tombraider import TombraiderConfig
+from adversariallm.attacks.trial import TRIALConfig
+from adversariallm.attacks.trojfill import TrojFillConfig
+from adversariallm.attacks.wordgame import WordGameConfig
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +50,16 @@ def author_payload(method, **overrides):
 
     # Build attack defaults with fake, explicit routes for each required role.
     configs = {'flip_attack': FlipAttackConfig, 'equacode': EquaCodeConfig,
-               'gta': GTAConfig, 'mousetrap': MousetrapConfig, 'query_attack': QueryAttackConfig, 'tap': TAPConfig}
+               'gta': GTAConfig, 'mousetrap': MousetrapConfig, 'query_attack': QueryAttackConfig, 'tap': TAPConfig,
+               'wordgame': WordGameConfig, 'aim': AIMConfig, 'deep_inception': DeepInceptionConfig, 'hill': HILLConfig,
+               'isa': ISAConfig, 'past_tense': PastTenseConfig,
+               'scp': SCPConfig, 'abj': ABJConfig, 'pair_hosted': PAIRHostedConfig,
+               'puzzled': PUZZLEDConfig, 'majic': MAJICConfig, 'trial': TRIALConfig,
+               'air': AIRConfig, 'sata': SATAConfig, 'response_attack': ResponseAttackConfig, 'rts': RTSConfig,
+               'renellm': ReNeLLMConfig, 'jailcon': JAILCONConfig,
+               'trojfill': TrojFillConfig, 'jailexpert': JailExpertConfig,
+               'bpj': BPJConfig, 'cc_bos': CCBOSConfig, 'intent_laundering': IntentLaunderingConfig,
+               's2c': S2CConfig, 'tombraider': TombraiderConfig}
     config = asdict(configs[method]())
     if method in ('mousetrap', 'tap'):
         config['source_profile'] = {'mousetrap': 'o1-2024-12-17', 'tap': 'gpt-4'}[method]
@@ -33,10 +67,17 @@ def author_payload(method, **overrides):
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider'}
     if method == 'query_attack':
         config['translator'] = {'id': 'test/translator', 'provider': 'translator-provider'}
-    else:
+    elif method not in ('wordgame', 'aim', 'deep_inception', 'hill', 'isa', 'scp', 'puzzled',
+                        'air', 'sata', 'response_attack', 'rts', 'jailcon', 'trojfill', 'jailexpert',
+                        'bpj', 'intent_laundering', 's2c'):
         config['judge'] = {'id': 'test/judge', 'provider': 'judge-provider'}
-    if method in ('gta', 'tap'):
+    if method in ('gta', 'tap', 'wordgame', 'hill', 'isa', 'past_tense', 'scp', 'abj', 'pair_hosted',
+                  'puzzled', 'majic', 'trial', 'air', 'sata', 'response_attack', 'rts',
+                  'renellm', 'trojfill', 'jailexpert',
+                  'cc_bos', 'intent_laundering', 's2c', 'tombraider'):
         config['attacker'] = {'id': 'test/attacker', 'provider': 'attacker-provider'}
+    if method == 'jailexpert':
+        config['embedding'] = {'id': 'test/embedding', 'provider': 'embedding-provider'}
 
     # Use the declared shared comparison environment for releases without exact SDK pins.
     if method in ('gta', 'mousetrap'):

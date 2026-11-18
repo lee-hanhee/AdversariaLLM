@@ -1,0 +1,82 @@
+{
+  "method": "DeepInception (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2311.03191",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: Xuan Li, Zhanke Zhou, Jianing Zhu, Jiangchao Yao, Tongliang Liu, Bo Han.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/deep_inception_gen.py",
+      "reference": {
+        "sha256": "4622381fe19fef1e2a9c42a9a281ca89b01857e846db8f6df5d5231665973686"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/deep_inception/deep_inception_pipeline.py",
+          "sha256": "4075eef6db81df99403ee6f41cf8ed5e49b336eddfa1cebd52e1c800385d1ba4",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/deep_inception/diffs/deep_inception_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/deep_inception.py",
+        "purpose": "Configuration, hosted routes, original class initialization, and result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      },
+      {
+        "path": "adversariallm/attacks/utils/author_runtime.py",
+        "purpose": "Existing shared transport and results; unchanged."
+      }
+    ],
+    "preserved_behavior": [
+      "Original DeepInceptionAttack prompt template and scene_type/character_number/layer_number formatting.",
+      "JBF message role parsing, default system prompt, temperature 1, omitted token limit, and five completion attempts with exponential sleeps.",
+      "Default single generation and target query per example."
+    ],
+    "changes": [
+      {
+        "area": "provenance",
+        "author": "Paper describes DeepInception; this pinned implementation is third-party JBF code.",
+        "repository": "Preserve JBF code without claiming official author-code equivalence.",
+        "reason": "The requested plan identifies JBF as the integration source."
+      },
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials and provider selection.",
+        "repository": "Shared OpenRouter client, explicit target provider pin, no fallback; disable OpenAI SDK retries and retain JBF five-attempt loop.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      },
+      {
+        "area": "framework_and_reporting",
+        "author": "ModernBaseAttack initialization, logs, RichResponse cost tracking and runner evaluation.",
+        "repository": "Hydra parameter lookup, repository result metadata, approximate reasoning-token counting; no JBF logs/cost tracking/evaluator.",
+        "reason": "Use repository orchestration and classifiers."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py deep_inception --official-repo Jailbreak-Foundry",
+      "status": "pending_recheck"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

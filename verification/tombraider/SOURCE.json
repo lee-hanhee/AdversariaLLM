@@ -1,0 +1,40 @@
+{
+  "method": "TOMBRAIDER (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2501.18628",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-18",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2501.18628.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/tombraider_gen.py",
+      "reference": {
+        "sha256": "8fcfd66b6e38b3f3d2a6f6c9111cd44b8e733719fcb7fc4c968158112175a65d"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/tombraider/tombraider_pipeline.py",
+          "sha256": "568b120ff9f1f422b78225a017b2f693f06343e34271a7b1f3fa1c6258969ff4",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/tombraider/diffs/tombraider_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py tombraider --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    }
+  }
+}

@@ -1,0 +1,14 @@
+--- src/jbfoundry/attacks/generated/air_gen.py
++++ adversariallm/attacks/author_implementations/air/air_pipeline.py
+@@ -1,3 +1,11 @@
++"""Preserved third-party Jailbreak Foundry source, OpenSQZ/Jailbreak-Foundry.
++
++Pinned revision: 793922dac1c03e4db487e9c438dff1879e26ab0b.
++AIR paper: https://arxiv.org/abs/2410.03857.
++This is JBF code derived from the AIR paper.
++No LICENSE/COPYING file exists in the pinned JBF tree.
++"""
++
+ """
+ Attack via Implicit Reference (AIR) Implementation
+ 

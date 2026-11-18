@@ -1,0 +1,40 @@
+{
+  "method": "BPJ (Boundary Point Jailbreaking — Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2602.15001",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-18",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2602.15001.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/bpj_gen.py",
+      "reference": {
+        "sha256": "5df6deead1c4fbbe877100062c32e3df24bf17ebf3707a324092f8cf6f7c1f45"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/bpj/bpj_pipeline.py",
+          "sha256": "910c2eaaeeb6be4faf4f137ea93eec4f8049627356a39abc84fa2fe7509895f1",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/bpj/diffs/bpj_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py bpj --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    }
+  }
+}

@@ -33,7 +33,7 @@ def test_openrouter_target_owns_only_config_and_client(monkeypatch):
     assert vars(target) == {'config': config, 'client': client}
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'query_attack', 'tap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'query_attack', 'tap', 'wordgame'])
 def test_source_profiles_are_attack_settings_with_a_shared_target_model(method):
     payload = author_payload(method)
     model = {'backend': 'openrouter', 'id': 'test/target', 'provider': 'target-provider'}
@@ -48,14 +48,16 @@ def test_source_profiles_are_attack_settings_with_a_shared_target_model(method):
         cls.validate_config(model, {**payload['config'], 'source_profile': 'unsupported-profile'})
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame'])
 def test_registry_and_yaml_retain_original_defaults(method):
     # Keep registry selection and composed settings aligned with the source profile.
     with initialize_config_dir(config_dir=str(ROOT / 'conf'), version_base='1.3'):
         overrides = ['hydra/launcher=basic', 'model=openrouter',
                      f'attack={method}']
+        helper_role = 'attacker' if method == 'wordgame' else 'judge'
         overrides += ['models.openrouter.id=test/target', 'models.openrouter.provider=target-provider',
-                      f'attacks.{method}.judge.id=test/judge', f'attacks.{method}.judge.provider=judge-provider']
+                      f'attacks.{method}.{helper_role}.id=test/{helper_role}',
+                      f'attacks.{method}.{helper_role}.provider={helper_role}-provider']
         if method == 'gta':
             overrides += ['attacks.gta.attacker.id=test/attacker', 'attacks.gta.attacker.provider=attacker-provider']
         if method == 'mousetrap':
@@ -79,21 +81,29 @@ def test_registry_and_yaml_retain_original_defaults(method):
     elif method == 'mousetrap':
         assert settings.source_profile == 'o1-2024-12-17'
         assert 'judge_model' not in settings
+    elif method == 'wordgame':
+        assert settings.source_profile == 'gpt-3.5-turbo'
+        assert settings.num_hints == 5 and settings.use_wordgame_plus is True
+        assert 'judge' not in settings
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
-@pytest.mark.parametrize('role,field', [('target', 'id'), ('target', 'provider'), ('judge', 'id'), ('judge', 'provider')])
+@pytest.mark.parametrize('method,role,field', [
+    (method, role, field)
+    for method in ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame']
+    for role in ('target', 'attacker' if method == 'wordgame' else 'judge')
+    for field in ('id', 'provider')
+])
 def test_all_routes_require_explicit_model_and_provider(method, role, field):
     # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
-    (payload['model'] if role == 'target' else payload['config']['judge'])[field] = None
+    (payload['model'] if role == 'target' else payload['config'][role])[field] = None
 
     # Require each configured role to specify both routing fields.
     with pytest.raises(ValueError, match='explicit OpenRouter'):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame'])
 @pytest.mark.parametrize('change', ['openrouter', 'model', 'provider', 'seed'])
 def test_substitutions_and_generic_overrides_are_rejected(method, change):
     # Prepare the selected author configuration and controlled repository dependencies.
@@ -111,13 +121,12 @@ def test_substitutions_and_generic_overrides_are_rejected(method, change):
         validate_author_config(method, payload['model'], payload['config'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame'])
 def test_no_global_rng_seed_is_applied(monkeypatch, method):
     # Prepare the selected author configuration and controlled repository dependencies.
     monkeypatch.setattr('transformers.set_seed', lambda value: pytest.fail('Author adapters must not seed RNG'))
     payload = author_payload(method)
-    cls = {'flip_attack': FlipAttack, 'equacode': EquaCodeAttack, 'gta': GTAAttack, 'mousetrap': MousetrapAttack}[method]
-    cls(payload['config'])
+    Attack.from_name(method)(payload['config'])
 
 
 def hosted_target(payload, client=None):
@@ -269,7 +278,7 @@ def test_repository_binding_reuses_hosted_sdk_client_and_only_openrouter_credent
         assert body['provider'] == {'only': [role + '-provider'], 'allow_fallbacks': False, 'require_parameters': True}
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame'])
 def test_collection_rejects_provider_substitution_before_dataset_access(monkeypatch, method):
     import run_attacks
 
@@ -351,7 +360,7 @@ def test_sdk_transient_retry_serialization_and_delay_match_original_baselines(me
 
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame'])
 def test_custom_endpoints_cannot_redirect_author_requests(method):
     # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
@@ -413,7 +422,7 @@ def test_gta_background_only_results_remain_available_without_target_steps(monke
     assert output.runs[0].steps == [] and output.runs[0].author_result == record
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame'])
 def test_shared_entry_point_rejects_non_hosted_targets_before_execution(monkeypatch, method):
     # Prepare the selected author configuration and controlled repository dependencies.
     payload = author_payload(method)
@@ -425,7 +434,7 @@ def test_shared_entry_point_rejects_non_hosted_targets_before_execution(monkeypa
         Attack.from_name(method)(payload['config']).run(object(), payload['dataset'])
 
 
-@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap'])
+@pytest.mark.parametrize('method', ['flip_attack', 'equacode', 'gta', 'mousetrap', 'wordgame'])
 @pytest.mark.parametrize('fails', [False, True])
 def test_result_mapping_does_not_consume_author_rng_state(monkeypatch, method, fails):
     import random

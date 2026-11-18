@@ -87,7 +87,7 @@ def run_attacks(all_run_configs: list[RunConfig], cfg: DictConfig, date_time_str
             last_model = run_config.model
 
             # Choose the hosted interface or load local weights when the selected model changes.
-            if run_config.model_params.get("backend", "local") == "openrouter":
+            if run_config.model_params.get("backend", "local") in ("openrouter", "litellm"):
                 hosted_target = OpenRouterTarget(run_config.model_params)
                 model, tokenizer = None, None
             else:

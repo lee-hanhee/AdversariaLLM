@@ -1,0 +1,64 @@
+{
+  "method": "MAJIC (Jailbreak Foundry implementation)",
+  "repository": "https://github.com/OpenSQZ/Jailbreak-Foundry",
+  "paper": "https://arxiv.org/abs/2508.13048",
+  "revision": "793922dac1c03e4db487e9c438dff1879e26ab0b",
+  "verified_on": "2026-11-17",
+  "attribution": "Jailbreak Foundry contributors. Paper: arXiv:2508.13048.",
+  "license": {
+    "status": "No LICENSE/COPYING file exists in the pinned JBF tree. The paper license is not represented as a software license.",
+    "tree_check": "git ls-tree -r --name-only 793922dac1c03e4db487e9c438dff1879e26ab0b"
+  },
+  "files": [
+    {
+      "original_path": "src/jbfoundry/attacks/generated/majic_gen.py",
+      "reference": {
+        "sha256": "2823b7abba358343189f9a4266c61dfb30da083fd92e45eaf55529449b694310"
+      },
+      "implementations": [
+        {
+          "path": "adversariallm/attacks/author_implementations/majic/majic_pipeline.py",
+          "sha256": "c8b0e84ee14fa19a7affd7368f21ceea8aa1b3dd1e4a99801e17b5cca4365d52",
+          "extraction": "Prepend attribution only; retain every original source byte.",
+          "adaptation": {
+            "prepend_docstring": true,
+            "diff_path": "verification/majic/diffs/majic_pipeline.py.diff"
+          }
+        }
+      ]
+    }
+  ],
+  "repository_history": {
+    "contribution_base_revision": "5884cc23387f7482f07fa3e4d5ce2b924f390d22"
+  },
+  "integration": {
+    "files": [
+      {
+        "path": "adversariallm/attacks/majic.py",
+        "purpose": "Configuration, hosted routes, Q-learning state initialization, and per-iteration result mapping."
+      },
+      {
+        "path": "adversariallm/attacks/utils/jbf_runtime.py",
+        "purpose": "Shared JBF LLMLiteLLM transport binding reusing wordgame/wordgame_llm.py."
+      }
+    ],
+    "preserved_behavior": [
+      "Original MAJICAttack Q-learning transition matrix, softmax strategy selection, periodic reset, and evaluator loop."
+    ],
+    "changes": [
+      {
+        "area": "transport",
+        "author": "LiteLLM completion with framework credentials.",
+        "repository": "Shared OpenRouter client with explicit target, attacker, and judge provider pins; no fallback.",
+        "reason": "Preserve application attempts while replacing the provider transport."
+      }
+    ]
+  },
+  "verification_results": {
+    "source_identity": {
+      "command": "python3 verification/verify_source.py majic --official-repo Jailbreak-Foundry",
+      "status": "passed"
+    },
+    "limitations": "Preserved third-party source and mocked behavior comparisons do not establish paper-result reproduction or live provider equivalence."
+  }
+}

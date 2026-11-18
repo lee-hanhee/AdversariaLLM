@@ -1,5 +1,49 @@
 # Running author attacks through OpenRouter
 
+## WordGame and WordGame+
+
+`wordgame` runs the pinned third-party Jailbreak Foundry implementation of
+[WordGame](https://arxiv.org/abs/2405.14023). It does not claim to preserve code
+provided by the paper authors. WordGame+ is enabled by default; set
+`attacks.wordgame.use_wordgame_plus=false` for the base mode. Both use five hints
+unless `attacks.wordgame.num_hints` is changed to a positive integer.
+
+```bash
+python run_attacks.py --cfg job hydra/launcher=basic \
+  model=openrouter attack=wordgame \
+  models.openrouter.id=test/target \
+  models.openrouter.provider=target-provider \
+  attacks.wordgame.attacker.id=test/attacker \
+  attacks.wordgame.attacker.provider=attacker-provider \
+  classifiers=null
+```
+
+For an actual run, remove `--cfg job`, configure real target/attacker routes, and
+set `OPENROUTER_API_KEY`. The source label `gpt-3.5-turbo` identifies JBF's helper
+default independently of hosted model IDs. This adapter needs no judge route.
+It preserves JBF's message parsing, default system message, temperature 1,
+omitted token limit, and five completion attempts with 1/2/4/8-second waits.
+OpenAI SDK retries are disabled for these calls to avoid multiplying attempts.
+Generic generation overrides, explicit RNG seeds, and runtime defenses are not
+supported. Errors propagate with request evidence; JBF runner evaluation,
+error-swallowing, cost tracking, and file logging are replaced by repository
+bookkeeping. Reasoning-token estimates do not use LiteLLM tokenization.
+
+```bash
+python -m pytest -q tests/test_attacks/test_wordgame.py
+python -m pytest -q tests/test_author_execution.py -k wordgame
+python verification/verify_source.py wordgame
+```
+
+Tests use committed benign golden cases generated independently from pinned JBF
+methods, so a local JBF checkout and network are not needed to run them.
+Regenerate the cases with an independent checkout using
+`python verification/wordgame/generate_cases.py --official-repo /path/to/Jailbreak-Foundry`.
+Source identity and offline comparisons do not establish equivalent live model
+outputs or reproduction of the paper's benchmark results.
+
+## Other hosted attacks
+
 FlipAttack, EquaCode, GTA, Mousetrap, QueryAttack, and TAP execute pinned author
 attack logic with an OpenRouter transport binding. Target, helper, and judge
 calls use `openai==1.109.1` as a client for `https://openrouter.ai/api/v1`. Only `OPENROUTER_API_KEY` is needed; no direct
